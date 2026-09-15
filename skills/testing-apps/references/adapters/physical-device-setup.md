@@ -71,5 +71,5 @@ security find-certificate -c "Apple Development: <name>" -p ~/Library/Keychains/
 The team id is the `OU=` field.
 
 Remember: a daemon already running from before these exports were set will ignore
-them. Kill it first (see `SKILL.md`'s daemon section) in the same command as the
+them. Kill it first (see `mobile.md`'s daemon section) in the same command as the
 export + `open`.

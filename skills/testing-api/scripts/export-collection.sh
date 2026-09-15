@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
-# Zips a repo's Bruno collection for import into the Bruno desktop app.
-# Usage: export-collection.sh <repo_root> [dest_zip_path] [collection_subpath]
+# Zips a repo's API test collection (Bruno folder, Postman collection/environment
+# files, or an Insomnia export) for import into the matching desktop app.
+# Usage: export-collection.sh <repo_root> [dest_zip_path] [collection_subpath] [tool_label]
 set -euo pipefail
 
 REPO_ROOT="${1:?repo_root is required}"
 REPO_ROOT="$(cd "$REPO_ROOT" && pwd)"
 REPO_NAME="$(basename "$REPO_ROOT")"
 COLLECTION_SUBPATH="${3:-bruno}"
-DEST="${2:-$HOME/Desktop/${REPO_NAME}-bruno-collection.zip}"
+TOOL_LABEL="${4:-api}"
+DEST="${2:-$HOME/Desktop/${REPO_NAME}-${TOOL_LABEL}-collection.zip}"
 
-if [ ! -d "$REPO_ROOT/$COLLECTION_SUBPATH" ]; then
-  echo "No $COLLECTION_SUBPATH/ folder found under $REPO_ROOT" >&2
+if [ ! -e "$REPO_ROOT/$COLLECTION_SUBPATH" ]; then
+  echo "No $COLLECTION_SUBPATH found under $REPO_ROOT" >&2
   exit 1
 fi
 

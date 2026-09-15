@@ -1,7 +1,7 @@
 # Updating the collection's Confluence tracker page
 
 Load this when executing the final "publish" step of the procedure, for any product
-whose `environments/*.json` config has a `bruno.confluence` block. Skip entirely if
+whose `environments/*.json` config has a `api.confluence` block. Skip entirely if
 that block is absent.
 
 **Scope, precisely:** this page is a `lastUpdate` tracker plus the exported zip as a
@@ -14,7 +14,7 @@ touched.
 
 ## Identifiers come from the product's config
 
-Read these from that product's `bruno.confluence` block in `environments/*.json` —
+Read these from that product's `api.confluence` block in `environments/*.json` —
 never hardcode a site/space/page for a specific product in this file:
 
 | Config field | Meaning |
@@ -85,7 +85,7 @@ to attach content in the same call that creates the page.
    list. Pass its stdout directly as the `body` parameter.
 
 5. **`updateConfluencePage`** with that `pageId`, the generated body, and a
-   `versionMessage` like `"Automated update from testing-bruno-api skill"`.
+   `versionMessage` like `"Automated update from testing-api skill"`.
 
 6. **Report the page's `webui` link** (from the tool response `_links.webui`,
    prefixed with the site's `/wiki` base) back to the user so they can open it
@@ -100,7 +100,7 @@ to attach content in the same call that creates the page.
   before retrying — the guide, not this note, is authoritative.
 - Don't add a "this page is auto-generated / edits will be overwritten" disclaimer,
   or any other explanatory prose beyond the two lines the script produces.
-- If a product's `bruno.confluence` block has a stale/deleted `parentId` or the CQL
+- If a product's `api.confluence` block has a stale/deleted `parentId` or the CQL
   lookup returns nothing where a page is known to exist, say so and ask before
   creating a duplicate — don't silently create a second page under a different
   folder.

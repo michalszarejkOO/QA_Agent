@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Builds the Confluence HTML-format page body for a Bruno collection's tracker
-page: a lastUpdate marker plus, once the zip has been uploaded as a page
+Builds the Confluence HTML-format page body for an API collection's tracker
+page (Bruno, Postman, or Insomnia): a lastUpdate marker plus, once the zip has
+been uploaded as a page
 attachment, a visible file card pointing at it (a media-group node) - not a
 dump of the collection's content itself. Prints the HTML fragment to stdout (no
 <html>/<body> wrapper, per Confluence's HTML-format rules). No third-party deps -
@@ -10,7 +11,7 @@ stdlib only.
 Usage: build_confluence_body.py <repo_root> <attachment_name> [media_id] [collection]
 
 attachment_name is the fixed zip filename from that product's
-environments/*.json -> bruno.confluence.attachmentName. media_id/collection come
+environments/*.json -> api.confluence.attachmentName. media_id/collection come
 from the confluence_upload_attachment response (fileId / "contentId-<page_id>") -
 the attach step must run before this script can include the file card; omit them
 to print the lastUpdate panel alone.

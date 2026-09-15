@@ -11,9 +11,9 @@ Use when the run covered the whole collection (or the user didn't scope it).
 ```
 API Test Report — <one-line scope, e.g. "Auth OTP & Content endpoints">
 
-Environment: <env> (<baseUrl from the collection's environments/<env>.yml>)
+Environment: <env> (<baseUrl from the collection's environment file for <env>>)
 Commit: <git rev-parse --short HEAD> (branch: <git branch --show-current>)
-Tool: Bruno CLI (@usebruno/cli), collection under <collectionPath>
+Tool: <resolved api.client, e.g. "Bruno CLI (@usebruno/cli)" | "Newman (Postman)" | "inso (Insomnia)">, collection under <collectionPath>
 Executed: <UTC timestamp, `date -u "+%Y-%m-%d %H:%M UTC"`>
 
 Result: <ALL PASSED | N/M FAILED> — <requests passed>/<total requests> requests, <assertions passed>/<total assertions> assertions
@@ -29,14 +29,14 @@ Coverage per endpoint:
 - <auth/business-logic cases>
 
 Notes:
-- <any caveat surfaced in step 5/6 of SKILL.md — failing case detail, a case that
+- <any caveat surfaced in step 6/7 of SKILL.md — failing case detail, a case that
   passed without truly testing what its name claims (e.g. expiry), an environment
   prerequisite that was or wasn't met, or a product-specific caveat from
-  `bruno.knownCaveats`>
+  `api.knownCaveats`>
 - <only include a note if it's true and useful — do not restate the obvious>
 
-Test collection is committed under <collectionPath> and can be re-run at any time with:
-npx @usebruno/cli run <collectionPath> --env <env> -r
+Test collection is committed under <collectionPath> and can be re-run at any time with
+the resolved adapter's run command (see the matching adapters/*.md file).
 ```
 
 ## Scoped report (one or two endpoints)
@@ -49,7 +49,7 @@ the header fields that don't change the reader's trust in the result, keep it sh
 
 Environment: <env> (<baseUrl>)
 Commit: <short sha> (branch: <branch>)
-Tool: Bruno CLI (@usebruno/cli), collection under <collectionPath>/<subfolder>
+Tool: <resolved api.client>, collection under <collectionPath>/<subfolder>
 
 | Endpoint                              | Cases | Result |
 |----------------------------------------|:-----:|:------:|
@@ -65,13 +65,13 @@ Coverage per endpoint:
 
 - **Result line must match the CLI summary table exactly.** Don't round or
   editorialize — "34/35" stays "34/35", with the failing case named in Notes.
-- **Coverage bullets come from the actual `info.name`/`docs:` of the files that ran**,
-  not a generic guess — read a few request files if the case names aren't
-  self-explanatory.
+- **Coverage bullets come from the actual case/request names and their docs/
+  description fields**, not a generic guess — read a few request files if the case
+  names aren't self-explanatory.
 - **A Notes section is for something the reader would otherwise assume incorrectly.**
   Empty confidence-boosting filler ("all tests passed successfully!") doesn't belong;
   a real caveat (mock/god-code dependency, a case that's state-dependent, placeholder
-  content) does. See [test-case-conventions.md](./test-case-conventions.md) and the
-  product's `bruno.knownCaveats` for known ones.
+  content) does. See the resolved adapter (`adapters/bruno.md` / `postman.md` /
+  `insomnia.md`) and the product's `api.knownCaveats` for known ones.
 - Always present the final report inside a fenced code block on its own, so it can be
   copy-pasted into a Jira comment without picking up chat formatting.
