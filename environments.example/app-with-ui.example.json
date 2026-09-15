@@ -1,0 +1,35 @@
+{
+  "product": "acme",
+  "environment": "staging",
+  "ticketPrefixes": ["ACME"],
+  "basicAuth": {
+    "username": "acme",
+    "password": "REPLACE_ME",
+    "notes": "Server-level gate in front of the whole domain, separate from each surface's own sign-in form — omit this block entirely if the environment has none."
+  },
+  "surfaces": {
+    "app": {
+      "appUrl": "https://app.acme.staging.example.com/",
+      "repo": "~/Projects/acme-app",
+      "login": {
+        "method": "email_password",
+        "email": "qa@example.com",
+        "password": "REPLACE_ME",
+        "notes": "Describe anything non-obvious: a pool of valid test IDs instead of one fixed login, a magic-link flow, an OTP step, etc. qa-tester reads this field to know how to fill in the login form."
+      }
+    },
+    "backoffice": {
+      "appUrl": "https://backoffice.acme.staging.example.com/",
+      "repo": "~/Projects/acme-backoffice",
+      "login": {
+        "method": "email_password",
+        "email": "qa@example.com",
+        "password": "REPLACE_ME"
+      }
+    }
+  },
+  "repos": {
+    "bff": "~/Projects/acme-bff"
+  },
+  "notes": "Free-form: anything qa-tester needs to disambiguate which surface a PR touches, how to find the feature branch when the platform's PR API is unreachable, or which credential group to prefer by default."
+}

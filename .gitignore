@@ -1,0 +1,11 @@
+# Symlink to ~/.claude/environments/ (or wherever setup.sh's target points) —
+# contains real staging credentials for various products (basic auth, test login
+# IDs) — never commit. See environments.example/ for the documented shape.
+environments
+
+# Playwright MCP session artifacts (screenshots/traces) from running qa-tester —
+# local debugging output, not part of the project.
+.playwright-mcp/
+
+# OS cruft
+.DS_Store
