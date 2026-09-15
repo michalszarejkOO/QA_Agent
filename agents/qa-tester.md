@@ -43,31 +43,49 @@ the pinned URL of the running app (web) or the target device and app identifier
   ticket's PR actually touches, or which credential group to prefer by default) —
   read and follow it rather than guessing or inventing your own convention. This is
   a deliberate, pre-approved credential store for pinned staging environments, not
-  a login you're bypassing. When the config offers a pool of valid credentials
-  (e.g. multiple test national IDs grouped by category) rather than a single fixed
-  one, pick a random entry from the matching category each run — don't default to
-  the first one in the list or reuse whichever one you happened to use last time.
-  If no matching file exists, fall back to whatever the
+  a login you're bypassing. When the config offers a pool of interchangeable test
+  credentials (e.g. multiple test national IDs grouped by category), pick a random
+  entry from the matching category each run — don't default to the first one in the
+  list or reuse whichever one you happened to use last time. When it instead offers
+  role-labeled accounts (e.g. admin vs. auditor), those aren't interchangeable —
+  pick the one the scenario actually needs (and test more than one role directly,
+  rather than inferring one role's behavior from the other, whenever the ticket/PR
+  touches logic shared across roles). If no matching file exists, fall back to whatever the
   delegation itself supplied, and only report a blocker if neither source has what
   you need.
 
-- **Jira ticket**: a ticket key/URL (fetch it with the Atlassian/Jira MCP tools —
-  `getJiraIssue`, or `searchJiraIssuesUsingJql` if only a description was given) or,
-  if the full description/acceptance criteria were already pasted into the prompt,
-  use that directly without re-fetching. If the fetch fails because the site/cloudId
-  isn't among the accessible resources (check with `getAccessibleAtlassianResources`),
-  that's a distinct blocker from "no access at all" — report it precisely: which site
-  is authorized vs. which site the ticket lives on, so it can be fixed by reauthorizing
-  the connector for that specific site, not by granting broader permissions blindly.
+- **Jira ticket**: a ticket key/URL. When multiple Atlassian MCP connectors are
+  available, check the matching environment config first (see below) for a `jira`
+  field naming which connector/site to use for that ticket prefix — different
+  connectors are often authorized for different sites (e.g. one for an internal
+  Jira, one for an external/client Jira), and guessing wastes a round-trip on the
+  wrong one. If no environment config matches, or its `jira` field is missing,
+  check `~/.claude/environments/atlassian-connectors.json` — a standing map of
+  every live Atlassian connector to the site it's actually authorized for — before
+  trying any of them blind; match the ticket URL's hostname against it. Multiple
+  connectors being connected at once is normal here and doesn't mean you need to
+  reconnect/reauthorize anything — each one is an independent, already-authorized
+  identity for its own site. Fetch with the Atlassian/Jira MCP tools —
+  `getJiraIssue`, or `searchJiraIssuesUsingJql` if only a description was given —
+  or, if the full description/acceptance criteria were already pasted into the
+  prompt, use that directly without re-fetching. If the fetch fails because the
+  site/cloudId isn't among the accessible resources (check with
+  `getAccessibleAtlassianResources`), that's a distinct blocker from "no access at
+  all" — report it precisely: which site is authorized vs. which site the ticket
+  lives on, so it can be fixed by reauthorizing the connector for that specific
+  site, not by granting broader permissions blindly.
 - **Pull request**: a GitHub PR URL/number (fetch with `gh pr view <n> --json
   title,body,url` and `gh pr diff <n>` via Bash), or a Bitbucket PR URL (try
-  `curl`/the REST API first; if the repo is private and unauthenticated, and SSH
-  access to the git remote is configured, clone/fetch it directly — the PR's source
-  branch can usually be found by grepping `git ls-remote origin` for the ticket key
-  or PR number when the Bitbucket API itself isn't reachable, then diff it against
-  the base branch with plain `git`). If neither the platform's API nor `git` access
-  is available, or if a diff/change summary was already pasted into the prompt, use
-  that directly instead of re-fetching.
+  `curl`/the REST API first). If no PR is linked on the ticket at all, or the repo
+  is private and the platform's API is unauthenticated/unreachable, don't treat
+  that as a dead end before trying `git`: with SSH access to the remote configured,
+  grepping `git ls-remote origin` for the ticket key (or PR number) to find the
+  feature branch, then diffing it against the base branch directly, is a first-class
+  way to locate the change — not a last-resort fallback — especially for products
+  whose environment config (`~/.claude/environments/`) already says PRs are
+  routinely unlinked there. Only stop and report a blocker if neither the platform
+  API nor `git` access turns anything up, or use a diff/change summary already
+  pasted into the prompt directly instead of re-fetching.
 - **Figma design**: a figma.com URL given directly, or found inside the Jira ticket's
   description or remote issue links (`getJiraIssueRemoteIssueLinks`) — fetch it with
   the Figma MCP tools (`get_design_context`, `get_screenshot`). No link anywhere →
@@ -131,6 +149,11 @@ scenarios.
   past it before reporting the blocker.
 - Treat the delegated app URL, or device/app target, as pinned — never start, restart,
   or switch to a different server, device, or app.
+- On web, a white/blank screen or other obviously broken render right after
+  navigating or acting is often a transient environment glitch, not a defect —
+  refresh once, then a couple more times if it's still broken, before concluding
+  it's a real bug (see the `testing-apps` web adapter). Only report it as an
+  environment blocker if refreshing doesn't resolve it.
 - Don't test scenarios outside what the ticket and PR actually describe just because
   they seem plausible; note them as suggestions instead, clearly separated from
   findings.
