@@ -9,3 +9,5 @@ environments
 
 # OS cruft
 .DS_Store
+# Local claude settings
+.claude/settings.local.json

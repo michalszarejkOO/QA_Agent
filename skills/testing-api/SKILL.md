@@ -1,7 +1,7 @@
 ---
 name: testing-api
-description: Runs a repo's API test collection — Bruno, Postman, or Insomnia — against a live environment via that tool's CLI, exports the collection to a zip the user can download and import into the matching desktop app, optionally refreshes a lastUpdate timestamp on a Confluence tracker page and attaches that zip, and produces a Jira-comment-ready pass/fail report. Use when asked to test the API, run the API test suite, verify endpoints are working, export/re-export an API collection, or produce a test summary/report for a Jira ticket, for any product with a Bruno, Postman, or Insomnia collection — not tied to one repo or one tool.
-when_to_use: "Trigger on: 'przetestuj API', 'uruchom testy API/bruno/postman/insomnia', 'sprawdź czy endpointy działają', 'wygeneruj raport testów do jiry', 'wyeksportuj kolekcję', 'run the API tests', 'test this endpoint', 'export the collection', or any request to verify API behavior using a committed collection. Product-agnostic: resolve which repo/collection/tool via the environments config (see step 0) or ask if it can't be resolved."
+description: Runs a repo's API test collection — Bruno, Postman, or Insomnia — against a live environment via that tool's CLI, exports the collection to a zip the user can download and import into the matching desktop app, optionally refreshes a lastUpdate timestamp on a Confluence tracker page and attaches that zip, and produces a Jira-comment-ready pass/fail report. When the request is driven by a specific backend Jira ticket, switches to ticket mode: reads the ticket and its PR/branch for context, always tests against `demo`, generates full scenario coverage (not just happy path) for any endpoint the collection doesn't already cover, treats the Confluence-attached collection as the latest version, and closes by preparing (never auto-posting) a Jira comment and any bug reports for the user's approval. Use when asked to test the API, run the API test suite, verify endpoints are working, export/re-export an API collection, QA/test a backend Jira ticket, or produce a test summary/report for a Jira ticket, for any product with a Bruno, Postman, or Insomnia collection — not tied to one repo or one tool.
+when_to_use: "Trigger on: 'przetestuj API', 'uruchom testy API/bruno/postman/insomnia', 'sprawdź czy endpointy działają', 'wygeneruj raport testów do jiry', 'wyeksportuj kolekcję', 'run the API tests', 'test this endpoint', 'export the collection', 'test/QA this backend ticket', a Jira ticket URL/ID for a [BE] or backend-only ticket, or any request to verify API behavior using a committed collection. Product-agnostic: resolve which repo/collection/tool via the environments config (see step 0) or ask if it can't be resolved."
 ---
 
 # Testing an API collection
@@ -23,13 +23,17 @@ and identical regardless of which tool a given repo happens to use.
   files or product code — if a request needs new test cases, that's a separate
   task.
 - The collection is the source of truth. Never recreate it from scratch; only add to
-  it if the user explicitly asks for new test cases.
+  it if the user explicitly asks for new test cases. **Exception: ticket mode**
+  (see [ticket-driven-testing.md](./references/ticket-driven-testing.md)) — when the
+  request names a specific backend ticket, the ask to test that ticket *is* the ask
+  for new test cases covering it, so generate what's missing before running.
 - Requires network access to the target environment and whatever runtime the
   resolved adapter needs (`npx`/Node for Bruno and Postman; Node for Insomnia's
   `inso`). If either is unavailable, say so — do not fabricate a result.
 - The Confluence-publish step (step 7) only runs for a product whose environment
   config actually declares an `api.confluence` block. No config, no publish step —
-  just export, run, and report.
+  just export, run, and report. In ticket mode this step is mandatory whenever that
+  block exists (see rule table) — never silently skip it there.
 
 ## Non-negotiable rules
 
@@ -45,6 +49,22 @@ and identical regardless of which tool a given repo happens to use.
 | NEVER | Commit, push, or otherwise persist results/exports into git without being asked. The zip export is a local artifact, not a repo change. |
 | NEVER | Claim a PASS the CLI did not report. If any request fails, show the failing assertion(s) and response detail, and reflect the real status in the report. |
 
+### Additional rules — ticket mode only
+
+Load [ticket-driven-testing.md](./references/ticket-driven-testing.md) whenever the
+request names or links a specific backend ticket, and follow these on top of the
+rules above:
+
+| Severity | Rule |
+| --- | --- |
+| MUST | Always test against the `demo` environment — never `local`, and never a different `api.defaultEnvironment` — unless the user's message explicitly names another environment for this run. |
+| MUST | Before doing anything else, read the ticket's acceptance criteria and its linked PR's diff (or the merged feature branch found by the repo's ticket-key naming convention, if no PR is linked) so the scenarios generated actually target what changed. |
+| MUST | Treat the collection currently attached to the product's Confluence tracker page as the latest version, not whatever's in the local repo checkout — diff the two and flag any divergence to the user rather than silently picking one. |
+| MUST | Generate full scenario coverage for the ticket's endpoint(s) before executing anything, if the resolved collection doesn't already have it: happy path(s), validation/boundary cases, auth cases (missing/invalid/wrong-role token), and business-logic edge cases — not just the happy path. Follow the resolved adapter's existing naming/`docs:`/assertion conventions. |
+| MUST | After the report, always prepare a Jira-comment-ready block and explicitly ask the user whether to post it to the ticket now or just keep it as copy-pasteable text — never post it automatically. |
+| MUST | If any bug, scope mismatch, or discrepancy is found, draft a bug report (Title / Steps to reproduce / Expected / Actual) for each and explicitly ask the user whether to file it on the ticket or just keep it as a copy-pasteable draft — never file it automatically. |
+| MUST | Always finish by re-uploading the (possibly extended) collection and refreshed environment file to the product's Confluence tracker page and refreshing `lastUpdate`, whenever `api.confluence` is configured — mandatory in ticket mode, not conditional on results or on remembering to ask. |
+
 ## Reference Loading
 
 | Reference | Load when | Covers |
@@ -54,6 +74,7 @@ and identical regardless of which tool a given repo happens to use.
 | [adapters/insomnia.md](./references/adapters/insomnia.md) | `api.client` is `"insomnia"` | Export shape, `inso` CLI invocation — flag as less battle-tested, confirm syntax against `inso --help` before relying on it |
 | [report-template.md](./references/report-template.md) | Generating the final report, every run | The exact Jira-comment template (header fields, results table, coverage bullets, Notes) |
 | [confluence-publish.md](./references/confluence-publish.md) | Updating the tracker page, every run where the product config declares one | Reading cloudId/space/folder/title/attachment name from config, the generate-body script, find-or-create/update procedure, attaching the exported zip |
+| [ticket-driven-testing.md](./references/ticket-driven-testing.md) | The request names or links a specific backend ticket | Gathering ticket/PR context, resolving the Confluence attachment as the latest collection, generating full scenario coverage, and the ask-before-posting comment/bug-report step |
 
 ## Procedure
 
@@ -136,3 +157,50 @@ and identical regardless of which tool a given repo happens to use.
    passed — it's a timestamp and a file, not a test result. Give the user the page
    link when done. If there's no `confluence` block, skip this step silently — don't
    ask the user to set one up unless they bring it up.
+
+## Procedure — ticket mode
+
+Follow this instead of (really: layered onto) the generic procedure whenever the
+request names or links a specific backend ticket (e.g. "test MWA-510", a Jira URL
+for a `[BE]`/backend-only ticket). Full detail for each numbered step lives in
+[ticket-driven-testing.md](./references/ticket-driven-testing.md); this is the
+ordering.
+
+T0. **Gather ticket context first.** Fetch the ticket (verify the right Jira
+    connector reaches its site with `getAccessibleAtlassianResources` before
+    trusting any cached mapping — it drifts) and read its acceptance criteria. Find
+    its linked PR and diff it; if none is linked, find the merged feature branch by
+    this repo's ticket-key branch convention and diff that instead.
+
+T1. **Resolve the product/client/config** as step 0 above, then resolve the *latest*
+    collection specifically: fetch whatever is currently attached to the product's
+    Confluence tracker page (if `api.confluence` is configured) and diff it against
+    the local repo checkout. Use the Confluence version as the base for everything
+    below; tell the user about any divergence rather than silently picking one. If
+    no attachment-reading tool is available this session, say so plainly and fall
+    back to the local repo checkout, flagging that as a limitation, not a silent
+    substitution.
+
+T2. **Check coverage for the ticket's endpoint(s)** against that resolved
+    collection. If it's missing entirely, or only has a thin/assertion-less
+    placeholder, generate a full set of cases before running anything — happy
+    path(s), validation/boundary cases, auth cases, and business-logic edge cases —
+    following the resolved adapter's existing naming/`docs:`/assertion conventions.
+
+T3. **Run steps 1 and 3–6 of the generic procedure** (load adapter, export, check
+    `demo` reachability, run the suite, investigate failures) — but environment is
+    always `demo` in ticket mode, never the request's or config's default if that
+    would mean `local`.
+
+T4. **Write the report** (generic step 7), then **prepare the Jira comment** and
+    **ask the user** whether to post it to the ticket now or keep it as
+    copy-pasteable text.
+
+T5. **If any bug, scope mismatch, or discrepancy surfaced**, draft a bug report per
+    case (Title / Steps to reproduce / Expected / Actual) and ask the user whether
+    to file it on the ticket or keep it as a copy-pasteable draft.
+
+T6. **Always finish by publishing to Confluence** (generic step 8) whenever
+    `api.confluence` is configured — re-upload the (possibly extended) collection
+    and the refreshed environment file, not just the timestamp. This step is
+    mandatory in ticket mode, not conditional on results.

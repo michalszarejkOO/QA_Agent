@@ -2,7 +2,15 @@
 
 Load this when executing the final "publish" step of the procedure, for any product
 whose `environments/*.json` config has a `api.confluence` block. Skip entirely if
-that block is absent.
+that block is absent. **In ticket mode this step is mandatory, not conditional on
+results** — see [ticket-driven-testing.md](./ticket-driven-testing.md) Step 6.
+
+If the resolved adapter/repo has a live-populated-environment convention (e.g.
+Bruno's `demo-populated.yml` pattern — a copy of the environment file with
+blank/manual-fill fields replaced by real values captured live during the run),
+refresh and attach that file too, alongside the collection zip, using the same
+attach/re-version procedure below for each file. Not every product has this
+convention; only do it where one already exists.
 
 **Scope, precisely:** this page is a `lastUpdate` tracker plus the exported zip as a
 file attachment — never inline collection content. Do not dump request files, YAML,
