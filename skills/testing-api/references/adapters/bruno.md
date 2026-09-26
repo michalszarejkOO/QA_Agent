@@ -52,7 +52,11 @@ else that mutates server-side state:
 
 1. Check that product's `environments/*.json` → `api.knownCaveats` for a list of
    named cases with real caveats (e.g. "case X only passes with env var Y set",
-   "case Z depends on case W having run first for the same identifier").
+   "case Z depends on case W having run first for the same identifier"). If
+   `api.knownCaveatsFile` is also set, load that file too (resolved relative to the
+   same `environments/` directory) — it's the fuller version for products whose
+   caveat list is too long/structured to keep as flat JSON strings without drifting
+   out of sync. Where the two disagree, the file is the more current one.
 2. If nothing is recorded there but a case's name or `docs:` block implies
    order-dependence (reuse, expiry, single-use, "depends on"), read the neighboring
    request files in the same folder to confirm before reporting a bare PASS/FAIL —
@@ -61,8 +65,8 @@ else that mutates server-side state:
    elapsed) read as a bigger guarantee than it is.
 3. If you discover a new caveat this way that isn't yet recorded in the product's
    config, mention it in the report's Notes and suggest adding it to
-   `api.knownCaveats` for next time — don't silently edit that JSON file yourself
-   unless asked.
+   `api.knownCaveats` (or `api.knownCaveatsFile` if the product uses one) for next
+   time — don't silently edit that file yourself unless asked.
 
 ## Content/placeholder data
 

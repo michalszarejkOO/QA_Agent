@@ -91,6 +91,19 @@ projektu.
   okazało się, że różne projekty używają różnych klientów API i dwa/trzy osobne
   skille duplikowałyby tę samą logikę raportowania.
 
+- `skills/routing-qa-tickets/` — samodzielny skill wywoływany na samym początku, gdy
+  request niesie tylko goły ticket Jira i/albo link do PR-a, bez wskazania, czy zmiana
+  jest front- czy backendowa. Sprawdza config w `~/.claude/environments/` (sam kształt
+  configu — tylko `api` albo tylko `surfaces` — czasem rozstrzyga od razu), a jeśli nie,
+  patrzy na tanie sygnały (etykiety/komponent ticketu, lista zmienionych plików z PR-a,
+  bez pełnego diffu) i klasyfikuje backend/frontend, a dla frontendu dodatkowo web/
+  mobile. Backend → przekazuje dalej do `testing-api` bez zmian. Frontend → dokłada
+  konkretny target (web: `surfaces.*.appUrl` z configu; mobile: pyta o device/bundle id,
+  bo obecny kształt configu go nie niesie) i przekazuje do `qa-tester`. Rozjazd sygnałów
+  (dotknięte ścieżki wyglądają i na backend, i na frontend) albo ich brak → nie zgaduje,
+  pyta użytkownika. Nie duplikuje niczyjego kontekstu — samo tylko klasyfikuje i
+  przekazuje dalej.
+
 ## Skąd to się wzięło
 
 Powstało podczas sesji QA na tickecie OSH-1270 (PR #209, `takamol-osh-portal`) — po

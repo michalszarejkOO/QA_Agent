@@ -90,15 +90,25 @@ rules above:
      "collectionPath": "bruno",
      "defaultEnvironment": "demo",
      "knownCaveats": ["<free text about stateful/order-dependent cases, if any>"],
+     "knownCaveatsFile": "<filename, resolved relative to this same environments/ dir, of a fuller markdown doc — use this instead of/alongside knownCaveats when the caveat list is long enough that keeping it as JSON strings risks drifting out of sync with a richer doc>",
      "confluence": {
        "cloudId": "<site>",
        "spaceKey": "<space>",
        "parentId": "<folder page id>",
        "pageTitle": "<fixed page title>",
-       "attachmentName": "<fixed zip filename>"
+       "attachmentName": "<fixed zip filename>",
+       "secondaryAttachments": [
+         { "name": "<fixed filename>", "sourcePath": "<path relative to repo root>" }
+       ],
+       "envRefreshProcedure": "<optional filename, resolved relative to this same environments/ dir, of a doc describing how to mint live values into a secondaryAttachments file before export>"
      }
    }
    ```
+   `knownCaveatsFile`, `secondaryAttachments`, and `envRefreshProcedure` are all
+   optional — most products need none of them. See
+   [confluence-publish.md](./references/confluence-publish.md) for how the last two
+   are used, and [adapters/bruno.md](./references/adapters/bruno.md) for
+   `knownCaveatsFile`.
    `client` is one of `"bruno"`, `"postman"`, `"insomnia"` and selects which adapter
    the rest of this procedure loads — everything below is identical in shape across
    clients, only the exact commands and file conventions differ, and those live in
@@ -124,7 +134,11 @@ rules above:
    default per step 0.
 
 3. **Export the collection**, per the adapter's export instructions, so the user has
-   a file they can re-import into the matching desktop app. Report the output path.
+   a file they can re-import into the matching desktop app. If the product's config
+   has `api.confluence.attachmentName`, pass it as the export's destination filename
+   (e.g. `~/Desktop/<attachmentName>`) so repeat exports land under the same
+   predictable name instead of whatever the adapter's own default happens to be —
+   otherwise use the adapter's default. Report the output path.
 
 4. **Check the target environment.** For a local-style environment, verify the
    expected localhost URL is reachable (e.g. a short `curl -o /dev/null -w

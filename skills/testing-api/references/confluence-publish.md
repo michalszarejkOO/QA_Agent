@@ -1,24 +1,18 @@
 # Updating the collection's Confluence tracker page
 
 Load this when executing the final "publish" step of the procedure, for any product
-whose `environments/*.json` config has a `api.confluence` block. Skip entirely if
+whose `environments/*.json` config has an `api.confluence` block. Skip entirely if
 that block is absent. **In ticket mode this step is mandatory, not conditional on
 results** — see [ticket-driven-testing.md](./ticket-driven-testing.md) Step 6.
 
-If the resolved adapter/repo has a live-populated-environment convention (e.g.
-Bruno's `demo-populated.yml` pattern — a copy of the environment file with
-blank/manual-fill fields replaced by real values captured live during the run),
-refresh and attach that file too, alongside the collection zip, using the same
-attach/re-version procedure below for each file. Not every product has this
-convention; only do it where one already exists.
-
-**Scope, precisely:** this page is a `lastUpdate` tracker plus the exported zip as a
-file attachment — never inline collection content. Do not dump request files, YAML,
-or any collection content into the page *body*. The zip from step 2 of SKILL.md
-(`export-collection.sh`) is attached to this same page as a binary attachment (see
-"Attach the exported zip" below) so the user can download it straight from
-Confluence; the page body itself still only records *when* the collection was last
-touched.
+**Scope, precisely:** this page is a `lastUpdate` tracker plus the exported zip (and
+any secondary attachments) as file attachments — never inline collection content. Do
+not dump request files, YAML, or any collection content into the page *body*. The
+zip from step 3 of SKILL.md (`export-collection.sh`) and anything listed under
+`api.confluence.secondaryAttachments` are attached to this same page as binary
+attachments (see "Attach the files" below) so the user can download them straight
+from Confluence; the page body itself still only records *when* the collection was
+last touched, plus one visible file card per attachment.
 
 ## Identifiers come from the product's config
 
@@ -32,83 +26,108 @@ never hardcode a site/space/page for a specific product in this file:
 | `parentId` | Target folder's page id (the collection's landing folder) |
 | `pageTitle` | Fixed page title, so re-runs update instead of duplicating |
 | `attachmentName` | Fixed zip filename, so re-runs create a new version instead of duplicating |
+| `secondaryAttachments` | (Optional) array of `{ "name": "<fixed filename>", "sourcePath": "<path relative to repo root>" }` — e.g. a live-populated environment file. Each is attached and shown as its own file card, same as the primary zip. |
+| `envRefreshProcedure` | (Optional) filename of a product-specific markdown doc, resolved relative to the same `environments/` directory as the product's own config, describing how to mint/refresh live values into a `secondaryAttachments` file before export. Load and follow it verbatim, in full, before step 4 below, when present. Not every product needs this — most `secondaryAttachments` (if any) are static files with no live-minting step. |
 
-Attachment upload/delete is done through the **`mcp-atlassian`** server (not
-`tsh-core_atlassian`, which has no attachment tools). `confluence_upload_attachment`
-re-versions an existing attachment automatically when the filename matches, so
-re-runs update in place.
+## Which server to use
+
+Use the **`mcp-atlassian`** server (`mcp__mcp-atlassian__confluence_*`) for
+**everything** in this procedure — search, page create/update, and attachments. It
+is self-sufficient for Confluence and does not need Jira access at all. Do not use
+`plugin_tsh-core_atlassian` or any other Atlassian-flavored connector for the page
+body here — see the Notes section below for why.
 
 ## Procedure
 
-Order matters: the page **body** needs to embed a file card that points at the
-attachment's media id, so the attachment must be uploaded to a known page ID
-*before* the body referencing it is generated. On first run (no page yet) this
-means create the bare page first, then attach, then update the body — never try
-to attach content in the same call that creates the page.
+Order matters: the page **body** references each attachment by filename, so every
+attachment must be uploaded to a known page ID *before* the body update. On first
+run (no page yet) this means create the bare page first, then attach, then update
+the body — never try to attach content in the same call that creates the page.
 
 1. **Load the Atlassian tool schemas** if not already loaded this session:
-   `ToolSearch` with `select:mcp__plugin_tsh-core_atlassian__searchConfluenceUsingCql,mcp__plugin_tsh-core_atlassian__createConfluencePage,mcp__plugin_tsh-core_atlassian__updateConfluencePage,mcp__plugin_tsh-core_atlassian__getConfluencePage`
-   and `select:mcp__mcp-atlassian__confluence_upload_attachment`. Use
-   `mcp__plugin_tsh-core_atlassian__*` for page create/update/search and
-   `mcp-atlassian` for the attachment.
+   `ToolSearch` with
+   `select:mcp__mcp-atlassian__confluence_search,mcp__mcp-atlassian__confluence_create_page,mcp__mcp-atlassian__confluence_update_page,mcp__mcp-atlassian__confluence_get_page,mcp__mcp-atlassian__confluence_upload_attachment,mcp__mcp-atlassian__confluence_upload_attachments,mcp__mcp-atlassian__confluence_get_attachments`.
 
 2. **Find any existing page**, so the run updates in place instead of duplicating:
    ```
-   searchConfluenceUsingCql: cql = 'space = <spaceKey> AND ancestor = <parentId> AND title = "<pageTitle>" AND type = page'
+   confluence_search: query = 'space = <spaceKey> AND ancestor = <parentId> AND title = "<pageTitle>" AND type = page'
    ```
    - **Found** → note its `pageId`, skip to step 3.
-   - **Not found** → `createConfluencePage` with `cloudId`, `spaceId: "<spaceKey>"`,
-     `parentId: "<parentId>"`, the fixed `pageTitle`, and a minimal placeholder body
-     (e.g. just the panel from step 4 with no file card yet — there is no attachment
-     to reference on first creation). Note the returned page ID.
+   - **Not found** → `confluence_create_page` with `space_key: "<spaceKey>"`,
+     `parent_id: "<parentId>"`, the fixed `pageTitle`, `content_format: "storage"`,
+     and a minimal placeholder `content` (just the info-panel macro from step 6, no
+     file cards yet — there is no attachment to reference on first creation). Note
+     the returned page ID.
 
-3. **Attach the exported zip** to that page ID, using the **`mcp-atlassian`** server:
-   - `confluence_upload_attachment`'s `file_path` is sandboxed to the repo directory —
-     the export script's default destination (`~/Desktop/...`) is outside it and will
-     fail with a path-traversal error. Copy the zip into the repo root under the fixed
-     `attachmentName` first, upload from there, then delete the copy:
+3. **If `envRefreshProcedure` is configured**, load and follow it now, before
+   exporting — it mints/refreshes the live values that go into the corresponding
+   `secondaryAttachments` file.
+
+4. **Export the collection**, per the adapter's export instructions, so the exported
+   zip picks up anything step 3 just refreshed. Report the output path.
+
+5. **Attach the files** to the page, using **`mcp-atlassian`**:
+   - `confluence_upload_attachment`/`confluence_upload_attachments`' `file_path` is
+     sandboxed to Claude Code's own working directory — a repo outside it (e.g. the
+     export script's default `~/Desktop/...` destination, or a product repo that
+     isn't the current working directory) fails with a path-traversal error. Copy
+     each file that needs uploading into the current working directory first (a
+     scratch subfolder is fine), upload from there under its fixed name, then delete
+     the copy:
      ```
-     cp <exported_zip_path> ./<attachmentName>
+     cp <source_path> ./<fixed_name>
      ```
-     `content_id`: the page ID from step 2. `file_path`: `<attachmentName>` (bare
-     relative path — do not pass a `filename` override alongside `file_path`, it's
-     ignored and the *local* filename is what Confluence stores; that's why the local
-     copy must already have the fixed name). `comment`: current commit SHA and
-     branch.
-   - Uploading under a filename that already exists on the page creates a new version
-     automatically (same media id stays valid) — no need to delete the old one first.
-   - Read `fileId` and `content_id` from the response — the next step needs them as
-     `media_id` and `collection` (collection is `contentId-<page_id>`).
-   - Clean up: `rm ./<attachmentName>` immediately after the upload confirms success,
-     and confirm with `git status` (in the repo root) that the repo is back to clean
-     (this file must never be committed).
+     `content_id`: the page ID from step 2. `file_path`: the local copy's path. Do
+     not pass a `filename` override alongside `file_path` — it's ignored, and the
+     *local* filename is what Confluence stores, which is why the local copy must
+     already have the fixed name. `comment`: current commit SHA and branch.
+   - Do this for the primary zip (`attachmentName`) and, if configured, every entry
+     in `secondaryAttachments` (`sourcePath` relative to the repo root → fixed
+     `name`).
+   - Uploading under a filename that already exists on the page creates a new
+     version automatically — no need to delete the old one first, and the view-file
+     macros in the body (which reference by filename, not by id) keep working across
+     versions without any change.
+   - Clean up every local copy immediately after its upload confirms success.
 
-4. **Generate the page body**, now that the attachment's media id is known:
+6. **Generate the page body**, listing every attachment now on the page:
    ```
-   python3 <path-to-this-skill>/scripts/build_confluence_body.py <repo_root> <attachmentName> <media_id> contentId-<page_id>
+   python3 <path-to-this-skill>/scripts/build_confluence_body.py <repo_root> <attachmentName> [<secondaryAttachments[].name> ...]
    ```
-   Prints the `lastUpdate`/commit/branch info panel followed by a file-card
-   `media-group` node referencing the attachment, so the zip shows up as a visible,
-   clickable card on the page itself — not just in the page's hidden attachments
-   list. Pass its stdout directly as the `body` parameter.
+   Prints genuine Confluence **Storage Format** XHTML: an `info` panel macro with the
+   `lastUpdate`/commit/branch line, followed by one `view-file` macro per attachment
+   — each referencing its file **by filename**, so there's nothing to look up between
+   the upload step and this one. Pass its stdout directly as `content`, with
+   `content_format: "storage"`.
 
-5. **`updateConfluencePage`** with that `pageId`, the generated body, and a
-   `versionMessage` like `"Automated update from testing-api skill"`.
+7. **`confluence_update_page`** with that `page_id`, the generated `content`,
+   `content_format: "storage"`, the unchanged `title` (required by the tool even when
+   it isn't changing), and a `version_comment` like `"Automated update from
+   testing-api skill"`.
 
-6. **Report the page's `webui` link** (from the tool response `_links.webui`,
-   prefixed with the site's `/wiki` base) back to the user so they can open it
-   directly, and mention the attached zip by name — don't just say "published."
+8. **Verify**: call `confluence_get_page` with `convert_to_markdown: false` and
+   confirm the returned `content.value` actually contains one `ac:structured-macro
+   ac:name="view-file"` element per attachment uploaded in step 6 — don't assume the
+   update rendered correctly just because the call returned success. A markup
+   mismatch can silently drop a file card instead of erroring (see Notes).
+
+9. **Report the page's `url`** (from the tool response, or build it from `cloudId` +
+   the page's webui path) back to the user so they can open it directly, and mention
+   every attached file by name — don't just say "published."
 
 ## Notes
 
-- The body format is HTML (Confluence's ADF-mapped HTML dialect), which is the
-  default for `createConfluencePage`/`updateConfluencePage`. If a publish call is
-  rejected with a format error, call `getContentFormatGuide` with `toolName:
-  "createConfluencePage"` and reconcile the script's output against current guidance
-  before retrying — the guide, not this note, is authoritative.
+- **Use genuine Confluence Storage Format (XHTML) via `mcp-atlassian`, not the
+  ADF-derived HTML dialect** (`<div data-type="media-group">...`, `data-id="<uuid>"`)
+  that some other Atlassian connectors' page tools accept. Feeding that dialect into
+  `mcp-atlassian`'s `confluence_update_page` either silently **drops** the
+  unrecognized `data-type` divs from the stored content (confirmed 2026-09-21/25 —
+  the file card vanished entirely, no error) or, with an even earlier mismatch,
+  created a broken 0-byte phantom attachment (confirmed 2026-09-16). The `view-file`
+  macro form in this doc, generated with `content_format: "storage"`, is the form
+  actually confirmed to render correctly.
 - Don't add a "this page is auto-generated / edits will be overwritten" disclaimer,
-  or any other explanatory prose beyond the two lines the script produces.
-- If a product's `api.confluence` block has a stale/deleted `parentId` or the CQL
-  lookup returns nothing where a page is known to exist, say so and ask before
-  creating a duplicate — don't silently create a second page under a different
-  folder.
+  or any other explanatory prose beyond the panel and file cards the script produces.
+- If a product's `api.confluence` block has a stale/deleted `parentId` or the search
+  returns nothing where a page is known to exist, say so and ask before creating a
+  duplicate — don't silently create a second page under a different folder.

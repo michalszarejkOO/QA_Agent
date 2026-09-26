@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 """
-Builds the Confluence HTML-format page body for an API collection's tracker
-page (Bruno, Postman, or Insomnia): a lastUpdate marker plus, once the zip has
-been uploaded as a page
-attachment, a visible file card pointing at it (a media-group node) - not a
-dump of the collection's content itself. Prints the HTML fragment to stdout (no
-<html>/<body> wrapper, per Confluence's HTML-format rules). No third-party deps -
-stdlib only.
+Builds the Confluence Storage Format (XHTML) page body for an API collection's
+tracker page (Bruno, Postman, or Insomnia): a lastUpdate marker plus one
+view-file macro per attachment, each referencing its attachment by filename
+(not media id/UUID) - not a dump of the collection's content itself. Prints
+the XHTML fragment to stdout. No third-party deps - stdlib only.
 
-Usage: build_confluence_body.py <repo_root> <attachment_name> [media_id] [collection]
+Use with mcp-atlassian's confluence_create_page/confluence_update_page,
+content_format="storage". Attachments must already be uploaded to the page
+before this body is applied (the view-file macro looks up by filename, but
+the file still has to exist as an attachment).
 
-attachment_name is the fixed zip filename from that product's
-environments/*.json -> api.confluence.attachmentName. media_id/collection come
-from the confluence_upload_attachment response (fileId / "contentId-<page_id>") -
-the attach step must run before this script can include the file card; omit them
-to print the lastUpdate panel alone.
+Usage: build_confluence_body.py <repo_root> <attachment_name> [<attachment_name> ...]
+
+Pass every attachment currently on the page that should show as a visible
+file card - the primary collection zip plus any secondary attachments (e.g. a
+live-populated environment file) from that product's
+api.confluence.secondaryAttachments config.
 """
 import subprocess
 import sys
@@ -26,39 +28,40 @@ def sh(cmd, cwd):
     return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, check=True).stdout.strip()
 
 
-def build(repo_root: str, attachment_name: str, media_id: str | None = None, collection: str | None = None) -> str:
+def build(repo_root: str, attachment_names: list[str]) -> str:
     root = Path(repo_root)
     commit = sh(["git", "rev-parse", "--short", "HEAD"], root)
     branch = sh(["git", "branch", "--show-current"], root)
     now = datetime.now(timezone.utc)
     date_iso = now.strftime("%Y-%m-%d")
-    date_human = now.strftime("%b %d, %Y")
     time_human = now.strftime("%H:%M UTC")
 
     panel = (
-        '<div data-type="panel-info">'
-        f'<p><strong>lastUpdate:</strong> <time datetime="{date_iso}">{date_human}</time> at {time_human}</p>'
+        '<ac:structured-macro ac:name="info" ac:schema-version="1">'
+        '<ac:rich-text-body>'
+        f'<p><strong>lastUpdate:</strong> {date_iso} at {time_human}</p>'
         f'<p><strong>Commit:</strong> <code>{commit}</code> (branch: {branch})</p>'
-        '</div>'
+        '</ac:rich-text-body>'
+        '</ac:structured-macro>'
     )
-    if not media_id:
-        return panel
 
-    file_card = (
-        '<div data-type="media-group">'
-        f'<div data-type="media" data-media-type="file" data-id="{media_id}" '
-        f'data-collection="{collection}" data-alt="{attachment_name}"></div>'
-        '</div>'
+    cards = "".join(
+        '<ac:structured-macro ac:name="view-file" ac:schema-version="1">'
+        '<ac:parameter ac:name="name">'
+        f'<ri:attachment ri:filename="{name}"/>'
+        '</ac:parameter>'
+        '</ac:structured-macro>'
+        for name in attachment_names
     )
-    return panel + file_card
+
+    return panel + cards
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: build_confluence_body.py <repo_root> <attachment_name> [media_id] [collection]", file=sys.stderr)
+        print(
+            "Usage: build_confluence_body.py <repo_root> <attachment_name> [<attachment_name> ...]",
+            file=sys.stderr,
+        )
         sys.exit(1)
-    repo_root = sys.argv[1]
-    attachment_name = sys.argv[2]
-    media_id = sys.argv[3] if len(sys.argv) > 3 else None
-    collection = sys.argv[4] if len(sys.argv) > 4 else None
-    print(build(repo_root, attachment_name, media_id, collection))
+    print(build(sys.argv[1], sys.argv[2:]))
