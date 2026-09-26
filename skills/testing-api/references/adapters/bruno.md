@@ -1,13 +1,12 @@
-# Reading a Bruno collection's conventions
+# Bruno adapter
 
-Load this when interpreting results, or whenever a case looks stateful/order-
-dependent. This file covers the generic OpenCollection YAML shape; product-specific
-known caveats live in that product's `environments/*.json` under `bruno.knownCaveats`
-— always check there too, not just here.
+Load this when the resolved product config has `api.client: "bruno"`. Covers the
+mechanics specific to Bruno's "OpenCollection" YAML format (not the older `.bru`
+format) — export, CLI invocation, and where per-case caveats live. Everything else
+(resolving the product, writing the report, publishing to Confluence) is the parent
+skill's shared procedure.
 
 ## Typical layout
-
-Bruno's OpenCollection YAML format (not the older `.bru` format) usually looks like:
 
 ```
 <collectionPath>/
@@ -25,14 +24,39 @@ precondition. **Read `docs:` before reporting a case's result** — the assertio
 proves the status code; the docs block is where a precondition (order, environment
 config, timing) is recorded.
 
+## Export
+
+```
+./scripts/export-collection.sh <repo_root> [dest_zip_path] [collection_subpath]
+```
+
+Zips the collection for import into the Bruno desktop app. Without a
+`dest_zip_path` it defaults to `~/Desktop/<repo-folder-name>-bruno-collection.zip`.
+`collection_subpath` defaults to `bruno`.
+
+## Run
+
+```
+npx --yes @usebruno/cli run <scope-path> --env <env> -r
+```
+
+`<scope-path>` is `<collectionPath>` for the full collection or
+`<collectionPath>/<subfolder>` for a scoped run, resolved relative to the repo root.
+`-r` (recursive) is required to actually walk sub-folders. Capture the per-request
+assertion results and the summary table.
+
 ## Finding known stateful / order-dependent cases
 
 Before reporting on any case that touches auth, one-time codes, tokens, or anything
 else that mutates server-side state:
 
-1. Check that product's `environments/*.json` → `bruno.knownCaveats` for a list of
+1. Check that product's `environments/*.json` → `api.knownCaveats` for a list of
    named cases with real caveats (e.g. "case X only passes with env var Y set",
-   "case Z depends on case W having run first for the same identifier").
+   "case Z depends on case W having run first for the same identifier"). If
+   `api.knownCaveatsFile` is also set, load that file too (resolved relative to the
+   same `environments/` directory) — it's the fuller version for products whose
+   caveat list is too long/structured to keep as flat JSON strings without drifting
+   out of sync. Where the two disagree, the file is the more current one.
 2. If nothing is recorded there but a case's name or `docs:` block implies
    order-dependence (reuse, expiry, single-use, "depends on"), read the neighboring
    request files in the same folder to confirm before reporting a bare PASS/FAIL —
@@ -41,8 +65,8 @@ else that mutates server-side state:
    elapsed) read as a bigger guarantee than it is.
 3. If you discover a new caveat this way that isn't yet recorded in the product's
    config, mention it in the report's Notes and suggest adding it to
-   `bruno.knownCaveats` for next time — don't silently edit that JSON file yourself
-   unless asked.
+   `api.knownCaveats` (or `api.knownCaveatsFile` if the product uses one) for next
+   time — don't silently edit that file yourself unless asked.
 
 ## Content/placeholder data
 

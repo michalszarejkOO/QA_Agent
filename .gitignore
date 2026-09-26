@@ -7,5 +7,11 @@ environments
 # local debugging output, not part of the project.
 .playwright-mcp/
 
+# claude plugin eval run output (HTML/JSON reports) — regenerated per run, not
+# part of the project.
+evals/results/
+
 # OS cruft
 .DS_Store
+# Local claude settings
+.claude/settings.local.json
