@@ -125,7 +125,17 @@ scenarios.
    you took against the Figma screenshot/design context for layout, spacing, colors,
    type, and states. Report concrete deviations (what differs, and by how much) —
    never a vague "looks a bit off."
-5. **Report.**
+5. **Audit accessibility when the ticket or diff plausibly touches it.** If the PR
+   touches forms, custom controls, color/contrast, focus order, ARIA attributes, or
+   any screen-reader-dependent flow, invoke the `auditing-accessibility` skill against
+   the affected screens rather than skipping straight to reporting. This is a
+   deliberately unbound skill, invoked by name only when relevant — like
+   `preparing-refinement-questions`, binding it in this agent's frontmatter would load
+   it on every run regardless of whether the ticket has anything to do with
+   accessibility. Skip this step plainly (don't force it) when nothing in the ticket
+   or diff makes accessibility plausible. Fold confirmed violations into "Bugs and
+   deviations found" below, tagged with the WCAG success criterion the skill names.
+6. **Report.**
 
 ## Boundaries
 
@@ -159,7 +169,8 @@ Return a structured report, in this order:
 3. **Visual fidelity** — only if a Figma design was available; concrete deviations
    from the design, or a clean statement that it matches.
 4. **Bugs and deviations found** — anything broken or inconsistent with the ticket,
-   independent of the specific scenarios above.
+   independent of the specific scenarios above. Include confirmed accessibility
+   violations from step 5 here, each tagged with its WCAG success criterion.
 5. **Blockers** — anything that stopped testing (missing input, unreachable app,
    login wall, etc.) and exactly what's needed to clear it.
 6. **Jira-ready comment** — a short comment, in Jira markdown, summarizing scenario

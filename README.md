@@ -37,12 +37,26 @@ projektu.
   prefiksie ticketu albo repo, zamiast czekać na ręczne podanie danych w trakcie
   sesji. Zobacz [`environments.example/`](./environments.example/) po dokładny
   kształt JSON-a (osobne przykłady dla produktu z UI i dla produktu z kolekcją API).
+  `environments.example/validate_environments.py` sprawdza kształt tych plików
+  (wymagane pola, poprawny `api.client`, produkt bez `api` i bez `surfaces`) oraz
+  jedną spójność między plikami: czy `jira.connector` danego produktu w ogóle
+  istnieje w `atlassian-connectors.json` i czy oba pliki zgadzają się co do site'u.
+  Nie sprawdza, czy dany connector jest faktycznie autoryzowany na żywo teraz — to
+  dryfuje niezależnie od plików i wymaga osobnego sprawdzenia
+  `getAccessibleAtlassianResources`.
 
 - `agents/qa-tester.md` — subagent wykonujący QA na żywej aplikacji na podstawie
   ticketu Jira, diffu PR-a i (opcjonalnie) designu Figma — egzekucję na żywej
   appce (Playwright dla weba, `agent-device` dla iOS/Android) delegowaną w całości
   do skilla `testing-apps`. Nie edytuje kodu, nie publikuje nic w Jirze bez
-  wyraźnej zgody użytkownika.
+  wyraźnej zgody użytkownika. Dodatkowo, gdy ticket/diff dotyka czegoś, co
+  prawdopodobnie ma znaczenie dla accessibility (formularze, custom controls,
+  kontrast, focus order, ARIA, przepływy zależne od czytnika ekranu), wywołuje
+  wprost skill `auditing-accessibility` (spoza tego repo) i dokłada potwierdzone
+  naruszenia do sekcji "Bugs and deviations found", otagowane kryterium WCAG.
+  Celowo niezbindowany w frontmatterze — tak jak
+  `preparing-refinement-questions` — żeby nie ładować go przy każdym uruchomieniu
+  agenta niezależnie od tego, czy ticket ma cokolwiek wspólnego z accessibility.
 - `skills/writing-test-cases/` — pisze statyczne test case'y (Title / Preconditions /
   Steps to reproduce / Expected result) z ticketu/diffu, niezależnie od egzekucji.
   Zbindowany do `qa-tester` (krok "Derive scenarios").
@@ -146,3 +160,16 @@ routingu opisowego) i są używane wewnątrz jego własnej procedury — `testin
 w kroku "Execute", samo wybierając adapter web/mobile po kształcie targetu.
 `preparing-refinement-questions` wywołuje się wprost, niezależnie od `qa-tester` — np. "przygotuj
 pytania do refinementu dla OSH-XXXX".
+
+## Eval suite
+
+`.claude-plugin/plugin.json` i `evals/` istnieją wyłącznie po to, żeby dało się
+uruchomić `claude plugin eval .` — minimalny zestaw regresyjny dla dwóch
+najbardziej podatnych na cichy błąd miejsc w tym repo: klasyfikacji
+backend/frontend/mobile w `routing-qa-tickets` (w tym dwóch przypadków, gdzie
+skill musi zapytać zamiast zgadywać) i bramki "nigdy nie publikuj bez zgody"
+w ticket-mode `testing-api`. Manifest nie zmienia sposobu dystrybucji tego repo
+— `setup.sh`'owe symlinki nadal nią są — jest potrzebny tylko po to, żeby
+sesja odpalana przez `claude plugin eval` w ogóle widziała skille tego repo po
+nazwie. Zobacz [`evals/README.md`](./evals/README.md) po zakres, sposób
+uruchomienia i znany, jeszcze niedopracowany przypadek.

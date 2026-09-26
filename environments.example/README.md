@@ -22,3 +22,24 @@ a product that has both a UI and an API collection).
 Never commit real credentials, even to a private repo — that's exactly why
 `environments/` itself stays gitignored and only these scrubbed examples are
 tracked.
+
+## Validating your files
+
+`validate_environments.py` checks every `environments/*.json` file for the
+structural mistakes above (missing required fields, a bad `api.client`, a
+product with neither `api` nor `surfaces`, an incomplete `confluence` block)
+and one cross-file consistency check: that a product's `jira.connector` names
+a connector that actually exists in `atlassian-connectors.json`, and that the
+two files agree on which site it points at.
+
+```
+python3 environments.example/validate_environments.py
+```
+
+Defaults to `$CLAUDE_CONFIG_DIR/environments` if set, else
+`~/.claude/environments` (the same resolution `qa-tester`/`testing-api`/
+`routing-qa-tickets` use) — or pass a directory explicitly. This only checks
+that the files agree with each other; it can't tell you whether a connector
+is actually authorized for the site it claims right now — that drifts
+independently of the files and needs a live check with that connector's own
+`getAccessibleAtlassianResources` tool.
