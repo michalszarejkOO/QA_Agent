@@ -1,6 +1,6 @@
 ---
 name: testing-apps
-description: Drives a running app to execute test scenarios and capture evidence — Playwright for a web app, or the agent-device CLI (Callstack) for an iOS/Android mobile app — picking the adapter from whether the target is a URL or a device/bundle id. Used as qa-tester's own execution step (its steps 1-2 gather context and derive scenarios, this skill only replaces the browser/device-execution step, its steps 4-5 report and draft bugs). Also usable standalone for direct browser or mobile-device exploration/dogfooding when full ticket/PR/Figma context isn't needed.
+description: Drives a running app to execute test scenarios and capture evidence — Playwright for a web app, or the agent-device CLI (Callstack) for an iOS/Android mobile app — picking the adapter from whether the target is a URL or a device/bundle id. Used as qa-tester's own execution step (its steps 1-2 gather context and derive scenarios, this skill only replaces the browser/device-execution step, its step 6 reports and drafts bugs). Also usable standalone for direct browser or mobile-device exploration/dogfooding when full ticket/PR/Figma context isn't needed.
 when_to_use: "Trigger as qa-tester's own 'Execute' step for any web or mobile target. Also trigger directly for: 'test the iOS/Android app', 'dogfood <mobile app>', 'exploratory test on iPhone/Android/simulator/emulator', or driving/exploring a running web app in the browser without a full ticket-driven QA run. Do NOT trigger for a macOS or Apple TV target — agent-device also supports those, but this skill's mobile adapter is scoped to iOS/Android handhelds and simulators/emulators only; call agent-device directly for those."
 ---
 
@@ -63,5 +63,5 @@ web page.
    network output whenever a criterion concerns errors, loading states, or API
    behavior.
 4. Hand the captured evidence back to whatever's judging pass/fail — `qa-tester`'s
-   own steps 4-5 when invoked from there, or straight into your own response when
+   own step 6 when invoked from there, or straight into your own response when
    this skill was triggered standalone.

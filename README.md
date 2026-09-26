@@ -62,7 +62,13 @@ projektu.
   Zbindowany do `qa-tester` (krok "Derive scenarios").
 - `skills/reporting-bugs/` — szkicuje zgłoszenie buga (Title / Steps to reproduce /
   Expected / Actual). Zbindowany do `qa-tester` (krok "Bug report draft"). Nigdy sam
-  nie publikuje — tylko szkic.
+  nie publikuje — tylko szkic. Przed szkicowaniem sam wywołuje `find-duplicates`, więc
+  ten skill jest zbindowany do `qa-tester` razem z nim.
+- `skills/find-duplicates/` — sprawdza w Jirze, czy podobny bug/task już istnieje,
+  zanim coś nowego zostanie zgłoszone; tylko szuka i raportuje, nigdy nic nie
+  zakłada/linkuje. Automatyczny pierwszy krok `reporting-bugs`, stąd zbindowany do
+  `qa-tester` jako jego transitywna zależność, nie wywoływany przez `qa-tester`
+  bezpośrednio.
 - `skills/testing-apps/` — egzekucja scenariuszy na żywej appce: jeden skill, jeden
   wybór adaptera po kształcie targetu (URL → web/Playwright, bundle id/nazwa
   urządzenia → mobile/`agent-device`), zamiast dwóch osobnych miejsc na tę samą
@@ -152,12 +158,18 @@ testing-apps/` jako dwa adaptery jednego skilla, tym samym wzorcem co później
 skills:
   - writing-test-cases
   - reporting-bugs
+  - find-duplicates
   - testing-apps
 ```
 
-Te trzy skille ładują się w pełni przy każdym uruchomieniu agenta (nie na zasadzie
+Te cztery skille ładują się w pełni przy każdym uruchomieniu agenta (nie na zasadzie
 routingu opisowego) i są używane wewnątrz jego własnej procedury — `testing-apps`
-w kroku "Execute", samo wybierając adapter web/mobile po kształcie targetu.
+w kroku "Execute", samo wybierając adapter web/mobile po kształcie targetu;
+`find-duplicates` nie jest wywoływany przez `qa-tester` wprost — jest zbindowany, bo
+subagent dostaje na starcie tylko pełną treść skilli wymienionych we frontmatterze, a
+nie ładuje ich na żądanie jak zwykła sesja, więc `find-duplicates` musi być tu
+wypisany osobno, mimo że w praktyce woła go `reporting-bugs`, nie `qa-tester`
+bezpośrednio.
 `preparing-refinement-questions` wywołuje się wprost, niezależnie od `qa-tester` — np. "przygotuj
 pytania do refinementu dla OSH-XXXX".
 

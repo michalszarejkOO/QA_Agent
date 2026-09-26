@@ -6,6 +6,7 @@ disallowedTools: Write, Edit
 skills:
   - writing-test-cases
   - reporting-bugs
+  - find-duplicates
   - testing-apps
 ---
 
@@ -179,7 +180,9 @@ Return a structured report, in this order:
    for a clean pass.
 7. **Bug report draft(s)** — if you found a bug, draft it with the `reporting-bugs`
    skill (Title, Steps to reproduce, Expected, Actual) for each one found, separate
-   from the ticket-comment draft above.
+   from the ticket-comment draft above. `reporting-bugs` itself checks for an
+   existing duplicate via the `find-duplicates` skill before drafting — that's why
+   it's bound above alongside it.
 
 State a clean pass plainly. Never invent findings to seem thorough.
 
