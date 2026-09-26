@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{PROJECT_NAME}} — Quality Dashboard — {{SCOPE_LABEL}}</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root {
+    --color-bg: #f7f8fa;
+    --color-surface: #ffffff;
+    --color-border: #e2e5ea;
+    --color-text: #1f2430;
+    --color-text-muted: #5a6270;
+    --color-ready: #1b7a43;
+    --color-ready-bg: #e6f4ea;
+    --color-risk: #9a6400;
+    --color-risk-bg: #fdf1d6;
+    --color-not-ready: #b3261e;
+    --color-not-ready-bg: #fbe6e5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--color-text);
+    background: var(--color-bg);
+    line-height: 1.5;
+  }
+  .page { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  .sample-banner {
+    background: #fdf1d6;
+    border: 1px solid #e8c874;
+    color: #6b4d00;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  header.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+  header.dashboard-header .logo-slot img { max-height: 48px; }
+  header.dashboard-header h1 { font-size: 22px; margin: 0 0 4px; }
+  header.dashboard-header .meta { color: var(--color-text-muted); font-size: 13px; }
+
+  .banner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    font-size: 16px;
+  }
+  .banner .status-label { font-weight: 700; }
+  .banner .reason { color: inherit; font-weight: 400; }
+  .banner.is-ready { background: var(--color-ready-bg); color: var(--color-ready); }
+  .banner.is-at-risk { background: var(--color-risk-bg); color: var(--color-risk); }
+  .banner.is-not-ready { background: var(--color-not-ready-bg); color: var(--color-not-ready); }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .kpi-tile {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .kpi-tile .kpi-label { font-size: 12px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+  .kpi-tile .kpi-value { font-size: 28px; font-weight: 700; margin: 6px 0 2px; }
+  .kpi-tile .kpi-trend { font-size: 13px; }
+  .kpi-tile .kpi-trend.up { color: var(--color-not-ready); }
+  .kpi-tile .kpi-trend.down { color: var(--color-ready); }
+  .kpi-tile .kpi-trend.flat { color: var(--color-text-muted); }
+  .kpi-tile .kpi-target { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; }
+
+  section { margin-bottom: 32px; }
+  h2 { font-size: 17px; margin: 0 0 12px; }
+  h3 { font-size: 15px; margin: 0 0 8px; }
+
+  .chart-wrap { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; padding: 16px; }
+  table.chart-fallback { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+  table.chart-fallback caption { text-align: left; color: var(--color-text-muted); font-size: 12px; margin-bottom: 6px; }
+  table.chart-fallback th, table.chart-fallback td { border: 1px solid var(--color-border); padding: 6px 8px; text-align: right; }
+  table.chart-fallback th:first-child, table.chart-fallback td:first-child { text-align: left; }
+
+  table.readiness-table, table.details-table { width: 100%; border-collapse: collapse; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 8px; overflow: hidden; }
+  table.readiness-table th, table.readiness-table td,
+  table.details-table th, table.details-table td { padding: 10px 12px; border-bottom: 1px solid var(--color-border); font-size: 14px; text-align: left; }
+  table.readiness-table th, table.details-table th { background: #f0f1f4; font-size: 12px; text-transform: uppercase; color: var(--color-text-muted); }
+
+  .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .status-pill.ready { background: var(--color-ready-bg); color: var(--color-ready); }
+  .status-pill.known-risk { background: var(--color-risk-bg); color: var(--color-risk); }
+  .status-pill.not-ready { background: var(--color-not-ready-bg); color: var(--color-not-ready); }
+  .status-pill.not-in-release { background: #ececef; color: var(--color-text-muted); }
+
+  .risk-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-risk);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .risk-card h3 { margin-bottom: 6px; }
+  .risk-card dl { display: grid; grid-template-columns: 120px 1fr; row-gap: 4px; margin: 0; font-size: 13px; }
+  .risk-card dt { color: var(--color-text-muted); }
+  .risk-card dd { margin: 0; }
+
+  details.secondary-metrics summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 10px 0;
+  }
+
+  footer.definitions {
+    border-top: 1px solid var(--color-border);
+    padding-top: 16px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+  footer.definitions dl { margin: 0; }
+  footer.definitions dt { font-weight: 600; color: var(--color-text); margin-top: 8px; }
+  footer.definitions dd { margin: 0 0 4px; }
+
+  @media print {
+    body { background: #fff; }
+    .page { max-width: none; padding: 0; }
+    details.secondary-metrics { display: block; }
+    details.secondary-metrics summary { display: none; }
+    .kpi-tile, .chart-wrap, .risk-card, table.readiness-table, table.details-table { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Uncomment only when the user explicitly asked for a template/demo with sample data -->
+  <!--
+  <div class="sample-banner">Sample data — for template/demo purposes only, not a real report</div>
+  -->
+
+  <header class="dashboard-header">
+    <div>
+      <h1>{{PROJECT_NAME}} — Quality Dashboard</h1>
+      <div class="meta">
+        {{SCOPE_LABEL}} &middot; Platforms: {{PLATFORMS}} &middot; Last updated: {{LAST_UPDATED_DATE}}<br>
+        Data sources: {{DATA_SOURCES_LIST}}
+      </div>
+    </div>
+    <!-- logo-placeholder -->
+    <div class="logo-slot"><img src="" alt="" style="display:none;"></div>
+  </header>
+
+  <div class="banner is-ready" role="status" aria-label="Release readiness">
+    <span aria-hidden="true">&#9679;</span>
+    <span class="status-label">{{VERDICT_LABEL}}</span>
+    <span class="reason">— {{VERDICT_REASON}}</span>
+  </div>
+
+  <section aria-label="Key quality indicators">
+    <div class="kpi-grid">
+      <div class="kpi-tile">
+        <div class="kpi-label">Escaped defects</div>
+        <div class="kpi-value">{{ESCAPED_DEFECTS_VALUE}}</div>
+        <div class="kpi-trend flat">{{ESCAPED_DEFECTS_TREND}}</div>
+        <div class="kpi-target">Target: {{ESCAPED_DEFECTS_TARGET}}</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Open critical/high</div>
+        <div class="kpi-value">{{OPEN_CRIT_HIGH_VALUE}}</div>
+        <div class="kpi-trend flat">{{OPEN_CRIT_HIGH_TREND}}</div>
+        <div class="kpi-target">Target: {{OPEN_CRIT_HIGH_TARGET}}</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Regression automation</div>
+        <div class="kpi-value">{{AUTOMATION_COVERAGE_VALUE}}</div>
+        <div class="kpi-trend flat">{{AUTOMATION_COVERAGE_TREND}}</div>
+        <div class="kpi-target">Target: {{AUTOMATION_COVERAGE_TARGET}}</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Crash-free users / error rate</div>
+        <div class="kpi-value">{{PROD_HEALTH_VALUE}}</div>
+        <div class="kpi-trend flat">{{PROD_HEALTH_TREND}}</div>
+        <div class="kpi-target">Target: {{PROD_HEALTH_TARGET}}</div>
+      </div>
+      <div class="kpi-tile">
+        <div class="kpi-label">Regression pass rate</div>
+        <div class="kpi-value">{{REGRESSION_PASS_RATE_VALUE}}</div>
+        <div class="kpi-trend flat">{{REGRESSION_PASS_RATE_TREND}}</div>
+        <div class="kpi-target">Target: {{REGRESSION_PASS_RATE_TARGET}}</div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="Defect trend">
+    <h2>Defects: caught in sprint vs. escaped to production</h2>
+    <div class="chart-wrap">
+      <canvas id="trendChart" role="img" aria-label="Bar chart comparing defects caught in sprint against defects escaped to production, per period"></canvas>
+      <table class="chart-fallback">
+        <caption>Table rendering of the chart above, for accessibility/no-JS and print.</caption>
+        <thead>
+          <tr><th>Period</th><th>Caught in sprint</th><th>Escaped to production</th></tr>
+        </thead>
+        <tbody id="trendFallbackBody">
+          <!-- one <tr><td>Period</td><td>N</td><td>N</td></tr> per period; keep in sync with chartData below -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-label="Readiness by feature area">
+    <h2>Readiness by feature area</h2>
+    <table class="readiness-table">
+      <thead>
+        <tr><th>Feature area</th><th>Status</th><th>Note</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{FEATURE_AREA_1}}</td>
+          <td><span class="status-pill ready">Ready</span></td>
+          <td>{{FEATURE_AREA_1_NOTE}}</td>
+        </tr>
+        <tr>
+          <td>{{FEATURE_AREA_2}}</td>
+          <td><span class="status-pill known-risk">Known risk</span></td>
+          <td>{{FEATURE_AREA_2_NOTE}}</td>
+        </tr>
+        <!-- add/remove rows to match the actual feature areas in scope -->
+      </tbody>
+    </table>
+  </section>
+
+  <section aria-label="Open risks">
+    <h2>Open risks</h2>
+    <div class="risk-card">
+      <h3>{{RISK_1_TITLE}}</h3>
+      <dl>
+        <dt>User impact</dt><dd>{{RISK_1_IMPACT}}</dd>
+        <dt>Likelihood</dt><dd>{{RISK_1_LIKELIHOOD}}</dd>
+        <dt>Workaround</dt><dd>{{RISK_1_WORKAROUND}}</dd>
+        <dt>Plan / owner</dt><dd>{{RISK_1_PLAN_OWNER}}</dd>
+      </dl>
+    </div>
+    <!-- one .risk-card per open risk; if there are none, replace this section's contents with a single line: "No open risks this period." -->
+  </section>
+
+  <details class="secondary-metrics">
+    <summary>Details — secondary metrics</summary>
+    <table class="details-table">
+      <thead>
+        <tr><th>Metric</th><th>Value</th><th>Note</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Defects by severity/area</td><td>{{DEFECTS_BY_SEVERITY_AREA}}</td><td></td></tr>
+        <tr><td>Mean time to fix (critical/high)</td><td>{{MTTF_CRIT_HIGH}}</td><td></td></tr>
+        <tr><td>Reopen rate</td><td>{{REOPEN_RATE}}</td><td></td></tr>
+        <tr><td>Device/browser coverage</td><td>{{DEVICE_BROWSER_COVERAGE}}</td><td></td></tr>
+        <tr><td>Flaky test rate</td><td>{{FLAKY_TEST_RATE}}</td><td></td></tr>
+        <tr><td>Automation trend</td><td>{{AUTOMATION_TREND}}</td><td></td></tr>
+      </tbody>
+    </table>
+  </details>
+
+  <footer class="definitions">
+    <h2>What these numbers mean</h2>
+    <dl id="metricDefinitions">
+      <!-- one <dt>Metric name</dt><dd>Definition — formula — source</dd> pair per metric actually shown above; copy from references/metrics-definitions.md -->
+    </dl>
+    <p><strong>Thresholds used for this report:</strong> {{THRESHOLDS_SUMMARY}}</p>
+  </footer>
+
+</div>
+
+<script>
+  var chartData = {
+    labels: {{CHART_LABELS_JSON}},
+    caughtInSprint: {{CHART_CAUGHT_IN_SPRINT_JSON}},
+    escapedToProd: {{CHART_ESCAPED_JSON}}
+  };
+
+  (function renderFallbackTable() {
+    var tbody = document.getElementById('trendFallbackBody');
+    chartData.labels.forEach(function (label, i) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + label + '</td><td>' + chartData.caughtInSprint[i] + '</td><td>' + chartData.escapedToProd[i] + '</td>';
+      tbody.appendChild(tr);
+    });
+  })();
+
+  (function renderChart() {
+    var ctx = document.getElementById('trendChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: chartData.labels,
+        datasets: [
+          { label: 'Caught in sprint', data: chartData.caughtInSprint, backgroundColor: '#3b6fd6' },
+          { label: 'Escaped to production', data: chartData.escapedToProd, backgroundColor: '#b3261e' }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+      }
+    });
+  })();
+</script>
+</body>
+</html>
