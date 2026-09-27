@@ -33,6 +33,9 @@ Notes:
   passed without truly testing what its name claims (e.g. expiry), an environment
   prerequisite that was or wasn't met, or a product-specific caveat from
   `api.knownCaveats`>
+- <in generic (non-ticket) mode, a flag for thin coverage — e.g. "Only happy-path
+  cases exist for POST /auth/login; no validation, auth-failure, or business-logic
+  cases" — observation only, no cases were generated to fill it>
 - <only include a note if it's true and useful — do not restate the obvious>
 
 Test collection is committed under <collectionPath> and can be re-run at any time with
@@ -73,5 +76,8 @@ Coverage per endpoint:
   a real caveat (mock/god-code dependency, a case that's state-dependent, placeholder
   content) does. See the resolved adapter (`adapters/bruno.md` / `postman.md` /
   `insomnia.md`) and the product's `api.knownCaveats` for known ones.
+- **A "N/N PASS" line next to happy-path-only coverage is exactly this kind of
+  wrong assumption.** In generic mode, call out thin coverage as its own Note per
+  SKILL.md step 6 — don't let the pass count stand unqualified.
 - Always present the final report inside a fenced code block on its own, so it can be
   copy-pasted into a Jira comment without picking up chat formatting.

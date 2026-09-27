@@ -43,6 +43,7 @@ and identical regardless of which tool a given repo happens to use.
 | MUST | Default to the environment named in that product's config (`api.defaultEnvironment`, commonly `demo`) unless the user names another one. A `local`-type environment requires the app running locally — check reachability first and say clearly if it's down, rather than letting the run fail with a confusing connection error. |
 | MUST | Run the resolved adapter's CLI scoped to the folder implied by the request — the whole collection by default, or a specific subfolder when the user names an endpoint or area. |
 | MUST | Before writing the report, check the resolved adapter's per-case caveat convention for any test case that looks order- or state-dependent, including any product-specific caveats listed in that product's config (`api.knownCaveats`), and surface real caveats in the report's Notes — a clean pass/fail count that hides a non-representative test is misleading evidence. |
+| MUST | In generic (non-ticket) mode, when an executed folder/endpoint has only happy-path cases — no validation/boundary, auth, or business-logic cases — flag that gap in the report's Notes. This is an observation only: never generate cases to fill it in generic mode, that stays scoped to ticket mode's step T2. A clean "N/N PASS" next to thin coverage is misleading on its own. |
 | MUST | Use the report template in [report-template.md](./references/report-template.md) verbatim in structure — same headers, same table shape — so reports stay consistent across runs, products, and tools. Fill it from the actual CLI output, never from memory of a previous run. |
 | MUST | If (and only if) the product's config declares an `api.confluence` block, end the run by refreshing the `lastUpdate` timestamp on that Confluence page and attaching the freshly exported zip, per [confluence-publish.md](./references/confluence-publish.md) — this is independent of test results, not conditional on them passing. |
 | NEVER | Put collection content (request bodies, raw exports, file dumps) inline in a Confluence page body. It stays a `lastUpdate` marker; the zip is attached as a file, not pasted as text. |
@@ -156,6 +157,10 @@ rules above:
    actual status/response, and whether the adapter's per-case caveat convention (or
    the product's `api.knownCaveats`) names a precondition (wrong environment, wrong
    order, expired state) that explains it. Don't just report a number.
+   Also check each executed folder/endpoint's case set for thinness — happy-path
+   only, no validation/auth/business-logic cases — and flag any gap found in the
+   report's Notes (step 7). Flag only; don't generate cases here, that's ticket
+   mode's job (step T2).
 
 7. **Write the report** using [report-template.md](./references/report-template.md),
    filled with this run's real numbers, current commit (`git rev-parse --short HEAD`,
