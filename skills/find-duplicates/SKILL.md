@@ -43,12 +43,37 @@ or skip rests with the human or the calling skill.
 
 ## Output
 
-For each candidate that clears a bar: key, title, status, a link, the classification,
-and one line of reasoning tied to the specific overlapping behavior — not "keywords
-matched." If none found, state that clearly instead of an empty table.
+Report as markdown tables, grouped by classification — never a flat list of
+paragraphs, which is hard to scan once there are more than a couple of candidates:
+
+- One table per classification (`Likely duplicate`, `Possibly related`), each
+  followed by a one-line recommended action where useful (e.g. "link as duplicate
+  and close the older one").
+- Table columns: the ticket keys as linked references (`[KEY](url)`), then a short
+  "what overlaps" column carrying the one-line reasoning tied to the specific
+  overlapping behavior — not "keywords matched."
+- When the scan spans multiple areas/issue types (e.g. Bugs vs Stories vs Tasks),
+  split each classification's table by area instead of one giant mixed table.
+- Close with a short "checked and cleared" section — plain bullets are fine here,
+  no table needed — naming what was ruled out and why, so it reads as thorough
+  rather than incomplete.
+- If none found, state that clearly instead of an empty table.
 
 Never call a Jira write tool (create, comment, link, transition) — this skill only
 searches and reports.
+
+## Offering to save the report
+
+After delivering the report as a standalone request (not the automatic pre-check
+before `reporting-bugs` — skip this offer there, it's just an internal gate), ask
+the user whether they'd like it saved somewhere, e.g. via AskUserQuestion:
+
+- **Published to Confluence** — if chosen, ask for the target page/space link
+  before publishing.
+- **Saved as a PDF**.
+- Or neither — the in-chat report is enough.
+
+Only act once the user picks; don't publish or export unprompted.
 
 ## Using this before filing a bug
 
