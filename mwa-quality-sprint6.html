@@ -112,6 +112,20 @@
     border-left: 3px solid var(--color-border);
   }
 
+  .decisions-box {
+    background: var(--color-info-bg);
+    border: 1px solid #c6d9ea;
+    border-left: 5px solid var(--color-info);
+    border-radius: 12px;
+    padding: 16px 22px;
+    margin-bottom: 20px;
+  }
+  .decisions-box h2 { margin: 0 0 10px; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-info); }
+  .decisions-box ol { margin: 0; padding-left: 20px; font-size: 14px; }
+  .decisions-box li { margin-bottom: 8px; }
+  .decisions-box li:last-child { margin-bottom: 0; }
+  .decisions-box a { color: var(--color-info); font-weight: 600; }
+
   .kpi-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -131,6 +145,7 @@
   .kpi-tile .kpi-value-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .kpi-tile .kpi-value { font-size: 30px; font-weight: 700; margin: 6px 0 2px; font-variant-numeric: proportional-nums; }
   .kpi-tile .kpi-value.no-data { font-size: 16px; color: var(--color-text-muted); font-weight: 600; }
+  .kpi-tile .kpi-value .kpi-value-sep { color: var(--color-text-muted); font-weight: 400; font-size: 0.6em; margin: 0 3px; }
   .kpi-tile .kpi-spark { width: 72px; height: 32px; flex: none; }
   .kpi-tile .kpi-trend { font-size: 12.5px; }
   .kpi-tile .kpi-trend.up { color: var(--color-not-ready); }
@@ -295,7 +310,18 @@
 
   <div class="exec-summary">
     <h2>Summary</h2>
-    <p>Sprint 6 is not ready to release: 2 Critical and 13 High-severity bugs are open, almost entirely in the legacy PwD/Assistant/Admin apps rather than the new login feature, which itself has no open bugs yet. Since Sprint 5, 2 new High-severity accessibility bugs were opened and none were resolved, while login &amp; registration progressed to 7 of 18 items awaiting your acceptance. Two decisions are needed from you this sprint: sign off on the completed login/registration items below, and confirm whether the 6 blocked legacy deployment tasks affect this release's timeline.</p>
+    <p>Sprint 6 is not ready to release: 2 Critical and 13 High-severity bugs are open, almost entirely in the legacy PwD/Assistant/Admin apps rather than the new login feature, which itself has no open bugs yet — because testing hasn't started there, not because it's clean. Since Sprint 5, 2 new High-severity accessibility bugs were opened and none were resolved, while login &amp; registration progressed to 7 of 18 items awaiting your acceptance. See the decisions checklist below for everything we need from you this sprint.</p>
+  </div>
+
+  <div class="decisions-box">
+    <h2>Decisions needed from you</h2>
+    <ol>
+      <li>Confirm whether the 2 open <a href="#risk-critical">Critical bugs (MWA-463, MWA-441)</a> must be fixed before release, or accept the risk for launch.</li>
+      <li>Confirm whether the 2 open <a href="#risk-a11y">High-severity accessibility bugs (MWA-508, MWA-509)</a> can launch without a fix.</li>
+      <li>Sign off on the 7 login &amp; registration items now awaiting your acceptance (see the feature-area table below).</li>
+      <li>Confirm whether the <a href="#risk-blocked">6 blocked legacy deployment tasks</a> are required for this release.</li>
+      <li>Approve the <a href="#readiness-criteria">proposed readiness criteria</a> below, or tell us what to change.</li>
+    </ol>
   </div>
 
   <p class="severity-note"><strong>Severity mapping used throughout this report:</strong> Jira's "Highest" and "Critical" priorities are both counted as Critical; "High" as High; "Medium" as Medium. Declined/Won't Fix bugs are excluded from open-defect counts and shown separately where relevant.</p>
@@ -315,12 +341,12 @@
       </div>
 
       <div class="kpi-tile">
-        <div class="kpi-label">Bugs opened this sprint</div>
+        <div class="kpi-label">Bugs opened / resolved this sprint</div>
         <div class="kpi-value-row">
-          <div class="kpi-value">2</div>
-          <svg class="kpi-spark" data-spark="9,5,2" data-accent="#1b7a43" role="img" aria-hidden="true"></svg>
+          <div class="kpi-value">2<span class="kpi-value-sep">/</span>0</div>
+          <svg class="kpi-spark" data-spark="9,5,2" data-accent="#9a6400" role="img" aria-hidden="true"></svg>
         </div>
-        <div class="kpi-trend down">0 resolved so far · Sprint 5: 5 opened / 2 resolved (+1 Declined, not counted as a fix)</div>
+        <div class="kpi-trend flat">0 resolved is the concern — Sprint 5: 5 opened / 2 resolved (+1 Declined, not counted as a fix)</div>
         <div class="kpi-target">Target: resolved ≥ opened</div>
       </div>
 
@@ -429,7 +455,7 @@
   <section aria-label="Open risks">
     <h2>Open risks</h2>
 
-    <div class="risk-card severity-critical">
+    <div class="risk-card severity-critical" id="risk-critical">
       <h3><span class="sev-chip">Critical</span> 2 open Critical bugs with no workaround (<a href="https://is-takamol.atlassian.net/browse/MWA-463">MWA-463</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-441">MWA-441</a>)</h3>
       <dl>
         <dt>Impact</dt><dd>MWA-463: a PwD user's CV fails to upload when editing their profile. MWA-441: support requests submitted via "Contact us" don't appear in the admin panel, so they go unanswered.</dd>
@@ -439,7 +465,7 @@
       </dl>
     </div>
 
-    <div class="risk-card severity-high">
+    <div class="risk-card severity-high" id="risk-a11y">
       <h3><span class="sev-chip">High</span> 2 open High-severity accessibility bugs, unowned (<a href="https://is-takamol.atlassian.net/browse/MWA-508">MWA-508</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-509">MWA-509</a>)</h3>
       <dl>
         <dt>Impact</dt><dd>Android/iOS users relying on dark mode or high-contrast mode get no visual feedback when toggling theme — an accessibility regression for PwD and Volunteer users who depend on these settings.</dd>
@@ -449,7 +475,7 @@
       </dl>
     </div>
 
-    <div class="risk-card severity-process">
+    <div class="risk-card severity-process" id="risk-blocked">
       <h3><span class="sev-chip">Process</span> 6 legacy-app deployment tasks blocked</h3>
       <dl>
         <dt>Impact</dt><dd>Deploys of the PwD app, Assistant app, admin panel, and API to UAT/PROD (<a href="https://is-takamol.atlassian.net/browse/MWA-486">MWA-486</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-490">MWA-490</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-489">MWA-489</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-494">MWA-494</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-329">MWA-329</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-328">MWA-328</a>) are stalled.</dd>
@@ -477,7 +503,7 @@
     </table>
   </details>
 
-  <div class="criteria-box">
+  <div class="criteria-box" id="readiness-criteria">
     <div class="subtitle">Proposed — please confirm</div>
     <h2>Readiness criteria</h2>
     <table>
