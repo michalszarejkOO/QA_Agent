@@ -11,6 +11,11 @@ environments
 # part of the project.
 evals/results/
 
+# Generated client-facing reports (create-quality-metrics HTML output, named
+# per its own convention: <project>-quality-<scope>.html) — regenerated per
+# run from live Jira/test data, not part of the project.
+*-quality-*.html
+
 # OS cruft
 .DS_Store
 # Local claude settings
