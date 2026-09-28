@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mowaamah App (MWA) — Quality Report — Sprint 6</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --success: #16a34a;
+    --warning: #f59e0b;
+    --danger: #dc2626;
+    --bg-primary: #f8fafc;
+    --bg-card: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
+    --success-bg: #dcfce7; --success-text: #166534; --success-border: #86efac;
+    --warning-bg: #fef3c7; --warning-text: #92400e; --warning-border: #fcd34d;
+    --danger-bg: #fee2e2;  --danger-text: #991b1b;  --danger-border: #fecaca;
+    --info-bg: #dbeafe;    --info-text: #1e40af;    --info-border: #93c5fd;
+    --sev-critical: #1c5cab;
+    --sev-high: #3987e5;
+    --sev-medium: #86b6ef;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    line-height: 1.6;
+  }
+  .container { max-width: 1120px; margin: 0 auto; padding: 20px 24px; }
+
+  header.site-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+    color: #fff;
+    padding: 26px 0;
+  }
+  header.site-header .container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; padding: 0 24px; }
+  header.site-header h1 { font-size: 25px; font-weight: 700; margin: 0 0 4px; }
+  header.site-header .meta { font-size: 13px; opacity: 0.85; line-height: 1.6; }
+  header.site-header .meta strong { font-weight: 600; opacity: 1; }
+  header.site-header .side-meta { text-align: right; }
+
+  .page { max-width: 1120px; margin: 0 auto; padding: 28px 24px 64px; }
+
+  .verdict-row { display: flex; gap: 16px; align-items: stretch; margin-bottom: 20px; flex-wrap: wrap; }
+
+  .highlight-box {
+    border-radius: 12px;
+    padding: 18px 22px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  .highlight-box.danger  { background: linear-gradient(135deg, #fef2f2 0%, var(--danger-bg) 100%);  border: 1px solid var(--danger-border); }
+  .highlight-box.warning { background: linear-gradient(135deg, #fffbeb 0%, var(--warning-bg) 100%); border: 1px solid var(--warning-border); }
+  .highlight-box.info    { background: linear-gradient(135deg, #eff6ff 0%, var(--info-bg) 100%);     border: 1px solid var(--info-border); }
+  .highlight-box.success { background: linear-gradient(135deg, #f0fdf4 0%, var(--success-bg) 100%);  border: 1px solid var(--success-border); }
+
+  .banner { display: flex; align-items: center; gap: 14px; flex: 1 1 480px; font-size: 16px; color: var(--text-primary); }
+  .banner .status-icon {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex: none; font-weight: 700; color: #fff;
+  }
+  .banner.is-not-ready .status-icon { background: var(--danger); }
+  .banner.is-at-risk .status-icon { background: var(--warning); }
+  .banner.is-ready .status-icon { background: var(--success); }
+  .banner .status-label { font-weight: 700; }
+  .banner.is-not-ready .status-label { color: var(--danger-text); }
+  .banner.is-at-risk .status-label { color: var(--warning-text); }
+  .banner.is-ready .status-label { color: var(--success-text); }
+  .banner .reason { font-weight: 400; }
+
+  .coverage-note { flex: 1 1 260px; font-size: 12.5px; line-height: 1.5; color: var(--info-text); }
+  .coverage-note strong { display: block; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+  .coverage-note ul { margin: 0; padding-left: 18px; }
+  .coverage-note li { margin-bottom: 2px; }
+  .coverage-note li.included::marker { color: var(--success); }
+
+  .exec-summary.highlight-box { margin-bottom: 20px; font-size: 15px; color: var(--text-primary); }
+  .exec-summary h2 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); font-weight: 700; }
+
+  .insight-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-left: 4px solid var(--primary);
+    margin-bottom: 20px;
+  }
+  .insight-card h2 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--primary); font-weight: 700; }
+  .insight-card ol { margin: 0; padding-left: 20px; font-size: 14px; }
+  .insight-card li { margin-bottom: 8px; }
+  .insight-card li:last-child { margin-bottom: 0; }
+  .insight-card a { color: var(--primary); font-weight: 600; }
+
+  .severity-note {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin: 0 0 24px;
+    padding: 10px 14px;
+    border-left: 3px solid var(--border);
+  }
+
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::before { content: ''; width: 4px; height: 22px; background: var(--primary); border-radius: 2px; flex: none; }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+  .kpi-card {
+    background: var(--bg-card);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .kpi-card .label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .kpi-card .value-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .kpi-card .value { font-size: 28px; font-weight: 700; color: var(--text-primary); font-variant-numeric: proportional-nums; }
+  .kpi-card .value.no-data { font-size: 15px; color: var(--text-secondary); font-weight: 600; }
+  .kpi-card .value .sep { color: var(--text-secondary); font-weight: 400; font-size: 0.6em; margin: 0 3px; }
+  .kpi-card.danger .value { color: var(--danger); }
+  .kpi-card.warning .value { color: var(--warning); }
+  .kpi-card.success .value { color: var(--success); }
+  .kpi-card .spark { width: 72px; height: 32px; flex: none; }
+  .kpi-card .subtext { font-size: 12px; color: var(--text-secondary); margin-top: 8px; }
+  .kpi-card .subtext.change-up { color: var(--danger); font-weight: 600; }
+  .kpi-card .subtext.change-down { color: var(--success); font-weight: 600; }
+  .kpi-card .subtext.change-neutral { color: var(--warning); font-weight: 600; }
+  .kpi-card .target { font-size: 11.5px; color: var(--text-secondary); margin-top: 6px; }
+  .kpi-card .footnote { font-size: 10.5px; color: var(--text-secondary); margin-top: 6px; font-style: italic; }
+
+  .meter { height: 8px; border-radius: 9999px; background: var(--success-bg); overflow: hidden; margin-top: 10px; }
+  .meter.warning-track { background: var(--warning-bg); }
+  .meter.danger-track { background: var(--danger-bg); }
+  .meter .meter-fill { height: 100%; border-radius: 9999px 0 0 9999px; }
+  .meter .meter-fill.success { background: var(--success); }
+  .meter .meter-fill.warning { background: var(--warning); }
+  .meter .meter-fill.danger { background: var(--danger); }
+  .meter.no-data { background: repeating-linear-gradient(135deg, var(--border), var(--border) 4px, transparent 4px, transparent 8px); }
+
+  section { margin-bottom: 36px; }
+  h3 { font-size: 15px; margin: 0 0 8px; }
+
+  .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
+  .chart-grid > .chart-card:first-child { grid-column: span 2; }
+  @media (max-width: 720px) { .chart-grid > .chart-card:first-child { grid-column: span 1; } }
+  .chart-card { background: var(--bg-card); border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .chart-card h3 { font-size: 15px; font-weight: 600; margin: 0 0 12px; color: var(--text-primary); }
+  .chart-container { position: relative; height: 280px; }
+  .chart-note { font-size: 12px; color: var(--text-secondary); margin: 0 0 10px; }
+  .chart-error-note { display: none; font-size: 13px; color: var(--warning-text); margin: 0 0 10px; }
+  .chart-card.chart-failed canvas { display: none; }
+  .chart-card.chart-failed .chart-container { height: auto; }
+  .chart-card.chart-failed .chart-error-note { display: block; }
+
+  table.chart-fallback { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+  table.chart-fallback caption { text-align: left; color: var(--text-secondary); font-size: 12px; margin-bottom: 6px; }
+  table.chart-fallback th, table.chart-fallback td { border: 1px solid var(--border); padding: 6px 8px; text-align: right; font-variant-numeric: tabular-nums; }
+  table.chart-fallback th:first-child, table.chart-fallback td:first-child { text-align: left; font-variant-numeric: normal; }
+
+  /* Visually hidden on screen when the chart renders successfully; always available to screen readers, and forced visible in print. */
+  .chart-fallback-wrap {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap; margin: -1px;
+  }
+  .chart-card.chart-failed .chart-fallback-wrap {
+    position: static; width: auto; height: auto; overflow-x: auto; overflow-y: visible;
+    clip: auto; white-space: normal; margin: 12px 0 0;
+  }
+
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-card);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  table.data-table th, table.data-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+  table.data-table th { background: #f1f5f9; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
+  table.data-table tr:hover { background: #f8fafc; }
+  table.data-table tr:last-child td { border-bottom: none; }
+  table.data-table td.progress-cell { min-width: 130px; }
+  table.data-table .progress-fraction { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+  .sev-bar { display: flex; height: 10px; border-radius: 9999px; overflow: hidden; min-width: 90px; background: var(--border); }
+  .sev-bar span { display: block; height: 100%; }
+  .sev-bar .c { background: var(--sev-critical); }
+  .sev-bar .h { background: var(--sev-high); }
+  .sev-bar .m { background: var(--sev-medium); }
+  .sev-legend { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 500; }
+  .badge-danger  { background: var(--danger-bg);  color: var(--danger-text); }
+  .badge-warning { background: var(--warning-bg); color: var(--warning-text); }
+  .badge-success { background: var(--success-bg); color: var(--success-text); }
+  .badge-info    { background: var(--info-bg);    color: var(--info-text); }
+
+  .risk-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-left: 4px solid var(--primary);
+  }
+  .risk-card.severity-critical { border-left-color: var(--danger); }
+  .risk-card.severity-high { border-left-color: var(--warning); }
+  .risk-card.severity-process { border-left-color: var(--primary); }
+  .risk-card h3 { margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .risk-card .sev-chip { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; padding: 2px 8px; border-radius: 9999px; }
+  .severity-critical .sev-chip { background: var(--danger-bg); color: var(--danger-text); }
+  .severity-high .sev-chip { background: var(--warning-bg); color: var(--warning-text); }
+  .severity-process .sev-chip { background: var(--info-bg); color: var(--info-text); }
+  .risk-card dl { display: grid; grid-template-columns: 150px 1fr; row-gap: 6px; margin: 0; font-size: 13px; }
+  .risk-card dt { color: var(--text-secondary); }
+  .risk-card dd { margin: 0; }
+  .risk-card dd.decision-needed { font-weight: 700; color: var(--warning-text); }
+  .risk-card a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+  .criteria-box.highlight-box { font-size: 13.5px; }
+  .criteria-box .subtitle { font-size: 11.5px; color: var(--info-text); margin: 0 0 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+  .criteria-box h2 { margin: 0 0 4px; font-size: 15px; color: var(--info-text); }
+  .criteria-box table { width: 100%; border-collapse: collapse; }
+  .criteria-box th, .criteria-box td { text-align: left; padding: 7px 8px; vertical-align: top; border-bottom: 1px solid var(--info-border); }
+  .criteria-box th { width: 140px; }
+  .criteria-box tr:last-child th, .criteria-box tr:last-child td { border-bottom: none; }
+
+  details.secondary-metrics {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  details.secondary-metrics[open] { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  details.secondary-metrics summary {
+    list-style: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(to right, #f8fafc, #fff);
+    transition: background 0.2s;
+    user-select: none;
+  }
+  details.secondary-metrics summary::-webkit-details-marker { display: none; }
+  details.secondary-metrics summary:hover { background: linear-gradient(to right, #f1f5f9, #fff); }
+  details.secondary-metrics summary::after { content: '▼'; font-size: 10px; color: var(--text-secondary); transition: transform 0.2s; }
+  details.secondary-metrics[open] summary::after { transform: rotate(180deg); }
+  details.secondary-metrics table.data-table { border-radius: 0; box-shadow: none; }
+
+  footer.definitions {
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  footer.definitions dl { margin: 0; }
+  footer.definitions dt { font-weight: 600; color: var(--text-primary); margin-top: 8px; }
+  footer.definitions dd { margin: 0 0 4px; }
+
+  @media (max-width: 768px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    header.site-header .side-meta { text-align: left; }
+  }
+
+  @media print {
+    body { background: #fff; }
+    .page { max-width: none; padding: 0; }
+    header.site-header { background: #0f172a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .chart-grid { grid-template-columns: 1fr; }
+    details.secondary-metrics { display: block; }
+    details.secondary-metrics summary { display: none; }
+    .chart-fallback-wrap {
+      position: static !important; width: auto !important; height: auto !important;
+      overflow: visible !important; clip: auto !important; white-space: normal !important; margin: 12px 0 0 !important;
+    }
+    .kpi-card:hover { transform: none; box-shadow: none; }
+    .kpi-card, .chart-card, .risk-card, table.data-table, .highlight-box, .insight-card { break-inside: avoid; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container">
+      <div>
+        <h1>📊 Mowaamah App (MWA) — Quality Report</h1>
+        <p class="meta">Sprint 6 — login &amp; registration (in progress, day 11 of 15) &middot; Backend API, admin panel (web), PwD app (iOS/Android), Volunteer/Assistant app (iOS/Android)</p>
+      </div>
+      <div class="meta side-meta">
+        <strong>Data as of:</strong> 2026-09-27<br>
+        <strong>Data sources:</strong> Jira<br>
+        <strong>Not yet integrated:</strong> tests, monitoring
+      </div>
+    </div>
+  </header>
+
+<div class="page">
+
+  <div class="verdict-row">
+    <div class="highlight-box danger banner is-not-ready" role="status" aria-label="Release readiness">
+      <span class="status-icon" aria-hidden="true">&#10005;</span>
+      <span>
+        <span class="status-label">Not ready</span>
+        <span class="reason"> — 2 open Critical-severity bugs (<a href="https://is-takamol.atlassian.net/browse/MWA-463">MWA-463</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-441">MWA-441</a>) remain unresolved with no recorded workaround or client acceptance.</span>
+      </span>
+    </div>
+    <div class="highlight-box info coverage-note">
+      <strong>Data coverage</strong>
+      <ul>
+        <li class="included">Included: Jira (issues, defects, sprint progress)</li>
+        <li>Not yet integrated: regression test results, test automation coverage, production monitoring</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="highlight-box info exec-summary">
+    <h2>Summary</h2>
+    <p>Sprint 6 is not ready to release: 2 Critical and 13 High-severity bugs are open, almost entirely in the legacy PwD/Assistant/Admin apps rather than the new login feature, which itself has no open bugs yet — because testing hasn't started there, not because it's clean. Since Sprint 5, 2 new High-severity accessibility bugs were opened and none were resolved, while login &amp; registration progressed to 7 of 18 items awaiting your acceptance. See the decisions checklist below for everything we need from you this sprint.</p>
+  </div>
+
+  <div class="insight-card">
+    <h2>Decisions needed from you</h2>
+    <ol>
+      <li>Confirm whether the 2 open <a href="#risk-critical">Critical bugs (MWA-463, MWA-441)</a> must be fixed before release, or accept the risk for launch.</li>
+      <li>Confirm whether the 2 open <a href="#risk-a11y">High-severity accessibility bugs (MWA-508, MWA-509)</a> can launch without a fix.</li>
+      <li>Sign off on the 7 login &amp; registration items now awaiting your acceptance (see the feature-area table below).</li>
+      <li>Confirm whether the <a href="#risk-blocked">6 blocked legacy deployment tasks</a> are required for this release.</li>
+      <li>Approve the <a href="#readiness-criteria">proposed readiness criteria</a> below, or tell us what to change.</li>
+    </ol>
+  </div>
+
+  <p class="severity-note"><strong>Severity mapping used throughout this report:</strong> Jira's "Highest" and "Critical" priorities are both counted as Critical; "High" as High; "Medium" as Medium. Declined/Won't Fix bugs are excluded from open-defect counts and shown separately where relevant.</p>
+
+  <section aria-label="Key quality indicators">
+    <div class="kpi-grid">
+
+      <div class="kpi-card danger">
+        <div class="label">Open Critical/High bugs</div>
+        <div class="value-row">
+          <div class="value">15</div>
+          <svg class="spark" data-spark="12,13,15" data-accent="#dc2626" role="img" aria-hidden="true"></svg>
+        </div>
+        <div class="subtext change-up">2 Critical, 13 High — up from 13 as of Sprint 5's end</div>
+        <div class="target">Target: 0 Critical, ≤3 High with workaround/acceptance</div>
+        <div class="footnote">Excludes MWA-34, a Critical bug open since 2025-08-06, predating this release — tracked separately below.</div>
+      </div>
+
+      <div class="kpi-card warning">
+        <div class="label">Bugs opened / resolved this sprint</div>
+        <div class="value-row">
+          <div class="value">2<span class="sep">/</span>0</div>
+          <svg class="spark" data-spark="9,5,2" data-accent="#f59e0b" role="img" aria-hidden="true"></svg>
+        </div>
+        <div class="subtext change-neutral">0 resolved is the concern — Sprint 5: 5 opened / 2 resolved (+1 Declined, not counted as a fix)</div>
+        <div class="target">Target: resolved ≥ opened</div>
+      </div>
+
+      <div class="kpi-card warning">
+        <div class="label">Sprint progress (items done)</div>
+        <div class="value-row">
+          <div class="value">38%</div>
+          <svg class="spark" data-spark="81,52,38" data-accent="#dc2626" role="img" aria-hidden="true"></svg>
+        </div>
+        <div class="meter warning-track" aria-hidden="true"><div class="meter-fill warning" style="width:38%"></div></div>
+        <div class="subtext change-neutral">11 of 29 — Sprint 5: 13 of 25. Each sprint's ratio reflects its own scope; Sprint 6 carries more still-active login/registration work.</div>
+        <div class="target">Target: on track to 100% by sprint end (Oct 1)</div>
+      </div>
+
+      <div class="kpi-card warning">
+        <div class="label">Blocked / on-hold items</div>
+        <div class="value-row">
+          <div class="value">6</div>
+          <svg class="spark" data-spark="1,6,6" data-accent="#f59e0b" role="img" aria-hidden="true"></svg>
+        </div>
+        <div class="subtext change-neutral">Grew from 1 in Sprint 4 to 6 in Sprint 5, unchanged since</div>
+        <div class="target">Target: 0</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="label">Regression pass rate</div>
+        <div class="value no-data">Not available</div>
+        <div class="meter no-data" aria-hidden="true"></div>
+        <div class="subtext">Not yet integrated into this report</div>
+        <div class="target">Target: ≥95% Ready, ≥90% Ready with risks</div>
+      </div>
+
+    </div>
+  </section>
+
+  <section aria-label="Trends over time">
+    <h2 class="section-title">Trends over time</h2>
+    <div class="chart-grid">
+
+      <div class="chart-card">
+        <h3>Bugs opened per sprint, by severity</h3>
+        <p class="chart-note">Sprint 6 is shown lighter — it is a partial sprint (11 of 15 days elapsed). Even adjusted for the shorter period, its per-day rate (0.18 bugs/day) is lower than Sprint 5 (0.36/day) and Sprint 4 (0.64/day). Hover any segment for the exact count.</p>
+        <p class="chart-error-note">The chart could not load — see the table below for the same data.</p>
+        <div class="chart-container">
+          <canvas id="trendChart" role="img" aria-label="Stacked bar chart of bugs opened per sprint, split by Critical, High and Medium severity; Sprint 6 is a partial, lighter-shaded bar"></canvas>
+        </div>
+        <div class="chart-fallback-wrap">
+          <table class="chart-fallback">
+            <caption>Table rendering of the chart above, for accessibility and print.</caption>
+            <thead>
+              <tr><th>Period</th><th>Critical</th><th>High</th><th>Medium</th><th>Total (Critical–Medium)</th><th>Per-day rate</th></tr>
+            </thead>
+            <tbody id="trendFallbackBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Open Critical/High bugs (point-in-time)</h3>
+        <p class="chart-error-note">The chart could not load — see the table below for the same data.</p>
+        <div class="chart-container">
+          <canvas id="critHighTrendChart" role="img" aria-label="Line chart of open Critical/High bugs at the end of each sprint: 12, 13, 15"></canvas>
+        </div>
+        <div class="chart-fallback-wrap">
+          <table class="chart-fallback">
+            <caption>Table rendering of the chart above, for accessibility and print.</caption>
+            <thead><tr><th>Period</th><th>Open Critical/High</th></tr></thead>
+            <tbody>
+              <tr><td>Sprint 4 end (2026-09-02)</td><td>12</td></tr>
+              <tr><td>Sprint 5 end (2026-09-16)</td><td>13</td></tr>
+              <tr><td>Today (2026-09-27)</td><td>15</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Bugs opened vs. resolved per sprint</h3>
+        <p class="chart-error-note">The chart could not load — see the table below for the same data.</p>
+        <div class="chart-container">
+          <canvas id="openedResolvedChart" role="img" aria-label="Grouped bar chart of bugs opened vs. genuinely resolved per sprint"></canvas>
+        </div>
+        <div class="chart-fallback-wrap">
+          <table class="chart-fallback">
+            <caption>Table rendering of the chart above, for accessibility and print.</caption>
+            <thead><tr><th>Period</th><th>Opened</th><th>Resolved</th><th>Declined</th></tr></thead>
+            <tbody>
+              <tr><td>Sprint 4</td><td>9</td><td>2</td><td>0</td></tr>
+              <tr><td>Sprint 5</td><td>5</td><td>2</td><td>1</td></tr>
+              <tr><td>Sprint 6 (partial)</td><td>2</td><td>0</td><td>0</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Sprint progress (% done)</h3>
+        <p class="chart-error-note">The chart could not load — see the table below for the same data.</p>
+        <div class="chart-container">
+          <canvas id="progressTrendChart" role="img" aria-label="Line chart of sprint progress percentage: 81%, 52%, 38%"></canvas>
+        </div>
+        <div class="chart-fallback-wrap">
+          <table class="chart-fallback">
+            <caption>Table rendering of the chart above, for accessibility and print.</caption>
+            <thead><tr><th>Period</th><th>% done</th></tr></thead>
+            <tbody>
+              <tr><td>Sprint 4</td><td>81%</td></tr>
+              <tr><td>Sprint 5</td><td>52%</td></tr>
+              <tr><td>Sprint 6</td><td>38%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3>Open bugs today, by severity</h3>
+        <p class="chart-error-note">The chart could not load — see the table below for the same data.</p>
+        <div class="chart-container">
+          <canvas id="severitySnapshotChart" role="img" aria-label="Horizontal bar chart of currently open bugs by severity: 2 Critical, 13 High, 6 Medium"></canvas>
+        </div>
+        <div class="chart-fallback-wrap">
+          <table class="chart-fallback">
+            <caption>Table rendering of the chart above, for accessibility and print.</caption>
+            <thead><tr><th>Severity</th><th>Count</th></tr></thead>
+            <tbody>
+              <tr><td>Critical</td><td>2</td></tr>
+              <tr><td>High</td><td>13</td></tr>
+              <tr><td>Medium</td><td>6</td></tr>
+              <tr><td>Total (Critical–Medium)</td><td>21</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section aria-label="Readiness by feature area">
+    <h2 class="section-title">Readiness by feature area</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>Feature area</th><th>Status</th><th>Progress</th><th>Open bugs</th><th>Note</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Login &amp; Registration (new app)</td>
+          <td><span class="badge badge-warning">&#9888; Known risk</span></td>
+          <td class="progress-cell">
+            <div class="meter warning-track" aria-hidden="true"><div class="meter-fill warning" style="width:39%"></div></div>
+            <div class="progress-fraction">7 of 18 done*</div>
+          </td>
+          <td><span style="color:var(--text-secondary); font-size:13px;">None yet</span></td>
+          <td>Sprint goal is "ready for QA" by Oct 1. Most backend work is now awaiting your acceptance; no bugs logged yet because testing hasn't started on this area.</td>
+        </tr>
+        <tr>
+          <td>Legacy app stabilization &amp; deployment</td>
+          <td><span class="badge badge-danger">&#10005; Not ready</span></td>
+          <td class="progress-cell">
+            <div class="meter danger-track" aria-hidden="true"><div class="meter-fill danger" style="width:33%"></div></div>
+            <div class="progress-fraction">3 of 9 done</div>
+          </td>
+          <td>
+            <div class="sev-bar" role="img" aria-label="19 open bugs: 2 Critical, 11 High, 6 Medium">
+              <span class="c" style="width:10.5%"></span><span class="h" style="width:58%"></span><span class="m" style="width:31.5%"></span>
+            </div>
+            <div class="sev-legend">19 total (2C / 11H / 6M)</div>
+          </td>
+          <td>6 deployment/refactor tasks are blocked (on hold) with no ETA, and this area carries almost all of the open defect backlog.</td>
+        </tr>
+        <tr>
+          <td>Accessibility &amp; language settings</td>
+          <td><span class="badge badge-warning">&#9888; Known risk</span></td>
+          <td class="progress-cell">
+            <div class="meter warning-track" aria-hidden="true"><div class="meter-fill warning" style="width:50%"></div></div>
+            <div class="progress-fraction">1 of 2 done*</div>
+          </td>
+          <td>
+            <div class="sev-bar" role="img" aria-label="2 open bugs: 2 High">
+              <span class="h" style="width:100%"></span>
+            </div>
+            <div class="sev-legend">2 total (0C / 2H / 0M)</div>
+          </td>
+          <td>Core work is largely complete, but 2 new High-severity accessibility bugs are open and unassigned this sprint.</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="chart-note">*"Done" includes items awaiting your acceptance (dev-complete, pending sign-off). Bar colors: <span style="color:var(--sev-critical);font-weight:600;">■</span> Critical <span style="color:var(--sev-high);font-weight:600;">■</span> High <span style="color:var(--sev-medium);font-weight:600;">■</span> Medium.</p>
+  </section>
+
+  <section aria-label="Open risks">
+    <h2 class="section-title">Open risks</h2>
+
+    <div class="risk-card severity-critical" id="risk-critical">
+      <h3><span class="sev-chip">Critical</span> 2 open Critical bugs with no workaround (<a href="https://is-takamol.atlassian.net/browse/MWA-463">MWA-463</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-441">MWA-441</a>)</h3>
+      <dl>
+        <dt>Impact</dt><dd>MWA-463: a PwD user's CV fails to upload when editing their profile. MWA-441: support requests submitted via "Contact us" don't appear in the admin panel, so they go unanswered.</dd>
+        <dt>Likelihood</dt><dd>Certain — both reproduced and logged; still unstarted ("To Do").</dd>
+        <dt>Our planned action</dt><dd>Not yet scheduled — needs prioritization against the Sprint 6 login/registration goal.</dd>
+        <dt>Decision needed from client</dt><dd class="decision-needed">Confirm whether these must be fixed before release, or accept the risk for launch.</dd>
+      </dl>
+    </div>
+
+    <div class="risk-card severity-high" id="risk-a11y">
+      <h3><span class="sev-chip">High</span> 2 open High-severity accessibility bugs, unowned (<a href="https://is-takamol.atlassian.net/browse/MWA-508">MWA-508</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-509">MWA-509</a>)</h3>
+      <dl>
+        <dt>Impact</dt><dd>Android/iOS users relying on dark mode or high-contrast mode get no visual feedback when toggling theme — an accessibility regression for PwD and Volunteer users who depend on these settings.</dd>
+        <dt>Likelihood</dt><dd>Certain — reproduced and logged this sprint; both still unstarted.</dd>
+        <dt>Our planned action</dt><dd>Not yet assigned — recommend picking up next sprint if not fixed in Sprint 6.</dd>
+        <dt>Decision needed from client</dt><dd class="decision-needed">Accept launching without a fix, or hold the accessibility-dependent release until fixed.</dd>
+      </dl>
+    </div>
+
+    <div class="risk-card severity-process" id="risk-blocked">
+      <h3><span class="sev-chip">Process</span> 6 legacy-app deployment tasks blocked</h3>
+      <dl>
+        <dt>Impact</dt><dd>Deploys of the PwD app, Assistant app, admin panel, and API to UAT/PROD (<a href="https://is-takamol.atlassian.net/browse/MWA-486">MWA-486</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-490">MWA-490</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-489">MWA-489</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-494">MWA-494</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-329">MWA-329</a>, <a href="https://is-takamol.atlassian.net/browse/MWA-328">MWA-328</a>) are stalled.</dd>
+        <dt>Likelihood</dt><dd>Ongoing — unchanged since Sprint 5, no logged movement.</dd>
+        <dt>Our planned action</dt><dd>Raise with the team to identify the blocker on each task.</dd>
+        <dt>Decision needed from client</dt><dd class="decision-needed">Confirm whether these deploys are required for this release.</dd>
+      </dl>
+    </div>
+  </section>
+
+  <details class="secondary-metrics">
+    <summary><span>Details — secondary metrics</span></summary>
+    <table class="data-table">
+      <thead>
+        <tr><th>Metric</th><th>Value</th><th>Note</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Open bugs by severity (all ages, excl. MWA-34)</td><td>2 Critical, 13 High, 6 Medium — 21 total (Critical–Medium)</td><td></td></tr>
+        <tr><td>Open Critical/High bugs (point-in-time)</td><td>Sprint 4 end: 12 · Sprint 5 end: 13 · Today: 15</td><td></td></tr>
+        <tr><td>Bugs opened per sprint</td><td>Sprint 4: 9 · Sprint 5: 5 · Sprint 6 (partial): 2</td><td></td></tr>
+        <tr><td>Bugs resolved per sprint (genuine fixes)</td><td>Sprint 4: 2 · Sprint 5: 2 (+1 Declined) · Sprint 6 (partial): 0</td><td></td></tr>
+        <tr><td>Sprint progress by sprint</td><td>Sprint 4: 17 of 21 (81%) · Sprint 5: 13 of 25 (52%) · Sprint 6: 11 of 29 (38%)</td><td></td></tr>
+        <tr><td>Blocked/on-hold items by sprint</td><td>Sprint 4: 1 · Sprint 5: 6 · Sprint 6: 6</td><td></td></tr>
+        <tr><td>Mean time to fix (Critical/High)</td><td>Not available</td><td>No Critical/High bugs have been resolved yet this sprint.</td></tr>
+        <tr><td>Reopen rate</td><td>Not available</td><td>Requires per-bug history; not yet built into this report.</td></tr>
+        <tr><td>Device/browser coverage</td><td>Not available</td><td>Not yet integrated into this report.</td></tr>
+      </tbody>
+    </table>
+  </details>
+
+  <br>
+
+  <div class="highlight-box info criteria-box" id="readiness-criteria">
+    <div class="subtitle">Proposed — please confirm</div>
+    <h2>Readiness criteria</h2>
+    <table>
+      <tr><th>Ready</th><td>0 open Critical, 0 open High, regression pass rate ≥95%.</td></tr>
+      <tr><th>Ready with risks</th><td>0 open Critical, ≤3 open High each with a documented workaround or your sign-off, regression pass rate ≥90%.</td></tr>
+      <tr><th>Not ready</th><td>Any open Critical bug, or regression pass rate below 90%, or any feature area not yet tested.</td></tr>
+    </table>
+  </div>
+
+  <footer class="definitions">
+    <h2>What these numbers mean</h2>
+    <dl id="metricDefinitions">
+      <dt>Open Critical/High bugs</dt>
+      <dd>All bugs currently unresolved at Critical/High severity, regardless of when they were logged.</dd>
+
+      <dt>Bugs opened vs. resolved this sprint</dt>
+      <dd>New bugs logged this sprint compared with bugs fixed this sprint (Declined/Won't Fix shown separately, not counted as fixes).</dd>
+
+      <dt>Sprint progress</dt>
+      <dd>Committed stories and tasks that are done or awaiting your acceptance, out of the sprint's total scope.</dd>
+
+      <dt>Blocked/on-hold items</dt>
+      <dd>Items in this sprint that cannot move forward without an external decision or dependency.</dd>
+
+      <dt>Regression pass rate</dt>
+      <dd>Share of regression tests that passed in the latest full test run.</dd>
+    </dl>
+  </footer>
+
+</div>
+
+<!--
+  Internal reproducibility notes (JQL used, cloudId 591da4c1-6840-4aa8-acc7-dc613387755f):
+
+  Open Critical/High bugs (excl. MWA-34):
+    project = MWA AND issuetype = Bug AND priority in (Critical, Highest, High) AND statusCategory != Done AND key != MWA-34
+
+  Open bugs by severity, all ages (excl. MWA-34):
+    project = MWA AND issuetype = Bug AND statusCategory != Done AND key != MWA-34
+
+  Bugs opened per sprint window:
+    project = MWA AND issuetype = Bug AND created >= <period_start> AND created < <period_end>
+    Sprint 4: 2026-08-20 to 2026-09-02 | Sprint 5: 2026-09-03 to 2026-09-16 | Sprint 6 (partial): 2026-09-17 to 2026-09-27
+
+  Bugs resolved per sprint window:
+    project = MWA AND issuetype = Bug AND resolutiondate >= <period_start> AND resolutiondate < <period_end>
+
+  Open Critical/High as of end of each sprint (point-in-time reconstruction from created + resolutiondate, no changelog pull):
+    priority in (Critical, Highest, High), created <= <period_end>, and (resolutiondate is empty OR resolutiondate > <period_end>), excl. MWA-34
+    As of Sprint 4 end (2026-09-02): 12 | As of Sprint 5 end (2026-09-16): 13 | Today (2026-09-27): 15
+
+  Sprint progress (Story + Task, excluding Sub-task):
+    project = MWA AND sprint = 14862 (Sprint 4) / 15761 (Sprint 5) / 16366 (Sprint 6), issuetype in (Story, Task)
+    "Done" = statusCategory Done OR status "Takamol Acceptance" (shown to client as "awaiting client acceptance").
+    Sprint 4 denominator excludes 2 Cancelled/Declined tasks (MWA-440, MWA-362); Sprint 5 excludes 1 (MWA-440).
+    Sprint 4: 17 of 21 (81%) | Sprint 5: 13 of 25 (52%) | Sprint 6: 11 of 29 (38%)
+
+  Blocked/on-hold items: status = "On Hold" within each sprint's issue set (same query as sprint progress).
+    Sprint 4: 1 (MWA-328) | Sprint 5: 6 | Sprint 6: 6 (same 6 items as Sprint 5)
+
+  Feature-area grouping is a manual read of issue summaries/labels, not a Jira field — re-derive by hand if issues are re-labeled.
+
+  Visual style adapted 2026-09-27 to match /Users/michalszarejko/Downloads/ucp-dashboard.html (dark navy header, --primary #2563eb
+  palette, 16px card radius, section-title tick bar, .badge pill system, .highlight-box / .insight-card treatments,
+  gradient-header collapsible <details>). No data or verdict logic changed in that pass — style only.
+-->
+
+<script>
+  var chartData = {
+    labels: ["Sprint 4 (Aug 20–Sep 2)", "Sprint 5 (Sep 3–16)", "Sprint 6 (Sep 17–27, partial)"],
+    critical: [2, 1, 0],
+    high: [7, 0, 2],
+    medium: [0, 4, 0],
+    perDay: ["0.64", "0.36", "0.18"]
+  };
+
+  (function renderFallbackTable() {
+    var tbody = document.getElementById('trendFallbackBody');
+    chartData.labels.forEach(function (label, i) {
+      var total = chartData.critical[i] + chartData.high[i] + chartData.medium[i];
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + label + '</td><td>' + chartData.critical[i] + '</td><td>' + chartData.high[i] + '</td><td>' + chartData.medium[i] + '</td><td>' + total + '</td><td>' + chartData.perDay[i] + '</td>';
+      tbody.appendChild(tr);
+    });
+  })();
+
+  (function renderChart() {
+    var wrap = document.getElementById('trendChart').closest('.chart-card');
+    try {
+      if (typeof Chart === 'undefined') throw new Error('Chart.js failed to load');
+      var ctx = document.getElementById('trendChart').getContext('2d');
+
+      function seriesColor(solid, alphaForPartial) {
+        return function (context) {
+          return context.dataIndex === 2 ? alphaForPartial : solid;
+        };
+      }
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: chartData.labels,
+          datasets: [
+            { label: 'Critical', data: chartData.critical, backgroundColor: seriesColor('#1c5cab', 'rgba(28,92,171,0.45)'), hoverBackgroundColor: '#164a8a', borderRadius: 4, stack: 's' },
+            { label: 'High', data: chartData.high, backgroundColor: seriesColor('#3987e5', 'rgba(57,135,229,0.45)'), hoverBackgroundColor: '#2b6fc4', borderRadius: 4, stack: 's' },
+            { label: 'Medium', data: chartData.medium, backgroundColor: seriesColor('#86b6ef', 'rgba(134,182,239,0.45)'), hoverBackgroundColor: '#6ea2e2', borderRadius: 4, stack: 's' }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
+            tooltip: {
+              callbacks: {
+                afterTitle: function (items) {
+                  return items[0].dataIndex === 2 ? 'Partial sprint — 11 of 15 days' : null;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: { stacked: true, beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eceef2' } }
+          }
+        }
+      });
+    } catch (e) {
+      wrap.classList.add('chart-failed');
+    }
+  })();
+
+  function safeChart(canvasId, build) {
+    var canvas = document.getElementById(canvasId);
+    var wrap = canvas.closest('.chart-card');
+    try {
+      if (typeof Chart === 'undefined') throw new Error('Chart.js failed to load');
+      build(canvas.getContext('2d'));
+    } catch (e) {
+      wrap.classList.add('chart-failed');
+    }
+  }
+
+  safeChart('critHighTrendChart', function (ctx) {
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['Sprint 4 end', 'Sprint 5 end', 'Today'],
+        datasets: [{
+          label: 'Open Critical/High', data: [12, 13, 15],
+          borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)',
+          borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#dc2626', fill: true, tension: 0.25
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eceef2' } }, x: { grid: { display: false } } }
+      }
+    });
+  });
+
+  safeChart('openedResolvedChart', function (ctx) {
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Sprint 4', 'Sprint 5', 'Sprint 6 (partial)'],
+        datasets: [
+          { label: 'Opened', data: [9, 5, 2], backgroundColor: '#2563eb', borderRadius: 4 },
+          { label: 'Resolved', data: [2, 2, 0], backgroundColor: '#16a34a', borderRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } } },
+        scales: { y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eceef2' } }, x: { grid: { display: false } } }
+      }
+    });
+  });
+
+  safeChart('progressTrendChart', function (ctx) {
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['Sprint 4', 'Sprint 5', 'Sprint 6'],
+        datasets: [{
+          label: '% done', data: [81, 52, 38],
+          borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)',
+          borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#f59e0b', fill: true, tension: 0.25
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function (item) { return item.parsed.y + '% done'; } } }
+        },
+        scales: { y: { beginAtZero: true, max: 100, ticks: { callback: function (v) { return v + '%'; } }, grid: { color: '#eceef2' } }, x: { grid: { display: false } } }
+      }
+    });
+  });
+
+  safeChart('severitySnapshotChart', function (ctx) {
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Critical', 'High', 'Medium'],
+        datasets: [{
+          label: 'Open bugs', data: [2, 13, 6],
+          backgroundColor: ['#1c5cab', '#3987e5', '#86b6ef'],
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: '#eceef2' } }, y: { grid: { display: false } } }
+      }
+    });
+  });
+
+  (function renderSparklines() {
+    document.querySelectorAll('svg.spark').forEach(function (svg) {
+      var values = svg.getAttribute('data-spark').split(',').map(Number);
+      var accent = svg.getAttribute('data-accent');
+      var w = 72, h = 32, pad = 4;
+      var min = Math.min.apply(null, values), max = Math.max.apply(null, values);
+      var range = (max - min) || 1;
+      var stepX = (w - pad * 2) / (values.length - 1);
+      var points = values.map(function (v, i) {
+        var x = pad + i * stepX;
+        var y = h - pad - ((v - min) / range) * (h - pad * 2);
+        return [x, y];
+      });
+      var pathD = points.map(function (p, i) { return (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ');
+      var ns = 'http://www.w3.org/2000/svg';
+      svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+
+      var path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', pathD);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', '#cbd5e1');
+      path.setAttribute('stroke-width', '2');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('stroke-linejoin', 'round');
+      svg.appendChild(path);
+
+      points.forEach(function (p, i) {
+        var isLast = i === points.length - 1;
+        var dot = document.createElementNS(ns, 'circle');
+        dot.setAttribute('cx', p[0]);
+        dot.setAttribute('cy', p[1]);
+        dot.setAttribute('r', isLast ? 4 : 2.5);
+        dot.setAttribute('fill', isLast ? accent : '#cbd5e1');
+        if (isLast) {
+          var ring = document.createElementNS(ns, 'circle');
+          ring.setAttribute('cx', p[0]);
+          ring.setAttribute('cy', p[1]);
+          ring.setAttribute('r', 6);
+          ring.setAttribute('fill', '#fff');
+          svg.appendChild(ring);
+        }
+        svg.appendChild(dot);
+      });
+    });
+  })();
+
+  (function printDetails() {
+    var details = document.querySelector('details.secondary-metrics');
+    var wasOpen = false;
+    window.addEventListener('beforeprint', function () {
+      wasOpen = details.hasAttribute('open');
+      details.setAttribute('open', '');
+    });
+    window.addEventListener('afterprint', function () {
+      if (!wasOpen) details.removeAttribute('open');
+    });
+  })();
+</script>
+</body>
+</html>

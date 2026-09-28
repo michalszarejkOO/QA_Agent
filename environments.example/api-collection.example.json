@@ -1,0 +1,24 @@
+{
+  "product": "acme-api",
+  "environment": "demo",
+  "ticketPrefixes": ["ACME"],
+  "api": {
+    "client": "bruno",
+    "repo": "~/Projects/acme-api",
+    "collectionPath": "bruno",
+    "defaultEnvironment": "demo",
+    "knownCaveats": [
+      "Name any stateful/order-dependent case here, e.g.: 'auth/verify-otp/01 depends on auth/request-otp/01 having run first for the same identifier.'"
+    ],
+    "confluence": {
+      "cloudId": "your-site.atlassian.net",
+      "spaceKey": "SPACE",
+      "parentId": "0000000000",
+      "pageTitle": "Acme API — Bruno Collection",
+      "attachmentName": "acme-api-bruno-collection.zip",
+      "notes": "Omit this whole confluence block if the product has nowhere to publish results — testing-api skips that step when it's absent."
+    },
+    "notes": "'client' is one of \"bruno\", \"postman\", \"insomnia\" and picks which testing-api adapter runs this collection — everything else in this block has the same meaning regardless of client. For Postman, collectionPath should point at a directory containing both the *.postman_collection.json file and an environments/ folder of *.postman_environment.json files, mirroring Bruno's shape."
+  },
+  "notes": "This block can live in the same file as the app-with-ui shape if one product has both a UI and an API collection."
+}
