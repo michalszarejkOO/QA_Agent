@@ -174,10 +174,12 @@ Return a structured report, in this order:
    violations from step 5 here, each tagged with its WCAG success criterion.
 5. **Blockers** — anything that stopped testing (missing input, unreachable app,
    login wall, etc.) and exactly what's needed to clear it.
-6. **Jira-ready comment** — a short comment, in Jira markdown, summarizing scenario
-   results and any bugs found, written so it can be pasted into the ticket as-is
-   (pass/fail per scenario, concrete evidence, no filler). Always include this, even
-   for a clean pass.
+6. **Jira-ready comment** — a comment, in Jira markdown, that embeds the actual
+   scenario-results table from item 2 verbatim (one row per scenario: ID, title,
+   pass/fail/blocked, one-line evidence) — not a prose summary that groups or
+   paraphrases results instead of listing them. Prose is fine only as a short intro/
+   outro around that table (e.g. naming the overall verdict, or calling out bugs
+   found), never as a replacement for it. Always include this, even for a clean pass.
 7. **Bug report draft(s)** — if you found a bug, draft it with the `reporting-bugs`
    skill (Title, Steps to reproduce, Expected, Actual) for each one found, separate
    from the ticket-comment draft above. `reporting-bugs` itself checks for an

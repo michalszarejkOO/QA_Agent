@@ -20,6 +20,7 @@ actually a web page.
 | Before reporting any control as "does nothing" / "dead button", retest it twice: once via its `@eN` ref from a fresh `snapshot -i`, once via the correctly-converted point coordinate of its visible center. Only report broken if **both** fail. | A ref tap and a coordinate tap can legitimately disagree — see "Accessibility hit-frame checks" below. Reporting off one tap alone risks a false positive. |
 | Always pass `--device "<exact name>"` explicitly once more than one device/simulator matches. | Ambiguous matches fail the command outright (`AMBIGUOUS_MATCH`). |
 | If a physical iOS device is being used for the first time this session, or `open`/`snapshot` fails on signing/provisioning/Developer Mode, read [physical-device-setup.md](./physical-device-setup.md) before improvising. | The setup is multi-layered (device, macOS, Xcode, Apple account) and fails with a different error at each layer — guessing burns turns. |
+| When building from source, reserve the Metro port with `scripts/metro-port.sh reserve`, pass it to the build as `--port`, and release it at the end. See "Building from source in parallel". | Parallel runs on two devices otherwise collide on one port and block each other's builds. |
 | Never accept a device passcode, Apple ID password, or macOS/sudo password typed into the chat. Tell the user to type it into the native prompt (Terminal, Xcode, the device) themselves. | Chat history is not a credential store; treat a pasted password as a signal to warn, not to use. |
 
 (The real-account/real-transaction boundary is in the parent skill's Shared
@@ -44,6 +45,8 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
 2. Discover the target: `agent-device devices [--platform ios|android]` to pick a
    device/simulator, `agent-device apps --device "<name>"` to find the app's bundle id
    if only its display name is known.
+   If the app has to be built from source first (e.g. `expo run:ios|android`), do
+   that per "Building from source in parallel" below before opening it.
 3. `agent-device open <bundle-id> --device "<name>" --foreground` to start the session,
    then `agent-device snapshot -i` for the first interactive snapshot with `@eN` refs.
 4. Pick the loop that matches the ask and follow it as documented — don't
@@ -57,7 +60,36 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
    `agent-device screenshot <path>.png` (add `--overlay-refs` to show which element is
    which). Read every screenshot back before judging pass/fail — see "Shared
    discipline" in the parent skill (`../../SKILL.md`).
-6. `agent-device close` when the session ends.
+6. `agent-device close` when the session ends, then do the cleanup in "Building from
+   source in parallel" if you built the app.
+
+## Building from source in parallel — never share a Metro port
+
+Another session may be building for a second device on this Mac at the same time.
+Two builds on one Metro port block each other, or one device loads the other's
+bundle. Picking any "non-default" port isn't enough, because two agents tend to
+pick the same one. Every build from source must:
+
+1. **Reserve a free port with the script. Never pick one by hand.**
+   `PORT=$(../../scripts/metro-port.sh reserve "<ticket>-<platform>")`. The script
+   is at `skills/testing-apps/scripts/metro-port.sh`. It skips any port that is
+   listening, that a running expo/metro process was started with, or that another
+   run has reserved. The reservation is atomic, so two agents starting together
+   still get different ports. If the brief names a port, use it only if
+   `lsof -nP -iTCP:<port> -sTCP:LISTEN` is empty. Otherwise reserve a new one and
+   say so in the report.
+2. **Pass the port to every build and Metro command**, e.g. `expo run:ios --port
+   $PORT` / `expo run:android --port $PORT`, or `npm run <script> -- --port $PORT`.
+   Never let the build fall back to 8081. For Android, also run
+   `adb -s <serial> reverse tcp:$PORT tcp:$PORT` so the device can reach that port.
+3. **Build from your own worktree and use your own `--session <name>`.** Never use
+   the shared checkout or `default`. Another session can switch the shared
+   checkout's branch, or close the `default` session, partway through your run.
+4. **Clean up at the end, even on failure or abort.** Kill your processes by
+   worktree path (`pkill -f "<worktree path>"`). Stopping an agent does not stop
+   its `expo run:*` or xcodebuild; they keep running and keep the port. Then run
+   `metro-port.sh release $PORT`. `metro-port.sh list` shows every current
+   reservation and whether its port is still listening.
 
 ## The daemon keeps stale environment — restart it when signing config changes
 

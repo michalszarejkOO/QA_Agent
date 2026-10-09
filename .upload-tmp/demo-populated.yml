@@ -1,0 +1,29 @@
+name: demo-populated
+variables:
+  - name: baseUrl
+    value: https://api.mowaamah.demo.devops.takamol.support/mowaamah-application-api
+    description: ""
+  - name: testMobileNumber
+    value: "+966500000000"
+    description: "Reusable god-code number with an existing completed 'pwd' account. Safe to reuse across happy-path OTP runs; do not use for auth/role-mismatch (reserves +966500000501) or auth/access-control (reserves its own numbers)."
+  - name: freshMobileNumber
+    value: "+966586391465"
+    description: "Number used to mint an 'incomplete'-status account (request-otp + verify-otp, no register). Minted 2026-10-09 07:21 UTC. If a fresh incomplete token is needed again, use a new, never-before-used number instead of reusing this one."
+  - name: godOtpCode
+    value: "999999"
+    description: "GOD_OTP - works for any mobile number when the backend runs with SMS_MOCK=true (confirmed true on demo as of 2026-10-01)."
+  - name: staleRefreshToken
+    value: "UZdWK-m12GWyrDThTfDhoxEADV1VSw5y_Tz4Ekh2R0s"
+    description: "For auth/refresh-token/02-reuse-revokes-whole-chain.yml. Genuinely stale: captured as the refresh_token cookie from freshMobileNumber's verify-otp response, then made stale by one /auth/refresh rotation (2026-09-21 11:20 UTC). A rotated-away token stays invalid forever, so this value does not need refreshing."
+  - name: expiredRefreshToken
+    value: ""
+    description: "For auth/refresh-token/03-expired-token.yml. Left blank deliberately - a genuinely expired token can only be produced by waiting out the real 28-day TTL (or direct DB manipulation), not by a live API call. See that file's docs for manual steps."
+  - name: accessToken
+    value: "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJiNDQ4MTkyMC0xNWFkLTQwYzktYTJiMS00MGRjMmY1ZTEwMWYiLCJyb2xlIjoicHdkIiwiaXNzIjoibW93YWFtYWgiLCJleHAiOjE3OTE1MzEzNjgsImlhdCI6MTc5MTUzMDQ2OCwianRpIjoiYWIzNjQ2YmUtYzY1OS00ZjAwLTg4MGQtMWJkODZkMGFkNzcxIiwic3RhdHVzIjoiY29tcGxldGVkIn0.PNJgBwRV_-dR3k-kn5pfirO4-MdZtEWtaAr2NHSjDZ0"
+    description: "For auth/register-pwd.yml. Completed-status pwd token, captured 2026-10-09 07:21 UTC via a fresh random number (+966580581785) request-otp -> verify-otp (pwd) -> PUT register/pwd chain - 15-min TTL, EXPIRED by the time this is read unless regenerated the same run. testMobileNumber is not used for minting because MWA-404's hourly cap (3 challenges/1h) is easily exhausted by full-collection runs. Since MWA-538, PUT register/pwd with this token updates data (200, status stays completed)."
+  - name: incompleteAccessToken
+    value: "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0MmE4OTMwMS0xY2Q0LTRiNzMtYTYwNC1kZWI1ZTJiNjM4OTQiLCJyb2xlIjoicHdkIiwiaXNzIjoibW93YWFtYWgiLCJleHAiOjE3OTE1MzEzNjksImlhdCI6MTc5MTUzMDQ2OSwianRpIjoiOWExZjBjMjQtNzdmZS00ZTZmLTk2MGYtZmYwYmQzOGMyOTZlIiwic3RhdHVzIjoiaW5jb21wbGV0ZSJ9.RlXKw44xP9UoxqcK2h63AYWbq2hE-s8sFtFMoYUUjEU"
+    description: "For auth/access-control/03-protected-path-incomplete-token-forbidden.yml. Incomplete-status accessToken from freshMobileNumber's (+966586391465) verify-otp response. Captured 2026-10-09 07:21 UTC, 15-min TTL - EXPIRED by the time this is read unless regenerated the same run. auth/role-mismatch/02's after-response script auto-fills this at runtime in a full 'bruno/auth -r' run - this static value only matters standalone."
+  - name: completedAccessToken
+    value: "eyJ0eXAiOiJhdCtqd3QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJiNDQ4MTkyMC0xNWFkLTQwYzktYTJiMS00MGRjMmY1ZTEwMWYiLCJyb2xlIjoicHdkIiwiaXNzIjoibW93YWFtYWgiLCJleHAiOjE3OTE1MzEzNjgsImlhdCI6MTc5MTUzMDQ2OCwianRpIjoiYWIzNjQ2YmUtYzY1OS00ZjAwLTg4MGQtMWJkODZkMGFkNzcxIiwic3RhdHVzIjoiY29tcGxldGVkIn0.PNJgBwRV_-dR3k-kn5pfirO4-MdZtEWtaAr2NHSjDZ0"
+    description: "For auth/access-control/04-onboarding-path-completed-token-allowed.yml. Completed-status token, captured 2026-10-09 07:21 UTC via a fresh random number (+966580581785) request-otp -> verify-otp (pwd) -> PUT register/pwd chain - 15-min TTL, EXPIRED by the time this is read unless regenerated the same run. testMobileNumber is not used for minting because MWA-404's hourly cap (3 challenges/1h) is easily exhausted by full-collection runs. auth/verify-otp/01's after-response script auto-fills this at runtime in a full 'bruno/auth -r' run - this static value only matters standalone."
