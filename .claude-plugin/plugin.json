@@ -1,4 +1,4 @@
 {
   "name": "qa-agent",
-  "description": "QA subagent and skills (manual QA, API/collection testing, test-case writing, bug reporting, refinement questions, ticket routing) for Claude Code."
+  "description": "QA subagent and skills (manual QA, API/collection testing, Maestro mobile e2e flows, test-case writing, bug reporting, refinement questions, ticket routing) for Claude Code."
 }

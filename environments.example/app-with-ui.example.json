@@ -31,5 +31,19 @@
   "repos": {
     "bff": "~/Projects/acme-bff"
   },
+  "maestro": {
+    "appId": {
+      "ios": "com.acme.app.debug",
+      "android": "com.acme.app.debug"
+    },
+    "location": "tests-repo",
+    "flowsDir": "~/Projects/acme-mobile-e2e/.maestro",
+    "build": {
+      "ios": "~/Builds/acme/Acme.app",
+      "android": "~/Builds/acme/acme-staging.apk",
+      "notes": "iOS must be a simulator build (.app), not an .ipa. Where fresh builds come from: CI artifact / who to ask."
+    },
+    "notes": "Optional — only for a product with a mobile app tested with Maestro. location: app-repo (flowsDir inside the app repo), tests-repo (separate repo), or local (private folder). Written by the maestro-e2e skill on first use."
+  },
   "notes": "Free-form: anything qa-tester needs to disambiguate which surface a PR touches, how to find the feature branch when the platform's PR API is unreachable, or which credential group to prefer by default."
 }

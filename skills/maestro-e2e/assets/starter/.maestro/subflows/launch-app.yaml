@@ -1,0 +1,14 @@
+appId: ${APP_ID}
+---
+# Every test starts here from a clean install. Replace the arguments below with the ones your app
+# actually reads in its debug build (skip onboarding, consent, system prompts, pick an environment).
+# On iOS write every key with its leading dash: Maestro drops it from the first key otherwise.
+- stopApp
+- clearState
+- clearKeychain
+- launchApp:
+    arguments:
+      "-SkipOnboarding": true
+      "-SkipNotificationsPrompt": true
+    permissions:
+      all: deny

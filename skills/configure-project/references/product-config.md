@@ -48,6 +48,12 @@ entirely — a product needs at least one of the two, per `validate_environments
      `notes` field. Don't leave this blank if there's anything at all worth saying —
      it's the field `qa-tester` explicitly relies on to disambiguate.
 
+   - If it's a mobile app: will it get Maestro e2e flows? Optional — if the user
+     doesn't know yet, skip it; the `maestro-e2e` skill asks on first use. If yes,
+     capture the `maestro` block (app id per platform, `location`: `app-repo` /
+     `tests-repo` / `local`, and `flowsDir`) — shape in
+     `environments.example/app-with-ui.example.json`.
+
 4. **Does this product have a committed API test collection?**
    If yes:
    - Which tool: Bruno, Postman, or Insomnia (`api.client`).

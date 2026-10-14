@@ -106,6 +106,18 @@ def check_product_config(data, connectors):
                 if "repo" not in surface:
                     errors.append(f"'surfaces.{name}.repo' is required")
 
+    if "maestro" in data:
+        m = data["maestro"]
+        if not isinstance(m, dict):
+            errors.append("'maestro' must be an object")
+        else:
+            if m.get("location") not in ("app-repo", "tests-repo", "local"):
+                errors.append("'maestro.location' must be one of: app-repo, tests-repo, local")
+            if not isinstance(m.get("flowsDir"), str) or not m.get("flowsDir"):
+                errors.append("'maestro.flowsDir' is required")
+            if "appId" in m and not isinstance(m["appId"], (str, dict)):
+                errors.append("'maestro.appId' must be a string or {ios, android}")
+
     if "basicAuth" in data:
         ba = data["basicAuth"]
         if not isinstance(ba, dict) or "username" not in ba or "password" not in ba:

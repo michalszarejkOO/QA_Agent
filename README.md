@@ -95,6 +95,29 @@ generates the `environments/*.json` files for you.
   `agent-device` also supports macOS/TV, but this skill doesn't reach into that.
   Bound to `qa-tester` (its "Execute" step), and the mobile adapter is also
   callable directly for dogfooding without a full ticket/PR context.
+- `skills/maestro-e2e/` — Maestro e2e automation for iOS/Android (imported from
+  `maestro-claude-kit`). One skill, no separate agent: it runs in the main
+  conversation because its first step asks where the flows live — the app's own
+  repo (`.maestro/`), a separate tests repo, or a local folder (Maestro is
+  black-box, so testing an app whose code you don't have works the same way) — and
+  remembers the answer in the product's `maestro` block in
+  `~/.claude/environments/<product>-<env>.json`. It doesn't need a device already
+  running: `scripts/device-preflight.sh` finds Maestro/Java/`simctl`/Android SDK
+  even off PATH and lists devices, then the skill boots an existing simulator/AVD
+  itself and installs the build (`.app` for the iOS simulator — never an `.ipa` —
+  or `.apk`) the user points it to, remembering the path as `maestro.build`; it
+  asks before `maestro start-device` creates a new device (large download). Then it sets up the suite from
+  `assets/starter/.maestro` (Standard in its `README.md`, `config.yaml`, start
+  subflow, first smoke flow, and `run-flows.sh` — rounds, one session per flow,
+  `INFRA_RETRY` on driver crashes), writes/fixes flows against the live screen
+  (done = 5 green runs in a row), and can turn manual test cases that passed in
+  `qa-tester` into regression flows. Without the app repo it never guesses launch
+  arguments — it asks, or lets the start subflow click through onboarding.
+  Deliberately separate from `testing-apps`: that one is one-off manual execution
+  via `agent-device`, this one produces persistent YAML. Needs the Maestro CLI
+  (`brew install mobile-dev-inc/tap/maestro`, Java 17+) and the Maestro MCP server
+  at user scope (`claude mcp add -s user maestro -- maestro mcp`) — this repo links
+  into `~/.claude/` rather than loading as a plugin, so it ships no `.mcp.json`.
 - `skills/preparing-refinement-questions/` — generates refinement-session questions
   from a Jira ticket. **Standalone skill, deliberately unbound** from any agent
   (it applies before a feature is delivered, so `qa-tester` would never use it —

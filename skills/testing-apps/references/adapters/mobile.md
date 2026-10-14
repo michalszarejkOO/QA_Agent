@@ -12,6 +12,12 @@ handheld devices. If the delegated target is a desktop/TV/web app, don't use thi
 adapter — call `agent-device` directly, or use the web adapter if the target is
 actually a web page.
 
+**Not Maestro.** This adapter is one-off manual/exploratory execution with
+`agent-device`. Writing, running or fixing persistent Maestro flows (`.maestro/` YAML)
+is the `maestro-e2e` skill. Scenarios that passed here and are worth keeping as
+regression can be automated with `maestro-e2e` afterwards —
+suggest it in the report, don't write flows from this adapter.
+
 ## Non-negotiable rules
 
 | Rule | Why |
