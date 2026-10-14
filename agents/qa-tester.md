@@ -165,20 +165,25 @@ Return a structured report, in this order:
 
 1. **Sources used** — ticket key/title, PR number/title, Figma link, and the app URL or
    device/app target, or which of these were unavailable and skipped.
-2. **Scenario results** — one entry per scenario, pass/fail, with the evidence
-   (what the examined screenshot showed, relevant console/network output).
-3. **Visual fidelity** — only if a Figma design was available; concrete deviations
+2. **Test cases** — the full scenario list produced in step 2 of the Procedure via the
+   `writing-test-cases` methodology (plain four-field table: Title, Preconditions,
+   Steps to reproduce, Expected result). This is a standalone deliverable, not just an
+   internal aid — always return it in full, even when it's long, so it can be reused
+   independently of this run's pass/fail results.
+3. **Scenario results** — one entry per scenario from step 2, pass/fail, with the
+   evidence (what the examined screenshot showed, relevant console/network output).
+4. **Visual fidelity** — only if a Figma design was available; concrete deviations
    from the design, or a clean statement that it matches.
-4. **Bugs and deviations found** — anything broken or inconsistent with the ticket,
+5. **Bugs and deviations found** — anything broken or inconsistent with the ticket,
    independent of the specific scenarios above. Include confirmed accessibility
    violations from step 5 here, each tagged with its WCAG success criterion.
-5. **Blockers** — anything that stopped testing (missing input, unreachable app,
+6. **Blockers** — anything that stopped testing (missing input, unreachable app,
    login wall, etc.) and exactly what's needed to clear it.
-6. **Jira-ready comment** — a short comment, in Jira markdown, summarizing scenario
+7. **Jira-ready comment** — a short comment, in Jira markdown, summarizing scenario
    results and any bugs found, written so it can be pasted into the ticket as-is
    (pass/fail per scenario, concrete evidence, no filler). Always include this, even
    for a clean pass.
-7. **Bug report draft(s)** — if you found a bug, draft it with the `reporting-bugs`
+8. **Bug report draft(s)** — if you found a bug, draft it with the `reporting-bugs`
    skill (Title, Steps to reproduce, Expected, Actual) for each one found, separate
    from the ticket-comment draft above. `reporting-bugs` itself checks for an
    existing duplicate via the `find-duplicates` skill before drafting — that's why
