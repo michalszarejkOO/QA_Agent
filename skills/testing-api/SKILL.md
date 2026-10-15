@@ -40,7 +40,7 @@ and identical regardless of which tool a given repo happens to use.
 | Severity | Rule |
 | --- | --- |
 | MUST | Resolve the target repo, client, and collection path before doing anything else (step 0) — never assume the current directory has the collection, and never guess the client from habit when the config says otherwise. |
-| MUST | Default to the environment named in that product's config (`api.defaultEnvironment`, commonly `demo`) unless the user names another one. A `local`-type environment requires the app running locally — check reachability first and say clearly if it's down, rather than letting the run fail with a confusing connection error. |
+| MUST | In generic mode, test the staging-like branch's environment (step 2, [target-branch.md](../testing-apps/references/target-branch.md)) unless the user names another one. Fall back to `api.defaultEnvironment` only when no branch can be resolved. A `local`-type environment requires the app running locally — check reachability first and say clearly if it's down, rather than letting the run fail with a confusing connection error. |
 | MUST | Run the resolved adapter's CLI scoped to the folder implied by the request — the whole collection by default, or a specific subfolder when the user names an endpoint or area. |
 | MUST | Before writing the report, check the resolved adapter's per-case caveat convention for any test case that looks order- or state-dependent, including any product-specific caveats listed in that product's config (`api.knownCaveats`), and surface real caveats in the report's Notes — a clean pass/fail count that hides a non-representative test is misleading evidence. |
 | MUST | In generic (non-ticket) mode, when an executed folder/endpoint has only happy-path cases — no validation/boundary, auth, or business-logic cases — flag that gap in the report's Notes. This is an observation only: never generate cases to fill it in generic mode, that stays scoped to ticket mode's step T2. A clean "N/N PASS" next to thin coverage is misleading on its own. |
@@ -90,6 +90,7 @@ End every run with a point-list summary, after the report and drafts:
 | [adapters/insomnia.md](./references/adapters/insomnia.md) | `api.client` is `"insomnia"` | Export shape, `inso` CLI invocation — flag as less battle-tested, confirm syntax against `inso --help` before relying on it |
 | [report-template.md](./references/report-template.md) | Generating the final report, every run | The exact Jira-comment template (header fields, results table, coverage bullets, Notes) |
 | [confluence-publish.md](./references/confluence-publish.md) | Updating the tracker page, every run where the product config declares one | Reading cloudId/space/folder/title/attachment name from config, the generate-body script, find-or-create/update procedure, attaching the exported zip |
+| [target-branch.md](../testing-apps/references/target-branch.md) | Generic mode, when the request names no environment | Picking the staging-like branch (user, config `targetBranch`, detection from merged MRs), mapping it to a collection environment, using recent MRs as context |
 | [ticket-driven-testing.md](./references/ticket-driven-testing.md) | The request names or links a specific backend ticket | Gathering ticket/PR context, resolving the Confluence attachment as the latest collection, generating full scenario coverage, and the ask-before-posting comment/bug-report step |
 
 ## Procedure
@@ -146,8 +147,15 @@ End every run with a point-list summary, after the report and drafts:
 
 2. **Parse the rest of the request.** If it names a folder/area under the
    collection (e.g. "content", "auth/verify-otp"), scope both the run and the report
-   to that folder. If it names an environment ("local", "demo"), use that; otherwise
-   default per step 0.
+   to that folder. If it names an environment ("local", "demo"), use that.
+   Otherwise, in generic mode, resolve the staging-like branch and its environment
+   per [target-branch.md](../testing-apps/references/target-branch.md): config
+   `targetBranch`, then detection from merged MRs, then `api.defaultEnvironment`.
+   Run the collection as it is on that branch (a fresh worktree at
+   `origin/<branch>`), not the local checkout's branch. Carry over uncommitted
+   collection changes only if the user says to. Use the recent MRs the script
+   lists as the run's context. Ticket mode skips this; it always uses `demo` and
+   the ticket's own branch.
 
 3. **Export the collection**, per the adapter's export instructions, so the user has
    a file they can re-import into the matching desktop app. If the product's config

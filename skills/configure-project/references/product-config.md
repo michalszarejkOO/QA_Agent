@@ -74,12 +74,18 @@ entirely — a product needs at least one of the two, per `validate_environments
      step 2), space key, parent page id, a fixed page title, and a fixed attachment
      filename for the exported collection zip.
 
-5. **Assemble and confirm.** Merge whichever of `surfaces`/`api` blocks apply into
+5. **Staging-like branch.** For the main repo captured above, run
+   `python3 -I skills/testing-apps/scripts/detect_env_branch.py <repo>` and show
+   the suggested branch and its reason. Runs without a ticket test that branch.
+   If the user says it's wrong, write their branch as top-level `"targetBranch"`.
+   Otherwise leave the field out so runs keep detecting it.
+
+6. **Assemble and confirm.** Merge whichever of `surfaces`/`api` blocks apply into
    one JSON object shaped exactly like the example files (both together if the
    product has both), show it to the user, and only write it after they confirm —
    substitute `REPLACE_ME` for any password they didn't want to paste inline, and
    tell them plainly which fields still need manual editing before the file is
    fully live.
 
-6. **Write to `environments/<product>-<environment>.json`.** If a file with that
+7. **Write to `environments/<product>-<environment>.json`.** If a file with that
    exact name already exists, show the diff and confirm before overwriting.

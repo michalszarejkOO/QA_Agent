@@ -120,6 +120,11 @@ def check_product_config(data, connectors):
                 if "repo" not in surface:
                     errors.append(f"'surfaces.{name}.repo' is required")
 
+    if "targetBranch" in data:
+        tb = data["targetBranch"]
+        if not isinstance(tb, str) or not tb.strip():
+            errors.append("'targetBranch' must be a non-empty branch name string")
+
     if "basicAuth" in data:
         ba = data["basicAuth"]
         if not isinstance(ba, dict) or "username" not in ba or "password" not in ba:

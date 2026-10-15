@@ -2,6 +2,7 @@
   "product": "acme",
   "environment": "staging",
   "ticketPrefixes": ["ACME"],
+  "targetBranch": "staging",
   "basicAuth": {
     "username": "acme",
     "password": "REPLACE_ME",

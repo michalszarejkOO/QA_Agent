@@ -105,7 +105,8 @@ mode, log it in the run log. For `update` and `installed`, also list it under
 The steps, in an order that never changes:
 
 1. **Fresh worktree.** Check out the ticket's branch (or the PR head) in your own
-   new worktree, and install JS dependencies there. Never build from the shared
+   new worktree. On a standalone run, check out the target branch from
+   [target-branch.md](../target-branch.md) instead. Then and install JS dependencies there. Never build from the shared
    checkout. Record the commit (`git rev-parse --short HEAD`).
 2. **Uninstall the app from the device**, so no data, session, keychain-backed
    login or cache survives from an earlier run. Use the bundle id/package the

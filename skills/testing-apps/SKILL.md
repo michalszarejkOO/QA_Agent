@@ -127,9 +127,20 @@ End every run with a point-list summary:
 - **Not done / skipped:** each scenario, step, or piece of evidence that wasn't
   done, with its reason. If nothing was skipped, write "Nothing skipped."
 
+## Standalone runs: which branch and environment
+
+Run standalone (no ticket or PR, not inside `qa-tester`), this skill tests the
+product's staging-like branch and the environment deployed from it. Follow
+[target-branch.md](./references/target-branch.md): user's message, then config
+`targetBranch`, then detection from merged MRs, then ask. That reference also
+explains how the branch maps to the app URL or mobile build, and how recent MRs
+on it set what to explore first. Inside `qa-tester`, the ticket and PR decide
+the branch instead.
+
 ## Procedure
 
-1. Resolve the adapter from the target (table above).
+1. Resolve the adapter from the target (table above). Standalone, first resolve
+   the branch and environment per the section above.
 2. Load that adapter's reference file and follow it exactly — it owns discovery,
    session start, the click/type/navigate loop, and evidence capture for its
    platform.

@@ -31,6 +31,12 @@ a product that has both a UI and an API collection).
   `claude mcp add --scope user playwright-video -- npx -y @playwright/mcp@latest --isolated --caps=devtools`.
   Mobile videos use `agent-device record`.
 
+Runs without a ticket (generic API runs, standalone app runs) test the
+product's staging-like branch. They detect it from merged MRs/PRs with
+`skills/testing-apps/scripts/detect_env_branch.py`. To skip detection, set an
+optional top-level `"targetBranch"` (e.g. `"staging"`) in the product's file.
+Leave it out to keep detection on.
+
 Never commit real credentials, even to a private repo — that's exactly why
 `environments/` itself stays gitignored and only these scrubbed examples are
 tracked.
