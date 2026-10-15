@@ -56,12 +56,31 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
    Both guides cover navigation mapping, evidence capture per finding, and the
    report shape; `agent-device help workflow` has the full refs/selectors/waits
    reference if a command's exact shape is unclear.
-5. Capture evidence as you go: `mkdir -p <out>/screenshots <out>/videos <out>/traces`,
-   `agent-device screenshot <path>.png` (add `--overlay-refs` to show which element is
-   which). Read every screenshot back before judging pass/fail — see "Shared
-   discipline" in the parent skill (`../../SKILL.md`).
+5. Capture evidence as you go: `agent-device screenshot <path>.png` (add
+   `--overlay-refs` to show which element is which). Read every screenshot back
+   before judging pass/fail — see "Shared discipline" in the parent skill
+   (`../../SKILL.md`). Record videos and save bug screenshots per "Recording"
+   below.
 6. `agent-device close` when the session ends, then do the cleanup in "Building from
    source in parallel" if you built the app.
+
+## Recording
+
+What to record, and where it goes, is set in the parent skill's "Recorded
+evidence" section. The mobile mechanics:
+
+- **Video:** run `agent-device record start <run folder>/happy-path/<scenario-id>-<slug>.mp4`
+  after `open`, then `agent-device record stop` when the scenario ends. Stop it in
+  the same `--session` that started it. The default `--scope app` needs an active
+  app session. Use `--scope device` only if a step leaves the app (system
+  Settings, Control Center).
+- **Android:** a recording longer than 180 s comes back as several MP4 chunks.
+  Keep all of them, numbered `-part1`, `-part2`, and so on.
+- **iOS simulator:** `DEVICE_IN_USE` with reason `apple_simulator_recording_busy`
+  means another session's recorder holds the simulator. Don't retry in a loop.
+  Report the video as missing and continue.
+- **Bug screenshot:** `agent-device screenshot <run folder>/bugs/<bug-n>-<slug>.png`.
+- If a scenario recorded into `happy-path/` fails, `mv` its video into `bugs/`.
 
 ## Building from source in parallel — never share a Metro port
 

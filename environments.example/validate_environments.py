@@ -22,7 +22,8 @@ import sys
 from pathlib import Path
 
 VALID_CLIENTS = {"bruno", "postman", "insomnia"}
-META_FILES = {"atlassian-connectors.json"}
+VALID_EVIDENCE_MODES = {"auto", "ask"}
+META_FILES = {"atlassian-connectors.json", "evidence.json"}
 
 
 def resolve_environments_dir():
@@ -151,6 +152,17 @@ def check_connectors_file(data):
     return errors, connectors
 
 
+def check_evidence_file(data):
+    errors = []
+    folder = data.get("dir")
+    if not isinstance(folder, str) or not folder.strip():
+        errors.append("'dir' must be a non-empty path string")
+    mode = data.get("mode", "auto")
+    if mode not in VALID_EVIDENCE_MODES:
+        errors.append(f"'mode' must be one of {sorted(VALID_EVIDENCE_MODES)}, got {mode!r}")
+    return errors
+
+
 def main():
     env_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else resolve_environments_dir()
     if not env_dir.is_dir():
@@ -176,6 +188,20 @@ def main():
             print(f"{connectors_path.name}: invalid JSON — {e}")
 
     any_errors = False
+    evidence_path = env_dir / "evidence.json"
+    if evidence_path.exists():
+        try:
+            evidence_errors = check_evidence_file(load_json(evidence_path))
+        except json.JSONDecodeError as e:
+            evidence_errors = [f"invalid JSON — {e}"]
+        if evidence_errors:
+            any_errors = True
+            print(f"{evidence_path.name}:")
+            for e in evidence_errors:
+                print(f"  - {e}")
+        else:
+            print(f"{evidence_path.name}: ok")
+
     for path in files:
         if path.name in META_FILES:
             continue

@@ -19,6 +19,15 @@ a product that has both a UI and an API collection).
   Insomnia), repo path, default environment, known stateful-case caveats, and
   (optionally) a Confluence tracker page to publish results to.
 
+- [`evidence.example.json`](./evidence.example.json) — one file for all products,
+  saved as `environments/evidence.json`. It sets where `qa-tester` saves run
+  evidence (a video per happy-path scenario, plus a screenshot and video per bug)
+  and whether it records automatically (`"mode": "auto"`, the default) or asks
+  first (`"ask"`). Web videos need a Playwright MCP server named
+  `playwright-video` started with `--caps=devtools`. Add it once with
+  `claude mcp add --scope user playwright-video -- npx -y @playwright/mcp@latest --isolated --caps=devtools`.
+  Mobile videos use `agent-device record`.
+
 Never commit real credentials, even to a private repo — that's exactly why
 `environments/` itself stays gitignored and only these scrubbed examples are
 tracked.

@@ -67,6 +67,17 @@ diff.
      `environments.example/`), so ask the user for the device name/bundle id if the
      original request didn't already supply one — never invent or guess a target.
 
+   Before invoking, resolve evidence recording from
+   `~/.claude/environments/evidence.json`, because `qa-tester` runs as a subagent
+   and can't ask the user itself:
+   - No file, or no `dir` → ask the user which folder to save run videos and bug
+     screenshots to, write it to `evidence.json` (`mode: "auto"` unless they say
+     otherwise), then continue.
+   - `mode: "ask"` → ask the user whether to record and save evidence for this
+     run, and pass the answer in the brief ("evidence: record and save" / "evidence:
+     don't record").
+   - `mode: "auto"` or missing → nothing to ask; `qa-tester` records by default.
+
    Stop here once `qa-tester` is invoked.
 5. **Mixed signals** (both backend- and frontend-shaped paths touched) → don't pick
    one silently. Report the split plainly — which touched paths/areas read as backend,

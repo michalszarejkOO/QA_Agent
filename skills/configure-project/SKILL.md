@@ -60,17 +60,25 @@ This skill only asks questions and writes JSON config files under
    product with both a UI and an API collection gets both shapes merged into one
    file, per the example.
 
-4. **Offer local settings scaffolding.** Ask whether to also scaffold
+4. **Configure evidence recording.** Ask which folder `qa-tester` should save run
+   evidence to (a video per happy-path scenario, plus a screenshot and video per
+   bug), and whether to record and save on every run automatically (default) or
+   ask before each run. Write `environments/evidence.json` following
+   `environments.example/evidence.example.json`, with `mode` set to `"auto"` or
+   `"ask"`. It's one file for all products. If it already exists, show the diff
+   before overwriting.
+
+5. **Offer local settings scaffolding.** Ask whether to also scaffold
    `.claude/settings.local.json` entries for the repo path(s) just configured. If
    yes, follow [references/local-settings.md](./references/local-settings.md]. If a
    `.claude/settings.local.json` already exists, merge into it — never overwrite the
    user's existing local permissions.
 
-5. **Validate.** Run `python3 environments.example/validate_environments.py` (from
+6. **Validate.** Run `python3 environments.example/validate_environments.py` (from
    the repo root) and show the output. If it reports errors, fix the specific file
    and field it names and re-run until clean.
 
-6. **Summarize.** List every file written or updated (full path), and remind the
+7. **Summarize.** List every file written or updated (full path), and remind the
    user of anything still marked `REPLACE_ME` that they need to fill in by hand
    before the config is fully live. Note explicitly that connector *authorization*
    (whether a connector is actually live for its site right now) can drift

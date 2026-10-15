@@ -2,6 +2,16 @@
 
 Load this when the target is a URL.
 
+## Which Playwright server
+
+Use the `playwright-video` MCP server (`mcp__playwright-video__browser_*`) for the
+whole run. It's the same Playwright MCP started with `--caps=devtools`, so it
+also has the video tools. The plugin's `playwright` server
+(`mcp__plugin_tsh-product-testing_playwright__*`) is a separate browser with a
+separate session. Never mix the two in one run, or the recording, sign-in and
+screenshots end up in different browsers. Fall back to the plugin server only
+if `playwright-video` isn't connected, and report that videos weren't recorded.
+
 ## Fresh session, every run
 
 Always start from a fresh, unauthenticated state and sign in yourself as part of
@@ -40,3 +50,21 @@ environment blocker (not a product bug) rather than continuing to test around it
    before judging pass/fail.
 6. Use `browser_console_messages` and `browser_network_requests` whenever a
    criterion concerns errors, loading states, or API behavior.
+7. Record videos and save bug screenshots per "Recording" below.
+
+## Recording
+
+What to record, and where it goes, is set in the parent skill's "Recorded
+evidence" section. The web mechanics:
+
+- **Video:** call `browser_start_video` with a `filename` such as
+  `qa-video/<scenario-id>-<slug>.webm`, then call `browser_stop_video` when the
+  scenario ends. These tools exist only on a server started with
+  `--caps=devtools` (`playwright-video`, above). If they aren't in your tool
+  list, no video can be recorded this run. Report that, and keep going with
+  screenshots only.
+- **Bug screenshot:** call `browser_take_screenshot` with a `filename`.
+- Playwright MCP resolves a relative `filename` against its workspace root and
+  refuses paths outside it. Pass a relative name, read the saved path from the
+  tool result, then `mv` that file into the run folder. Don't pass the run
+  folder's absolute path directly.

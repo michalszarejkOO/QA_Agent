@@ -92,6 +92,14 @@ the pinned URL of the running app (web) or the target device and app identifier
   the Figma MCP tools (`get_design_context`, `get_screenshot`). No link anywhere →
   skip visual comparison and say so explicitly. Never guess or search for a design.
 
+- **Evidence recording**: read `~/.claude/environments/evidence.json` for the
+  folder (`dir`) and `mode`. Recording is on by default (`auto`). Under
+  `mode: ask`, record only if the brief says the user agreed. You can't ask
+  them yourself, so the delegating conversation asks before invoking you. A
+  folder named in the brief overrides `dir`. Missing settings are never a
+  blocker; the `testing-apps` skill's "Recorded evidence" section covers each
+  fallback.
+
 You need **at least one** of {Jira ticket, PR} to know what "correct" means, and the
 app URL or device/app target to test against. Missing both context sources, or no
 reachable target → stop and report exactly what is missing rather than improvising
@@ -119,6 +127,8 @@ scenarios.
    for a web URL or the `agent-device` adapter for an iOS/Android mobile target, and
    owns everything about driving the app and capturing evidence for that platform —
    fresh-session sign-in, network-before-clicking, screenshot-then-judge discipline,
+   recording a video of each happy-path scenario plus a screenshot and video of
+   each bug into the configured evidence folder (its "Recorded evidence" section),
    and (for mobile) the points/pixels conversion and accessibility hit-frame checks.
    Steps 1-2 above and 4-5 below are this procedure's own and stay unchanged either
    way.
@@ -166,23 +176,30 @@ Return a structured report, in this order:
 1. **Sources used** — ticket key/title, PR number/title, Figma link, and the app URL or
    device/app target, or which of these were unavailable and skipped.
 2. **Scenario results** — one entry per scenario, pass/fail, with the evidence
-   (what the examined screenshot showed, relevant console/network output).
+   (what the examined screenshot showed, relevant console/network output, and the
+   saved video's path for a happy-path scenario).
 3. **Visual fidelity** — only if a Figma design was available; concrete deviations
    from the design, or a clean statement that it matches.
 4. **Bugs and deviations found** — anything broken or inconsistent with the ticket,
    independent of the specific scenarios above. Include confirmed accessibility
    violations from step 5 here, each tagged with its WCAG success criterion.
-5. **Blockers** — anything that stopped testing (missing input, unreachable app,
+5. **Saved evidence** — the run folder's absolute path and every file saved in it
+   (happy-path videos, bug screenshots and videos), each mapped to its scenario or
+   bug. List any expected video that's missing and why (recording tool not
+   available, recorder busy, `mode: ask` with no answer in the brief, bug didn't
+   reproduce). If nothing was saved, say why in one line.
+6. **Blockers** — anything that stopped testing (missing input, unreachable app,
    login wall, etc.) and exactly what's needed to clear it.
-6. **Jira-ready comment** — a comment, in Jira markdown, that embeds the actual
+7. **Jira-ready comment** — a comment, in Jira markdown, that embeds the actual
    scenario-results table from item 2 verbatim (one row per scenario: ID, title,
    pass/fail/blocked, one-line evidence) — not a prose summary that groups or
    paraphrases results instead of listing them. Prose is fine only as a short intro/
    outro around that table (e.g. naming the overall verdict, or calling out bugs
    found), never as a replacement for it. Always include this, even for a clean pass.
-7. **Bug report draft(s)** — if you found a bug, draft it with the `reporting-bugs`
+8. **Bug report draft(s)** — if you found a bug, draft it with the `reporting-bugs`
    skill (Title, Steps to reproduce, Expected, Actual) for each one found, separate
-   from the ticket-comment draft above. `reporting-bugs` itself checks for an
+   from the ticket-comment draft above. Under each draft, list the paths of that
+   bug's saved screenshot and video so they can be attached when the bug is filed. `reporting-bugs` itself checks for an
    existing duplicate via the `find-duplicates` skill before drafting — that's why
    it's bound above alongside it.
 

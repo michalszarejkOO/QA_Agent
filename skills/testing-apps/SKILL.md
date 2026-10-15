@@ -53,15 +53,75 @@ web page.
 - **Never restart, switch, or reconfigure the pinned target.** The delegated app
   URL, device, or app is fixed for the run.
 
+## Recorded evidence (videos and bug screenshots)
+
+Every run records a video of each happy-path scenario, and a screenshot plus a
+video of each bug, and saves them to a folder the user chose. This is separate
+from the checkpoint screenshots you take to judge pass/fail (see above), which
+you take either way.
+
+**Settings.** Read `~/.claude/environments/evidence.json` (or
+`$CLAUDE_CONFIG_DIR/environments/evidence.json`) at the start of the run:
+
+| Field | Meaning |
+| --- | --- |
+| `dir` | Root folder for saved evidence. Expand `~` yourself. |
+| `mode` | `auto` (the default, also when the field or the file is missing): record and save without asking. `ask`: record and save only if the user said yes for this run. |
+
+- `mode: ask`: the delegating conversation asks the user before the run and
+  passes the answer in the brief. A subagent can't ask, so with no answer in the
+  brief, don't record or save, and say so in the report.
+- No `dir` configured: the delegating conversation asks the user for a folder
+  and writes it to `evidence.json` before delegating. If you still have no
+  folder, save to `./qa-evidence/` and flag in the report that the folder isn't
+  configured.
+- A folder named in the brief overrides `dir` for that run.
+
+**Layout.** Put everything for one run in
+`<dir>/<ticket key, or a short session name>/<YYYY-MM-DD>-<web|ios|android>/`,
+creating it with `mkdir -p`:
+
+```
+happy-path/<scenario-id>-<slug>.<webm|mp4>
+bugs/<bug-n>-<slug>.png
+bugs/<bug-n>-<slug>.<webm|mp4>
+```
+
+If that folder already exists from an earlier run today, add `-2`, `-3`, ... so
+nothing is overwritten.
+
+**What to record.**
+
+1. **Happy-path scenarios:** start recording at the scenario's first step and
+   stop after its final expected result is visible. If it passes, save the video
+   to `happy-path/`. If it fails, save it to `bugs/` as that bug's video.
+2. **Bugs:** save a screenshot of the failure state to `bugs/`. If the bug
+   showed up outside a recorded scenario (a negative or edge case, or found while
+   exploring), reproduce it once with recording on, then save that video next to
+   the screenshot. If it doesn't reproduce, say so in the report.
+3. Negative and edge-case scenarios that pass don't need a video. Their
+   checkpoint screenshots are enough.
+
+Starting and stopping a recording works differently on each platform; see the
+"Recording" section of each adapter. If recording isn't available (for example,
+the tool is missing or the simulator's recorder is busy), keep testing. Report
+which videos are missing and why. Never present a checkpoint screenshot as a
+video.
+
+At the end of the run, list every saved file with its absolute path so the
+report can link evidence to scenarios and bugs.
+
 ## Procedure
 
 1. Resolve the adapter from the target (table above).
 2. Load that adapter's reference file and follow it exactly — it owns discovery,
    session start, the click/type/navigate loop, and evidence capture for its
    platform.
-3. Capture evidence per the adapter's instructions: screenshots always; console/
+3. Resolve the evidence settings and run folder ("Recorded evidence" above)
+   before the first scenario.
+4. Capture evidence per the adapter's instructions: screenshots always; console/
    network output whenever a criterion concerns errors, loading states, or API
-   behavior.
-4. Hand the captured evidence back to whatever's judging pass/fail — `qa-tester`'s
+   behavior; videos and bug screenshots saved per "Recorded evidence" above.
+5. Hand the captured evidence back to whatever's judging pass/fail — `qa-tester`'s
    own step 6 when invoked from there, or straight into your own response when
-   this skill was triggered standalone.
+   this skill was triggered standalone. Include the saved-file list.
