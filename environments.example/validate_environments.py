@@ -23,6 +23,7 @@ from pathlib import Path
 
 VALID_CLIENTS = {"bruno", "postman", "insomnia"}
 VALID_EVIDENCE_MODES = {"auto", "ask"}
+VALID_INSTALL_MODES = {"clean", "update", "installed"}
 META_FILES = {"atlassian-connectors.json", "evidence.json"}
 
 
@@ -101,9 +102,21 @@ def check_product_config(data, connectors):
                 if not isinstance(surface, dict):
                     errors.append(f"'surfaces.{name}' must be an object")
                     continue
-                app_url = surface.get("appUrl")
-                if not isinstance(app_url, str) or not app_url.startswith("http"):
-                    errors.append(f"'surfaces.{name}.appUrl' must be an http(s) URL string")
+                if "platform" in surface:
+                    # Mobile surface: no URL, but installMode must be a known value.
+                    mode = surface.get("installMode", "clean")
+                    if mode not in VALID_INSTALL_MODES:
+                        errors.append(
+                            f"'surfaces.{name}.installMode' must be one of "
+                            f"{sorted(VALID_INSTALL_MODES)}, got {mode!r}"
+                        )
+                else:
+                    app_url = surface.get("appUrl")
+                    if not isinstance(app_url, str) or not app_url.startswith("http"):
+                        errors.append(
+                            f"'surfaces.{name}.appUrl' must be an http(s) URL string "
+                            f"(or set 'platform' for a mobile surface)"
+                        )
                 if "repo" not in surface:
                     errors.append(f"'surfaces.{name}.repo' is required")
 

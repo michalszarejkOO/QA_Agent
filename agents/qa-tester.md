@@ -129,7 +129,8 @@ scenarios.
    fresh-session sign-in, network-before-clicking, screenshot-then-judge discipline,
    recording a video of each happy-path scenario plus a screenshot and video of
    each bug into the configured evidence folder (its "Recorded evidence" section),
-   and (for mobile) the points/pixels conversion and accessibility hit-frame checks.
+   and (for mobile) a clean build and install before every run, the points/pixels
+   conversion, and accessibility hit-frame checks.
    Steps 1-2 above and 4-5 below are this procedure's own and stay unchanged either
    way.
 4. **Check visual fidelity when a Figma design is available.** Compare the screenshots

@@ -13,7 +13,10 @@ a product that has both a UI and an API collection).
 
 - [`app-with-ui.example.json`](./app-with-ui.example.json) — a product `qa-tester`
   drives through a browser or a mobile app via the `testing-apps` skill: app/
-  backoffice surfaces, login method, Basic Auth, pools of test credentials.
+  backoffice surfaces, login method, Basic Auth, pools of test credentials. A
+  mobile surface sets `platform` instead of `appUrl`, plus `installMode`:
+  `clean` (default, uninstall and rebuild every run), `update` (fresh build over
+  the existing app, data kept) or `installed` (test what's on the device).
 - [`api-collection.example.json`](./api-collection.example.json) — a product
   `testing-api` runs an API collection against: which client (Bruno, Postman, or
   Insomnia), repo path, default environment, known stateful-case caveats, and

@@ -35,6 +35,11 @@ entirely — a product needs at least one of the two, per `validate_environments
    internal backoffice):
    - Surface name (`app`, `backoffice`, etc.), its URL, and its repo path
      (`~/Projects/<repo>`).
+   - For a mobile surface: no URL. Capture `platform` (e.g. `expo-react-native`),
+     the build command, and `installMode`. Explain the options and default to
+     `clean`: `clean` uninstalls and rebuilds every run, `update` installs a fresh
+     build over the existing app and keeps its data, and `installed` skips the
+     build and tests what's on the device.
    - Sign-in method: a single fixed test account, or a pool of interchangeable test
      credentials (e.g. multiple valid test IDs grouped by category)? Either is fine —
      `qa-tester` already knows to pick randomly from a pool vs. use a fixed
