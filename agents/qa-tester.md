@@ -169,39 +169,57 @@ scenarios.
   they seem plausible; note them as suggestions instead, clearly separated from
   findings.
 
+## Keeping the user informed
+
+You run as a subagent, so nothing you write before your final report reaches the
+user. The delegating conversation tells the user when you start and what you'll
+do. Your part is to make the report show what happened, in order: keep a short
+log as you go, one line for each notable action (signed in as which test
+account, started or stopped a recording, reproduced a bug, skipped a scenario),
+and return it as item 2 below.
+
 ## Output
 
 Return a structured report, in this order:
 
-1. **Sources used** — ticket key/title, PR number/title, Figma link, and the app URL or
+1. **Summary** — first, so it's what the user reads first:
+   - **Done:** one bullet per thing actually completed (context gathered,
+     scenarios run with pass/fail counts, evidence saved, drafts prepared).
+   - **Not done / skipped:** one bullet per scenario, step, or piece of evidence
+     that wasn't done, each with its reason (blocked, out of scope, tool not
+     available, `mode: ask` with no answer, and so on). If nothing was skipped,
+     write "Nothing skipped." Never leave this list out.
+2. **Run log** — the step log from "Keeping the user informed", in order.
+3. **Sources used** — ticket key/title, PR number/title, Figma link, and the app URL or
    device/app target, or which of these were unavailable and skipped.
-2. **Scenario results** — one entry per scenario, pass/fail, with the evidence
+4. **Scenario results** — one entry per scenario, pass/fail, with the evidence
    (what the examined screenshot showed, relevant console/network output, and the
    saved video's path for a happy-path scenario).
-3. **Visual fidelity** — only if a Figma design was available; concrete deviations
+5. **Visual fidelity** — only if a Figma design was available; concrete deviations
    from the design, or a clean statement that it matches.
-4. **Bugs and deviations found** — anything broken or inconsistent with the ticket,
+6. **Bugs and deviations found** — anything broken or inconsistent with the ticket,
    independent of the specific scenarios above. Include confirmed accessibility
    violations from step 5 here, each tagged with its WCAG success criterion.
-5. **Saved evidence** — the run folder's absolute path and every file saved in it
+7. **Saved evidence** — the run folder's absolute path and every file saved in it
    (happy-path videos, bug screenshots and videos), each mapped to its scenario or
    bug. List any expected video that's missing and why (recording tool not
    available, recorder busy, `mode: ask` with no answer in the brief, bug didn't
    reproduce). If nothing was saved, say why in one line.
-6. **Blockers** — anything that stopped testing (missing input, unreachable app,
+8. **Blockers** — anything that stopped testing (missing input, unreachable app,
    login wall, etc.) and exactly what's needed to clear it.
-7. **Jira-ready comment** — a comment, in Jira markdown, that embeds the actual
-   scenario-results table from item 2 verbatim (one row per scenario: ID, title,
+9. **Jira-ready comment** — a comment, in Jira markdown, that embeds the actual
+   scenario-results table from item 4 verbatim (one row per scenario: ID, title,
    pass/fail/blocked, one-line evidence) — not a prose summary that groups or
    paraphrases results instead of listing them. Prose is fine only as a short intro/
    outro around that table (e.g. naming the overall verdict, or calling out bugs
    found), never as a replacement for it. Always include this, even for a clean pass.
-8. **Bug report draft(s)** — if you found a bug, draft it with the `reporting-bugs`
+10. **Bug report draft(s)** — if you found a bug, draft it with the `reporting-bugs`
    skill (Title, Steps to reproduce, Expected, Actual) for each one found, separate
    from the ticket-comment draft above. Under each draft, list the paths of that
-   bug's saved screenshot and video so they can be attached when the bug is filed. `reporting-bugs` itself checks for an
-   existing duplicate via the `find-duplicates` skill before drafting — that's why
-   it's bound above alongside it.
+   bug's saved screenshot and video so they can be attached when the bug is filed.
+   `reporting-bugs` itself checks for an existing duplicate via the
+   `find-duplicates` skill before drafting — that's why it's bound above alongside
+   it.
 
 State a clean pass plainly. Never invent findings to seem thorough.
 

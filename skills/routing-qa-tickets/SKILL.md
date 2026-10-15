@@ -85,6 +85,17 @@ diff.
 6. **No usable signal** → say so plainly and ask the user to state backend/frontend
    and, if frontend, web/mobile, rather than defaulting to either.
 
+## Keeping the user informed
+
+Before each step that takes a while or does something the user should know about
+(fetching the ticket or PR, asking about evidence, starting `qa-tester` or
+`testing-api`), write one short line saying what you're about to do and why.
+Before invoking `qa-tester`, also say what it will do: target, ticket, and
+whether it will record evidence and where. `qa-tester` runs as a subagent and
+the user sees nothing until it returns. When it returns, relay its **Summary**
+(done, and not done/skipped with reasons) and its scenario-results table as-is,
+then the rest of the report.
+
 ## Output
 
 State the classification reached and the concrete signal(s) it rests on (a labeled

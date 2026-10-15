@@ -66,6 +66,21 @@ rules above:
 | MUST | If any bug, scope mismatch, or discrepancy is found, draft a bug report (Title / Steps to reproduce / Expected / Actual) for each and explicitly ask the user whether to file it on the ticket or just keep it as a copy-pasteable draft — never file it automatically. |
 | MUST | Always finish by re-uploading the (possibly extended) collection and refreshed environment file to the product's Confluence tracker page and refreshing `lastUpdate`, whenever `api.confluence` is configured — mandatory in ticket mode, not conditional on results or on remembering to ask. |
 
+## Keeping the user informed
+
+Before each notable step, write one short line saying what you're about to do:
+resolving the config, fetching the ticket or PR, pulling the Confluence
+collection, generating new cases, exporting, running the suite, publishing to
+Confluence. Say which environment and folder a run targets before starting it.
+
+End every run with a point-list summary, after the report and drafts:
+
+- **Done:** each thing completed (cases generated, suite run with pass/fail
+  counts, export path, Confluence page updated).
+- **Not done / skipped:** each step that wasn't done, with its reason (no
+  `api.confluence` block, environment unreachable, user chose not to post, and
+  so on). If nothing was skipped, write "Nothing skipped."
+
 ## Reference Loading
 
 | Reference | Load when | Covers |

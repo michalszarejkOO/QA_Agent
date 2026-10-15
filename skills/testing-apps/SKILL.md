@@ -111,6 +111,22 @@ video.
 At the end of the run, list every saved file with its absolute path so the
 report can link evidence to scenarios and bugs.
 
+## Keeping the user informed
+
+When this skill runs in the main conversation (standalone, not inside
+`qa-tester`), write one short line before each notable action: signing in and
+with which test account, starting or stopping a recording, building or opening
+the app, reproducing a bug, skipping a scenario. One line per step, not per
+click. Inside `qa-tester`, log the same actions for its report's run log
+instead.
+
+End every run with a point-list summary:
+
+- **Done:** each thing completed (scenarios run with pass/fail counts, evidence
+  saved and where).
+- **Not done / skipped:** each scenario, step, or piece of evidence that wasn't
+  done, with its reason. If nothing was skipped, write "Nothing skipped."
+
 ## Procedure
 
 1. Resolve the adapter from the target (table above).
