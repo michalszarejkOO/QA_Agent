@@ -44,11 +44,16 @@ order found.
 1. Identify what's actually wrong and what evidence supports it. If the defect was
    only described, not observed directly, say so in Actual rather than presenting
    secondhand claims as verified fact.
-2. Write Title last if it helps — it's easiest to name precisely once Steps/Expected/
+2. Invoke the `find-duplicates` skill against this defect before drafting. A likely
+   duplicate found → surface it plainly instead of silently drafting a new report;
+   only draft anyway if there's a distinct repro or new information worth adding, or
+   the caller confirms it's wanted regardless. Nothing found, or only "possibly
+   related" → continue to step 3, noting any related ticket(s) alongside the draft.
+3. Write Title last if it helps — it's easiest to name precisely once Steps/Expected/
    Actual are settled.
-3. Don't speculate about root cause or fix unless it was independently verified (e.g.
+4. Don't speculate about root cause or fix unless it was independently verified (e.g.
    read in the actual source, not guessed) — this format has no field for it. If you
    have a verified root cause and it's valuable context, one line is enough; don't
    turn the report into a code review.
-4. Return the draft. Never call a Jira/issue-tracker write tool yourself — filing is
+5. Return the draft. Never call a Jira/issue-tracker write tool yourself — filing is
    the human's decision, not this skill's.

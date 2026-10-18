@@ -27,8 +27,10 @@ about nothing.
 
 - **Ambiguous language** — "handle correctly," "as appropriate," "should work" with
   no stated rule. Turn it into "what should happen when...?"
-- **Missing or incomplete acceptance criteria** — behavior implied by the summary but
-  never stated as a testable rule.
+- **Missing, incomplete, or untestable acceptance criteria** — behavior implied by
+  the summary but never stated as a testable rule, *and* AC that exists but is
+  stated as a goal rather than a checkable rule (e.g. "the form should validate
+  input" without saying what counts as invalid or what the user sees).
 - **Uncovered edge cases** — empty/error/loading states, permissions or roles,
   concurrent edits, localization, offline or slow network, boundary values — ask
   about the ones the ticket's own scope would plausibly touch, not every case in the

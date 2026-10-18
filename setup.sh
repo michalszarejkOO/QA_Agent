@@ -36,4 +36,5 @@ link "$REPO_ROOT/agents/qa-tester.md" "$CLAUDE_DIR/agents/qa-tester.md"
 echo
 echo "Skills and agent linked into $CLAUDE_DIR."
 echo "Now populate $REPO_ROOT/environments/ (gitignored, never committed) with your"
-echo "own per-product staging configs — see environments.example/ for the shape."
+echo "own per-product staging configs — see environments.example/ for the shape, or"
+echo "ask Claude to run the 'configure-project' skill for a guided setup."

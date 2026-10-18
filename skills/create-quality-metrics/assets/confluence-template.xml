@@ -1,0 +1,168 @@
+<!--
+Confluence storage-format template for the quality dashboard. Fill every {{PLACEHOLDER}}
+before publishing; delete any row/section that has no data source rather than leaving a
+placeholder unresolved. Call getContentFormatGuide before editing this if it's been a
+while — nesting rules (panels can't contain tables; table cells can hold lists and
+status lozenges) are easy to get wrong from memory.
+
+If updating an existing page, wrap this whole block in matching start/end marker
+comments named "quality-dashboard" so a future run can find and replace only this
+section, and preserve everything outside those markers untouched.
+-->
+<h1>{{PROJECT_NAME}} — Quality Dashboard — {{SCOPE_LABEL}}</h1>
+
+<p><em>Platforms: {{PLATFORMS}} &middot; Last updated: {{LAST_UPDATED_DATE}} &middot; Data sources: {{DATA_SOURCES_LIST}}</em></p>
+
+<!--
+Pick ONE panel type matching the verdict:
+  Ready          -> ac:name="info",    status colour="Green"
+  Ready w/ risks -> ac:name="warning", status colour="Yellow"
+  Not ready      -> ac:name="error",   status colour="Red"
+-->
+<ac:structured-macro ac:name="info">
+  <ac:rich-text-body>
+    <p>
+      <ac:structured-macro ac:name="status">
+        <ac:parameter ac:name="colour">Green</ac:parameter>
+        <ac:parameter ac:name="title">{{VERDICT_LABEL}}</ac:parameter>
+      </ac:structured-macro>
+      &nbsp;{{VERDICT_REASON}}
+    </p>
+  </ac:rich-text-body>
+</ac:structured-macro>
+
+<h2>Key quality indicators</h2>
+<table data-layout="full-width">
+  <thead>
+    <tr>
+      <th>Metric</th>
+      <th>Value</th>
+      <th>Trend vs. previous period</th>
+      <th>Target</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Escaped defects (found in production)</td>
+      <td>{{ESCAPED_DEFECTS_VALUE}}</td>
+      <td>{{ESCAPED_DEFECTS_TREND}}</td>
+      <td>{{ESCAPED_DEFECTS_TARGET}}</td>
+    </tr>
+    <tr>
+      <td>Open critical/high defects</td>
+      <td>
+        <!-- Prefer a live Jira issue macro over a static count for this row: -->
+        <ac:structured-macro ac:name="jira">
+          <ac:parameter ac:name="server">{{JIRA_SERVER_NAME}}</ac:parameter>
+          <ac:parameter ac:name="serverId">{{JIRA_SERVER_ID}}</ac:parameter>
+          <ac:parameter ac:name="jqlQuery">project = {{PROJECT_KEY}} AND issuetype = Bug AND priority in (Critical, High) AND statusCategory != Done AND fixVersion = {{RELEASE_OR_SPRINT}}</ac:parameter>
+        </ac:structured-macro>
+      </td>
+      <td>{{OPEN_CRIT_HIGH_TREND}}</td>
+      <td>{{OPEN_CRIT_HIGH_TARGET}}</td>
+    </tr>
+    <tr>
+      <td>Regression automation coverage</td>
+      <td>{{AUTOMATION_COVERAGE_VALUE}}</td>
+      <td>{{AUTOMATION_COVERAGE_TREND}}</td>
+      <td>{{AUTOMATION_COVERAGE_TARGET}}</td>
+    </tr>
+    <tr>
+      <td>Crash-free users / production error rate</td>
+      <td>{{PROD_HEALTH_VALUE}}</td>
+      <td>{{PROD_HEALTH_TREND}}</td>
+      <td>{{PROD_HEALTH_TARGET}}</td>
+    </tr>
+    <tr>
+      <td>Regression pass rate (latest run)</td>
+      <td>{{REGRESSION_PASS_RATE_VALUE}}</td>
+      <td>{{REGRESSION_PASS_RATE_TREND}}</td>
+      <td>{{REGRESSION_PASS_RATE_TARGET}}</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Defects: caught in sprint vs. escaped to production</h2>
+<!-- Use a table-based chart macro if this Confluence instance has one; otherwise this
+     plain table with a note is the fallback — do not silently omit the trend. -->
+<p><em>Table rendering of the trend (no chart macro available this run).</em></p>
+<table data-layout="full-width">
+  <thead>
+    <tr><th>Period</th><th>Caught in sprint</th><th>Escaped to production</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>{{PERIOD_1_LABEL}}</td><td>{{PERIOD_1_CAUGHT}}</td><td>{{PERIOD_1_ESCAPED}}</td></tr>
+    <tr><td>{{PERIOD_2_LABEL}}</td><td>{{PERIOD_2_CAUGHT}}</td><td>{{PERIOD_2_ESCAPED}}</td></tr>
+    <!-- add one row per period covered; 3-6 prior periods where data allows -->
+  </tbody>
+</table>
+
+<h2>Readiness by feature area</h2>
+<table data-layout="full-width">
+  <thead>
+    <tr><th>Feature area</th><th>Status</th><th>Note</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>{{FEATURE_AREA_1}}</td>
+      <td>
+        <ac:structured-macro ac:name="status">
+          <ac:parameter ac:name="colour">Green</ac:parameter>
+          <ac:parameter ac:name="title">Ready</ac:parameter>
+        </ac:structured-macro>
+      </td>
+      <td>{{FEATURE_AREA_1_NOTE}}</td>
+    </tr>
+    <tr>
+      <td>{{FEATURE_AREA_2}}</td>
+      <td>
+        <ac:structured-macro ac:name="status">
+          <ac:parameter ac:name="colour">Yellow</ac:parameter>
+          <ac:parameter ac:name="title">Known risk</ac:parameter>
+        </ac:structured-macro>
+      </td>
+      <td>{{FEATURE_AREA_2_NOTE}}</td>
+    </tr>
+    <!-- status colours: Green=Ready, Yellow=Known risk, Red=Not ready, Grey=Not in release -->
+  </tbody>
+</table>
+
+<h2>Open risks</h2>
+<ac:structured-macro ac:name="warning">
+  <ac:rich-text-body>
+    <p><strong>{{RISK_1_TITLE}}</strong></p>
+    <ul>
+      <li>User impact: {{RISK_1_IMPACT}}</li>
+      <li>Likelihood: {{RISK_1_LIKELIHOOD}}</li>
+      <li>Workaround: {{RISK_1_WORKAROUND}}</li>
+      <li>Plan / owner: {{RISK_1_PLAN_OWNER}}</li>
+    </ul>
+  </ac:rich-text-body>
+</ac:structured-macro>
+<!-- one warning panel per open risk; if there are none, replace this section with a
+     single sentence: "No open risks this period." -->
+
+<ac:structured-macro ac:name="expand">
+  <ac:parameter ac:name="title">Details — secondary metrics</ac:parameter>
+  <ac:rich-text-body>
+    <table data-layout="full-width">
+      <thead>
+        <tr><th>Metric</th><th>Value</th><th>Note</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Defects by severity/area</td><td>{{DEFECTS_BY_SEVERITY_AREA}}</td><td></td></tr>
+        <tr><td>Mean time to fix (critical/high)</td><td>{{MTTF_CRIT_HIGH}}</td><td></td></tr>
+        <tr><td>Reopen rate</td><td>{{REOPEN_RATE}}</td><td></td></tr>
+        <tr><td>Device/browser coverage</td><td>{{DEVICE_BROWSER_COVERAGE}}</td><td></td></tr>
+        <tr><td>Flaky test rate</td><td>{{FLAKY_TEST_RATE}}</td><td></td></tr>
+        <tr><td>Automation trend</td><td>{{AUTOMATION_TREND}}</td><td></td></tr>
+      </tbody>
+    </table>
+  </ac:rich-text-body>
+</ac:structured-macro>
+
+<h2>What these numbers mean</h2>
+<!-- Copy only the definitions for metrics actually shown above, from
+     references/metrics-definitions.md — don't paste the whole file. -->
+<p>{{METRIC_DEFINITIONS_TEXT}}</p>
+<p><strong>Thresholds used for this report:</strong> {{THRESHOLDS_SUMMARY}}</p>

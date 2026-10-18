@@ -2,6 +2,7 @@
   "product": "acme",
   "environment": "staging",
   "ticketPrefixes": ["ACME"],
+  "targetBranch": "staging",
   "basicAuth": {
     "username": "acme",
     "password": "REPLACE_ME",
@@ -26,6 +27,13 @@
         "email": "qa@example.com",
         "password": "REPLACE_ME"
       }
+    },
+    "mobile": {
+      "repo": "~/Projects/acme-mobile",
+      "platform": "expo-react-native",
+      "buildCommand": "npx expo run:ios --device <udid> --port <reserved port>",
+      "installMode": "clean",
+      "notes": "A mobile surface has 'platform' instead of 'appUrl'. installMode: \"clean\" (default — uninstall, rebuild native projects, install fresh build every run), \"update\" (fresh build installed over the existing app, data kept — for upgrade testing), or \"installed\" (no build, test whatever is on the device). A mode named in the run's brief overrides this for that run."
     }
   },
   "repos": {
