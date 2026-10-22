@@ -122,6 +122,16 @@ scenarios.
    app itself — it's what step 3 executes against. A scenario written after
    you've already started clicking around just rationalizes whatever you happened to
    click, instead of the other way round.
+   **Cross-platform parity.** Before writing the list, check the evidence folder for
+   an earlier run of the same ticket on another platform, e.g.
+   `<evidence dir>/<TICKET>/<date>-android/` when you're testing iOS. If one exists,
+   read its file names and screenshots and use its scenarios as the baseline: every
+   scenario it ran gets a matching row in your list, with the other run's ID next to
+   it. That includes Storybook-only components, theme, contrast, font scale, screen
+   reader, and both languages and roles. You may only drop one after you've tried it
+   on your platform and it failed; report it as BLOCKED with the exact error. "Not
+   reachable in the shipped build", "needs system settings" or "needs a debugger"
+   aren't reasons on their own if the other platform found a way.
 3. **Execute against the scenarios from step 2 — in the browser, or on-device.**
    Follow the `testing-apps` skill for this step: it resolves the Playwright adapter
    for a web URL or the `agent-device` adapter for an iOS/Android mobile target, and
@@ -169,6 +179,12 @@ scenarios.
 - Don't test scenarios outside what the ticket and PR actually describe just because
   they seem plausible; note them as suggestions instead, clearly separated from
   findings.
+- Don't mark a written scenario NOT RUN or N/A without trying it first. A dev-only
+  build flag (e.g. Storybook), a system setting (`agent-device settings`), a slow
+  trigger such as token expiry, or a screen reader each has a known method. Check the
+  `testing-apps` adapter and its references before you give up. The same goes for a
+  stuck video recorder: close the recording, reopen the session and retry before
+  dropping video.
 
 ## Keeping the user informed
 

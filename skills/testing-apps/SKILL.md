@@ -82,9 +82,9 @@ you take either way.
 creating it with `mkdir -p`:
 
 ```
-happy-path/<scenario-id>-<slug>.<webm|mp4>
+happy-path/<scenario-id>-<slug>.mp4
 bugs/<bug-n>-<slug>.png
-bugs/<bug-n>-<slug>.<webm|mp4>
+bugs/<bug-n>-<slug>.mp4
 ```
 
 If that folder already exists from an earlier run today, add `-2`, `-3`, ... so

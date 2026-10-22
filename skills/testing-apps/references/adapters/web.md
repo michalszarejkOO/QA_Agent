@@ -63,6 +63,12 @@ evidence" section. The web mechanics:
   `--caps=devtools` (`playwright-video`, above). If they aren't in your tool
   list, no video can be recorded this run. Report that, and keep going with
   screenshots only.
+- **Convert to MP4:** Playwright records WebM only, which QuickTime and Jira
+  previews play poorly. After moving the video into the run folder, convert it
+  and keep the `.mp4` as the evidence file:
+  `ffmpeg -hide_banner -loglevel error -y -i <name>.webm -c:v libx264 -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -movflags +faststart -an <name>.mp4 && rm <name>.webm`.
+  If `ffmpeg` is missing or the conversion fails, keep the `.webm` and say so
+  in the report.
 - **Bug screenshot:** call `browser_take_screenshot` with a `filename`.
 - Playwright MCP resolves a relative `filename` against its workspace root and
   refuses paths outside it. Pass a relative name, read the saved path from the

@@ -21,7 +21,7 @@ actually a web page.
 | Always pass `--device "<exact name>"` explicitly once more than one device/simulator matches. | Ambiguous matches fail the command outright (`AMBIGUOUS_MATCH`). |
 | If a physical iOS device is being used for the first time this session, or `open`/`snapshot` fails on signing/provisioning/Developer Mode, read [physical-device-setup.md](./physical-device-setup.md) before improvising. | The setup is multi-layered (device, macOS, Xcode, Apple account) and fails with a different error at each layer — guessing burns turns. |
 | Every run starts with a clean build and install (uninstall the app, rebuild the native project from your own worktree, install the fresh build) unless the product config's `installMode` says otherwise. Never test whatever is already installed by default. See "Clean build and install, every run". | A build left on the device may be stale, from another branch, or a legacy app with a similar name, and its leftover data and sessions hide first-launch bugs. A failed build is a blocker, not a reason to test the old copy. |
-| When building from source, reserve the Metro port with `scripts/metro-port.sh reserve`, pass it to the build as `--port`, and release it at the end. See "Building from source in parallel". | Parallel runs on two devices otherwise collide on one port and block each other's builds. |
+| When building from source, reserve the Metro port with `scripts/metro-port.sh reserve`, pass it to the build as `--port`, and release it at the end. If a reopened dev client shows a native-module mismatch, check who owns the port and move to a new one (step 5). See "Building from source in parallel". | Parallel runs on two devices otherwise collide on one port and block each other's builds. |
 | Never accept a device passcode, Apple ID password, or macOS/sudo password typed into the chat. Tell the user to type it into the native prompt (Terminal, Xcode, the device) themselves. | Chat history is not a credential store; treat a pasted password as a signal to warn, not to use. |
 
 (The real-account/real-transaction boundary is in the parent skill's Shared
@@ -45,7 +45,9 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
    back to the web adapter on a mobile target.
 2. Discover the target: `agent-device devices [--platform ios|android]` to pick a
    device/simulator, `agent-device apps --device "<name>"` to find the app's bundle id
-   if only its display name is known.
+   if only its display name is known. For a **physical** device, connected by cable
+   or over Wi-Fi, also run `scripts/list_physical_devices.py` and pick only a row
+   with `state=ready`. See "Physical devices: cable or Wi-Fi" below.
    Then do the build and install per "Clean build and install, every run" below
    (clean unless `installMode` says otherwise), before opening the app.
 3. `agent-device open <bundle-id> --device "<name>" --foreground` to start the session,
@@ -64,6 +66,60 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
    below.
 6. `agent-device close` when the session ends, then do the cleanup in "Building from
    source in parallel" if you built the app.
+
+## Physical devices: cable or Wi-Fi
+
+A physical device can be attached by USB cable or over Wi-Fi (Android Wireless
+debugging, iOS "Connect via network"). Both count as connected. Don't ask the user
+to plug in a device that is already reachable over Wi-Fi.
+
+`agent-device devices` alone can't tell you which devices are reachable. It lists
+every *paired* iPhone/iPad as `booted=true`, including ones that are asleep or off
+the network. Run the discovery script instead:
+
+```
+python3 -I ../../scripts/list_physical_devices.py [--platform ios|android] [--connect]
+```
+
+It prints one row per physical device with its `id` (UDID or adb serial),
+`transport` (`usb` / `wifi`) and `state`. iOS rows come from `xcrun devicectl`.
+Android rows come from `adb devices -l` plus `adb mdns services`. Only a `ready`
+row can be tested. Every other state says what the user has to do. Pick by `id`:
+`--udid <udid>` on iOS, `--serial <serial>` on Android. Device names repeat (two
+"iPhone (Michał)"), an id doesn't. Log the transport in the run log.
+
+**Android over Wi-Fi**
+
+- The serial is `<ip>:<port>`, or `adb-<serial>-<suffix>._adb-tls-connect._tcp`.
+  Use it everywhere a serial goes: `--serial`, `adb -s`, `adb reverse`.
+- The port changes every time Wireless debugging reconnects (screen lock, Wi-Fi
+  drop, reboot). If a command fails with `device offline` / `not found`, re-run the
+  script with `--connect`. That runs `adb connect` for each device still
+  advertised over mDNS, then reports the new serial. Don't reuse the old one.
+- A device that was never paired with this Mac needs `adb pair <ip>:<pair-port>`
+  and the 6-digit code from **Developer options > Wireless debugging > Pair device
+  with pairing code**. The user reads that code off the device. Ask them for it;
+  don't guess.
+- `adb reverse tcp:$PORT tcp:$PORT` works over Wi-Fi as well, so Metro setup is
+  the same as over USB.
+
+**iOS over Wi-Fi**
+
+- Works for devices that `devicectl` lists (CoreDevice, iOS 17+). Install,
+  uninstall, launch, logs and recording all go over the network.
+- `not-reachable` means the device is paired but has no live tunnel right now. Ask
+  the user to wake and unlock it and keep it on the same Wi-Fi as the Mac. Opening
+  **Xcode > Window > Devices and Simulators** often brings the tunnel back. Then
+  re-run the script.
+- A device that only `xctrace` sees (older iOS, XCTest backend) needs a cable.
+  `agent-device help physical-device` says its runner goes through usbmuxd.
+- Wi-Fi is slower than USB. The first runner build and install can take minutes.
+  On a timeout, retry once with `--debug` before calling it a blocker.
+
+**Both platforms.** The device has to reach the Mac's IP (Metro, local API). A
+VPN on the Mac or the device can block that even when adb/devicectl look fine.
+Check `route get <device ip>` before filing a device-only network error as an app
+bug.
 
 ## Recording
 
@@ -161,6 +217,29 @@ pick the same one. Every build from source must:
    its `expo run:*` or xcodebuild; they keep running and keep the port. Then run
    `metro-port.sh release $PORT`. `metro-port.sh list` shows every current
    reservation and whether its port is still listening.
+5. **Wrong bundle on reopen: start your own Metro on a new port.** A dev client
+   remembers the last Metro URL. After your Metro stops and its port is released,
+   another session can start its Metro on that port, and reopening the app loads
+   that session's JS. That JS is built from a different branch, so it doesn't match
+   your build's native code. It typically shows as a red screen such as
+   `Cannot find native module '<Name>'`, `TurboModuleRegistry ... could not be
+   found`, or another native-module or SDK-version mismatch. Before treating such an
+   error as an app bug, check who owns the port. `lsof -nP -iTCP:<port>
+   -sTCP:LISTEN` gives the PID, and `lsof -a -p <pid> -d cwd -Fn` gives its
+   worktree. If that worktree isn't yours:
+   - Don't stop or reuse the other session's Metro.
+   - Reserve a new port with `metro-port.sh reserve`, and start Metro from your own
+     worktree on it (`npx expo start --port $PORT --dev-client`, after loading the
+     worktree's `.env`).
+   - On Android, run `adb -s <serial> reverse tcp:$PORT tcp:$PORT`.
+   - Point the dev client at your Metro: press `a`/`i` in Metro, open the
+     dev-client URL with `--url http://localhost:$PORT`, or choose that server in
+     the dev launcher.
+   - Report the mismatch in the run log, not as a defect.
+
+   The same applies when you hand the device back. The installed dev client stays
+   bound to your released port, so the report must say which worktree and command
+   start a matching Metro.
 
 ## The daemon keeps stale environment — restart it when signing config changes
 
