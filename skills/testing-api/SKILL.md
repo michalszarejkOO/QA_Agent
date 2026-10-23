@@ -80,6 +80,10 @@ End every run with a point-list summary, after the report and drafts:
 - **Not done / skipped:** each step that wasn't done, with its reason (no
   `api.confluence` block, environment unreachable, user chose not to post, and
   so on). If nothing was skipped, write "Nothing skipped."
+- **Proposed additions to the project skill:** each new product-specific finding
+  (a stateful case, an environment quirk, a misleading status code), worded as
+  the line to add to `<projectSkill>/SKILL.md`, or "None". Add them only after
+  the user approves, and never to this skill or Claude's memory.
 
 ## Reference Loading
 
@@ -95,7 +99,10 @@ End every run with a point-list summary, after the report and drafts:
 
 ## Procedure
 
-0. **Resolve the product, client, and config.** Figure out which repo/collection is
+0. **Check the setup, then resolve the product, client, and config.** First run
+   `python3 -I "$(dirname "$(dirname "$(readlink ~/.claude/agents/qa-tester.md)")")/skills/updating-qa-agent/scripts/check_setup.py"`. If it prints a warning, show it to the user and offer to update first
+   (`./setup.sh`, then the `updating-qa-agent` skill); if they'd rather run now,
+   continue with the fallbacks. Then resolve the product. Figure out which repo/collection is
    in scope from the user's request (a repo name, a ticket prefix, or an explicit
    path). Look for a matching file under `~/.claude/environments/*.json` (or
    `$CLAUDE_CONFIG_DIR/environments/` if that's set — the same global, per-product
@@ -132,12 +139,20 @@ End every run with a point-list summary, after the report and drafts:
    the adapter, never in this file.
    - **Found** → use `repo` as the repo root, `client` to pick the adapter, and
      `collectionPath` for every step below. `confluence` is optional; its absence
-     just means step 7 is skipped.
+     just means step 7 is skipped. Create this run's **run folder**,
+     `<workDir>/api-runs/<ticket key, or YYYY-MM-DD-<env>>/` (top-level
+     `workDir` from the same file; add `-2`, `-3`, ... if it exists). Every file
+     this run writes goes there: the exported zip, the CLI's result file, and the
+     report. Nothing goes to `/tmp` or `~/Desktop`. If the file has
+     `projectSkill`, read `<projectSkill>/SKILL.md` now (unless this session
+     already loaded it) and follow its rules for this product's collection and
+     test data.
    - **Not found, but the current directory has a recognizable collection** (a
      `bruno/`-style folder, a `*.postman_collection.json`, or an Insomnia export) →
      infer the client from whichever of those is present, use the cwd as repo root,
      default environment `demo`, and skip the Confluence step (nothing to publish to
-     without config).
+     without config). The run folder is `./api-runs/<YYYY-MM-DD-<env>>/`; say in
+     the report that no working directory is configured.
    - **Not found and cwd has no collection** → ask the user which repo/collection/tool
      to run against rather than guessing.
 
@@ -152,17 +167,17 @@ End every run with a point-list summary, after the report and drafts:
    per [target-branch.md](../testing-apps/references/target-branch.md): config
    `targetBranch`, then detection from merged MRs, then `api.defaultEnvironment`.
    Run the collection as it is on that branch (a fresh worktree at
-   `origin/<branch>`), not the local checkout's branch. Carry over uncommitted
+   `origin/<branch>`, under `<workDir>/worktrees/`), not the local checkout's branch. Carry over uncommitted
    collection changes only if the user says to. Use the recent MRs the script
    lists as the run's context. Ticket mode skips this; it always uses `demo` and
    the ticket's own branch.
 
 3. **Export the collection**, per the adapter's export instructions, so the user has
-   a file they can re-import into the matching desktop app. If the product's config
-   has `api.confluence.attachmentName`, pass it as the export's destination filename
-   (e.g. `~/Desktop/<attachmentName>`) so repeat exports land under the same
-   predictable name instead of whatever the adapter's own default happens to be —
-   otherwise use the adapter's default. Report the output path.
+   a file they can re-import into the matching desktop app. Always pass a
+   destination inside the run folder: `<run folder>/<api.confluence.attachmentName>`
+   when the config has one, so repeat exports keep the same predictable name, or
+   `<run folder>/<repo name>-<client>-collection.zip` otherwise. Report the output
+   path.
 
 4. **Check the target environment.** For a local-style environment, verify the
    expected localhost URL is reachable (e.g. a short `curl -o /dev/null -w
@@ -190,7 +205,8 @@ End every run with a point-list summary, after the report and drafts:
    run in the repo root) and branch, the environment used, which client/tool ran the
    suite, and a Notes section that includes any caveats found in step 6 or flagged by
    the adapter/`api.knownCaveats` for cases that ran. Present it in a fenced code
-   block so it's a clean paste into Jira.
+   block so it's a clean paste into Jira, and save the same text as
+   `<run folder>/report.md`.
 
 8. **If the product's config has an `api.confluence` block**, refresh that page's
    `lastUpdate` and attach the zip, following

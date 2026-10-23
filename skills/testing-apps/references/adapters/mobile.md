@@ -60,7 +60,8 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
    Both guides cover navigation mapping, evidence capture per finding, and the
    report shape; `agent-device help workflow` has the full refs/selectors/waits
    reference if a command's exact shape is unclear.
-5. Capture evidence as you go: `agent-device screenshot <path>.png` (add
+5. Capture evidence as you go: checkpoint screenshots with
+   `agent-device screenshot <run folder>/checkpoints/<n>-<slug>.png` (add
    `--overlay-refs` to show which element is which). Read every screenshot back
    before judging pass/fail — see "Shared discipline" in the parent skill
    (`../../SKILL.md`). Record a video of every scenario and save bug folders
@@ -189,8 +190,10 @@ skipped" as "clean install skipped: installMode=update".
 The steps, in an order that never changes:
 
 1. **Fresh worktree.** Check out the ticket's branch (or the PR head) in your own
-   new worktree. On a standalone run, check out the target branch from
-   [target-branch.md](../target-branch.md) instead. Then install JS dependencies there. Never build from the shared
+   new worktree under `<workDir>/worktrees/<ticket or branch>` (the product's
+   working directory; add `-2`, `-3`, ... if it's taken). On a standalone run,
+   check out the target branch from [target-branch.md](../target-branch.md)
+   instead. Then install JS dependencies there. Never build from the shared
    checkout. Record the commit (`git rev-parse --short HEAD`).
 2. **Uninstall the app from the device**, so no data, session, keychain-backed
    login or cache survives from an earlier run. Use the bundle id/package the

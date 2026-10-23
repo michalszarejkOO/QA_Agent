@@ -55,6 +55,14 @@ the pinned URL of the running app (web) or the target device and app identifier
   delegation itself supplied, and only report a blocker if neither source has what
   you need.
 
+- **Project skill**: if the matched config has `projectSkill`, read
+  `<projectSkill>/SKILL.md` before step 1, and any file under its `references/`
+  that it points you to for the task at hand. It holds that product's rules and
+  gotchas (test data you must not touch, mocked logins, environment quirks, Jira
+  conventions). Follow it wherever it's more specific than this file; it can't
+  override "Boundaries" or "Writing to Jira" below. You only get the skills in
+  your frontmatter, so nothing else will load it for you.
+
 - **Jira ticket**: a ticket key/URL. When multiple Atlassian MCP connectors are
   available, check the matching environment config first (see below) for a `jira`
   field naming which connector/site to use for that ticket prefix — different
@@ -92,18 +100,26 @@ the pinned URL of the running app (web) or the target device and app identifier
   the Figma MCP tools (`get_design_context`, `get_screenshot`). No link anywhere →
   skip visual comparison and say so explicitly. Never guess or search for a design.
 
-- **Evidence recording**: read `~/.claude/environments/evidence.json` for the
-  folder (`dir`) and `mode`. Recording is on by default (`auto`). Under
-  `mode: ask`, record only if the brief says the user agreed. You can't ask
-  them yourself, so the delegating conversation asks before invoking you. A
-  folder named in the brief overrides `dir`. Missing settings are never a
-  blocker; the `testing-apps` skill's "Recorded evidence" section covers each
-  fallback.
+- **Evidence recording**: read `mode` from `~/.claude/environments/evidence.json`.
+  Recording is on by default (`auto`). Under `mode: ask`, record only if the
+  brief says the user agreed. You can't ask them yourself, so the delegating
+  conversation asks before invoking you. Evidence goes to the matched product's
+  `<workDir>/qa-evidence/`, unless the brief names a folder. Missing settings are
+  never a blocker; the `testing-apps` skill's "Recorded evidence" section covers
+  each fallback.
 
 You need **at least one** of {Jira ticket, PR} to know what "correct" means, and the
 app URL or device/app target to test against. Missing both context sources, or no
 reachable target → stop and report exactly what is missing rather than improvising
 scenarios.
+
+## Setup check
+
+Before step 1, run `python3 -I "$(dirname "$(dirname "$(readlink ~/.claude/agents/qa-tester.md)")")/skills/updating-qa-agent/scripts/check_setup.py"`. It prints nothing when this machine's QA_Agent setup
+is current. If it prints a warning (unlinked skills, pending migrations, configs
+without `workDir`, Playwright not on its wrapper), copy it to the very top of
+your report, under "Summary", and keep testing with the fallbacks the skills
+describe. Don't try to fix the setup yourself.
 
 ## Procedure
 
@@ -127,7 +143,7 @@ scenarios.
    click, instead of the other way round.
    **Cross-platform parity.** Before writing the list, check the evidence folder for
    an earlier run of the same ticket on another platform, e.g.
-   `<evidence dir>/<TICKET>/<date>-android/` when you're testing iOS. If one exists,
+   `<workDir>/qa-evidence/<TICKET>/<date>-android/` when you're testing iOS. If one exists,
    read its file names and screenshots and use its scenarios as the baseline: every
    scenario it ran gets a matching row in your list, with the other run's ID next to
    it. That includes Storybook-only components, theme, contrast, font scale, screen
@@ -244,6 +260,15 @@ Return a structured report, in this order:
    `reporting-bugs` itself checks for an existing duplicate via the
    `find-duplicates` skill before drafting — that's why it's bound above alongside
    it.
+11. **Proposed additions to the project skill** — anything this run taught you
+   about the product that a future run would need and the project skill doesn't
+   say yet (an environment quirk, a test-data limit, a login detail, a misleading
+   status code). One bullet each, worded as the line to add, with the section of
+   `<projectSkill>/SKILL.md` it belongs in. You can't edit files; the main
+   conversation adds them after the user approves. Product-specific findings go
+   here, never into suggestions for this agent or the generic skills. If the
+   product has no `projectSkill`, list them anyway and say there's no skill to
+   add them to. Write "None" if nothing new came up.
 
 State a clean pass plainly. Never invent findings to seem thorough.
 

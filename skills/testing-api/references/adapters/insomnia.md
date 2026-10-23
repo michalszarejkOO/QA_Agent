@@ -44,7 +44,8 @@ assuming it's the single-file export.
 Once a Unit Test Suite is confirmed to exist:
 
 ```
-npx --yes insomnia-inso run test --env <env-name> --reporter list <path-or-identifier>
+npx --yes insomnia-inso run test --env <env-name> --reporter list <path-or-identifier> \
+  | tee <run folder>/inso-run.txt
 ```
 
 Treat the exact flags as provisional — confirm with `inso run test --help` in this

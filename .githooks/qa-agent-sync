@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Shared body of the post-merge / post-checkout hooks: after a pull or a branch
+# switch changes QA_Agent, re-run setup.sh (links new skills, cleans up, keeps
+# Playwright on its wrapper) and tell the user whether their setup needs an
+# update. Never prompts and never fails the git command.
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+LINE="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+changes=$("$REPO_ROOT/setup.sh" 2>&1 | grep -E '^(linked|removed|backing up|switching|adding|skipped)' || true)
+status=$(python3 -I "$REPO_ROOT/skills/updating-qa-agent/scripts/check_setup.py" 2>&1)
+code=$?
+
+echo
+echo "$LINE"
+echo " QA_Agent: skills updated from $REPO_ROOT"
+[ -n "$changes" ] && echo "$changes" | sed 's/^/   /'
+if [ $code -eq 0 ]; then
+  echo " Setup is up to date."
+else
+  echo " ⚠️  Your setup needs an update:"
+  echo "$status" | sed '1d;$d' | sed 's/^/   /'
+  echo " Open Claude and say: \"update QA_Agent\" (or \"aktualizuj skille\")"
+fi
+echo "$LINE"
+exit 0

@@ -30,14 +30,16 @@ config, timing) is recorded.
 ./scripts/export-collection.sh <repo_root> [dest_zip_path] [collection_subpath]
 ```
 
-Zips the collection for import into the Bruno desktop app. Without a
-`dest_zip_path` it defaults to `~/Desktop/<repo-folder-name>-bruno-collection.zip`.
+Zips the collection for import into the Bruno desktop app. Always pass a
+`dest_zip_path` inside the run folder (see the parent skill's step 3); the
+script's own fallback, `~/Desktop/<repo-folder-name>-bruno-collection.zip`, is
+only for calling it by hand.
 `collection_subpath` defaults to `bruno`.
 
 ## Run
 
 ```
-npx --yes @usebruno/cli run <scope-path> --env <env> -r
+npx --yes @usebruno/cli run <scope-path> --env <env> -r --output <run folder>/bruno-run.json
 ```
 
 `<scope-path>` is `<collectionPath>` for the full collection or

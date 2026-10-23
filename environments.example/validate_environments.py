@@ -6,7 +6,8 @@ Defaults to $CLAUDE_CONFIG_DIR/environments if that's set, else
 ~/.claude/environments — the same resolution qa-tester/testing-api/
 routing-qa-tickets use.
 
-Catches config-shape mistakes (missing required fields, wrong types, an
+Catches config-shape mistakes (missing required fields, wrong types, a
+'workDir' that doesn't exist on disk, an
 `api`/`surfaces` block with the wrong nested shape, a product with neither
 block at all) and one class of live drift: a product's `jira.connector`
 naming a connector that either isn't in atlassian-connectors.json at all, or
@@ -24,7 +25,7 @@ from pathlib import Path
 VALID_CLIENTS = {"bruno", "postman", "insomnia"}
 VALID_EVIDENCE_MODES = {"auto", "ask"}
 VALID_INSTALL_MODES = {"clean", "update", "installed"}
-META_FILES = {"atlassian-connectors.json", "evidence.json"}
+META_FILES = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json"}
 
 
 def resolve_environments_dir():
@@ -53,6 +54,18 @@ def check_product_config(data, connectors):
         return value
 
     require("product", str)
+    work_dir = require("workDir", str)
+    if work_dir is not None:
+        if not work_dir.strip():
+            errors.append("'workDir' must be a non-empty path string")
+        elif not Path(work_dir).expanduser().is_dir():
+            errors.append(f"'workDir' ({work_dir}) doesn't exist — create it (mkdir -p)")
+    if "projectSkill" in data:
+        skill = data["projectSkill"]
+        if not isinstance(skill, str) or not skill.strip():
+            errors.append("'projectSkill' must be a non-empty path string when present")
+        elif not (Path(skill).expanduser() / "SKILL.md").is_file():
+            errors.append(f"'projectSkill' ({skill}) has no SKILL.md")
     prefixes = require("ticketPrefixes", list)
     if prefixes:
         if not all(isinstance(p, str) for p in prefixes):
@@ -172,9 +185,12 @@ def check_connectors_file(data):
 
 def check_evidence_file(data):
     errors = []
-    folder = data.get("dir")
-    if not isinstance(folder, str) or not folder.strip():
-        errors.append("'dir' must be a non-empty path string")
+    # 'dir' is optional: evidence goes to each product's workDir, and 'dir' is only
+    # the fallback for runs that match no product config.
+    if "dir" in data:
+        folder = data["dir"]
+        if not isinstance(folder, str) or not folder.strip():
+            errors.append("'dir' must be a non-empty path string when present")
     mode = data.get("mode", "auto")
     if mode not in VALID_EVIDENCE_MODES:
         errors.append(f"'mode' must be one of {sorted(VALID_EVIDENCE_MODES)}, got {mode!r}")
@@ -222,6 +238,11 @@ def main():
 
     for path in files:
         if path.name in META_FILES:
+            continue
+        if path.is_symlink() and not path.exists():
+            # The product's workDir (and its config/) was deleted or moved.
+            print(f"{path.name}: dangling symlink to {os.readlink(path)} — remove it (./setup.sh does)")
+            any_errors = True
             continue
         try:
             data = load_json(path)
