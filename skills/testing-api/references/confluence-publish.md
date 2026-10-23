@@ -68,9 +68,9 @@ the body — never try to attach content in the same call that creates the page.
 
 5. **Attach the files** to the page, using **`mcp-atlassian`**:
    - `confluence_upload_attachment`/`confluence_upload_attachments`' `file_path` is
-     sandboxed to Claude Code's own working directory — a repo outside it (e.g. the
-     export script's default `~/Desktop/...` destination, or a product repo that
-     isn't the current working directory) fails with a path-traversal error. Copy
+     sandboxed to Claude Code's own working directory — a path outside it (e.g. the
+     run folder under the product's `workDir`, or a product repo that isn't the
+     current working directory) fails with a path-traversal error. Copy
      each file that needs uploading into the current working directory first (a
      scratch subfolder is fine), upload from there under its fixed name, then delete
      the copy:

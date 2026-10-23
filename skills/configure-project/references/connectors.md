@@ -23,6 +23,22 @@ connector by inside product configs' `jira.connector` field — it does not have
 match the MCP tool prefix, but making it recognizable (e.g. `internal`, `client-x`)
 helps more than a generic `atlassian1`.
 
+## Two or more Atlassian sites
+
+Each Atlassian MCP server's OAuth grant covers one site, and claude.ai lets a user
+add only one Atlassian connector. So when the products span more than one site
+(e.g. two clients), every extra site needs a local Claude Code MCP server:
+
+```
+claude mcp add --transport http --scope user atlassian-<site-short-name> https://mcp.atlassian.com/v2/mcp
+```
+
+then `/mcp` → that server → Authenticate, and pick the right site on Atlassian's
+consent screen: it may preselect another site the account belongs to. A new
+server only shows up in a new Claude Code session. Always confirm afterwards with
+that server's own `getAccessibleAtlassianResources` (step 2 below). If the user
+has no connector at all yet, the same local setup works for the first site too.
+
 ## Procedure
 
 1. **List which Atlassian MCP tools/connectors are available this session.** Look for

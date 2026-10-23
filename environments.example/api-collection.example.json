@@ -1,6 +1,8 @@
 {
   "product": "acme-api",
   "environment": "demo",
+  "workDir": "~/Projects/acme",
+  "projectSkill": "~/Projects/acme/skills/acme",
   "ticketPrefixes": ["ACME"],
   "api": {
     "client": "bruno",

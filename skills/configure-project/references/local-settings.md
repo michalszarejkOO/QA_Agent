@@ -8,16 +8,17 @@ tools that person actually uses.
 
 ## What to add
 
-For each product repo path configured in this run (a `surfaces.*.repo`, `api.repo`,
-or any `repos.*` entry), add it to `additionalDirectories` so this working directory
-can read/write there without a permission prompt every time:
+For each product configured in this run, add its `workDir` and every repo path
+outside it (a `surfaces.*.repo`, `api.repo`, or any `repos.*` entry) to
+`additionalDirectories`, so this working directory can read/write there without a
+permission prompt every time. A repo inside `workDir` is already covered by it:
 
 ```json
 {
   "permissions": {
     "additionalDirectories": [
-      "~/Projects/<repo-1>",
-      "~/Projects/<repo-2>"
+      "~/Projects/<product-workdir>",
+      "~/Projects/<repo-outside-workdir>"
     ]
   }
 }

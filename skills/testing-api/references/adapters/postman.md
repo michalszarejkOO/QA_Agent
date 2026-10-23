@@ -45,13 +45,13 @@ file and the `environments/` folder, so both come along in the zip.
 ```
 npx --yes newman run <collectionPath>/<name>.postman_collection.json \
   -e <collectionPath>/environments/<env>.postman_environment.json \
-  --reporters cli,json --reporter-json-export /tmp/newman-run.json
+  --reporters cli,json --reporter-json-export <run folder>/newman-run.json
 ```
 
 Add `--folder "<folder name>"` to scope the run to one folder (Newman's equivalent
 of Bruno's `-r <scope-path>`; unlike Bruno, Newman takes a folder *name* as it
 appears in the collection, not a filesystem path). Read the CLI summary table for
-the pass/fail counts, and parse `/tmp/newman-run.json` (`run.stats`,
+the pass/fail counts, and parse `<run folder>/newman-run.json` (`run.stats`,
 `run.executions[].assertions[]`) when you need the exact failing assertion text
 rather than re-deriving it from the CLI's abbreviated output.
 
