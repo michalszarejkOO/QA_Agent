@@ -14,8 +14,8 @@ user reverse-engineering the shape from the example templates and skill source b
 hand.
 
 This skill only asks questions, writes JSON config files under
-`~/.claude/environments/` (and, optionally, entries in the caller's
-`.claude/settings.local.json`), creates each product's working directory, and
+`~/.claude/environments/` (and, optionally, `additionalDirectories` entries in the
+user settings, `~/.claude/settings.json`), creates each product's working directory, and
 scaffolds and links its project skill. It never edits anything under this
 repo's `skills/` or `agents/`.
 
@@ -42,7 +42,7 @@ repo's `skills/` or `agents/`.
 | --- | --- | --- |
 | [references/connectors.md](./references/connectors.md) | Every run, before asking about products | Discovering which Atlassian MCP connectors are available this session, resolving each one's site live, writing `atlassian-connectors.json` |
 | [references/product-config.md](./references/product-config.md) | For each product the user wants to configure | The question flow for one product (working directory, UI surfaces, API collection, credentials, Confluence tracker, project skill) and how to assemble it into one `environments/<product>-<env>.json` file matching the example shapes exactly |
-| [references/local-settings.md](./references/local-settings.md) | After all products are configured, if the user wants it | Optionally scaffolding `.claude/settings.local.json` (`additionalDirectories` for each product's working directory and repos, a starter permission allowlist) |
+| [references/local-settings.md](./references/local-settings.md) | After all products are configured, if the user wants it | Adding each product's working directory and repos to `additionalDirectories` in the user settings (`~/.claude/settings.json`), so runs can write there from any folder; an optional starter allowlist |
 
 ## Procedure
 
@@ -82,12 +82,12 @@ repo's `skills/` or `agents/`.
    before overwriting; an existing `dir` there stays only as the fallback for runs
    that match no product.
 
-5. **Offer local settings scaffolding.** Ask whether to also scaffold
-   `.claude/settings.local.json` entries for the working directories and repo
-   path(s) just configured. If
-   yes, follow [references/local-settings.md](./references/local-settings.md]. If a
-   `.claude/settings.local.json` already exists, merge into it — never overwrite the
-   user's existing local permissions.
+5. **Offer folder access from anywhere.** Ask whether Claude may read and write
+   the working directories and repo path(s) just configured without asking, from
+   whatever folder it's opened in. If yes, follow
+   [references/local-settings.md](./references/local-settings.md): it merges them
+   into `permissions.additionalDirectories` of the user settings
+   (`~/.claude/settings.json`), never overwriting the user's other settings.
 
 6. **Validate.** Run `python3 environments.example/validate_environments.py` (from
    the repo root) and show the output. If it reports errors, fix the specific file
