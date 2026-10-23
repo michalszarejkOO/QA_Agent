@@ -14,6 +14,13 @@ something new about this project, propose adding it here (after the user
 approves), never to the generic QA_Agent skills and never to Claude's memory.
 It lives in the project's working directory, so it goes away with the project.
 
+**Every file you create for {{PRODUCT_TITLE}} goes into its working directory,
+`{{WORK_DIR}}`, wherever Claude was opened**: test output goes where the testing
+skills put it (`qa-evidence/`, `api-runs/`, `worktrees/`, `reports/`), and anything
+else (notes, plans, scripts, SQL, exports, data dumps) goes into `notes/` or
+`scripts/` there, created as needed. Never into the current folder, the Desktop,
+`/tmp` or `~/Downloads`. Give the full path of anything you save.
+
 ## Where things are
 
 | What | Where |

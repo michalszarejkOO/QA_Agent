@@ -205,6 +205,18 @@ def check_configs(r, products):
         r.add("INFO", "no evidence.json: runs record evidence without asking (mode auto)")
 
 
+def allowed_dirs():
+    config_dir = os.environ.get("CLAUDE_CONFIG_DIR")
+    path = Path(config_dir) / "settings.json" if config_dir else Path.home() / ".claude" / "settings.json"
+    entries = ((load(path) or {}).get("permissions") or {}).get("additionalDirectories") or []
+    return [Path(e).expanduser().resolve() for e in entries if isinstance(e, str)]
+
+
+def covered(folder, allowed):
+    folder = Path(folder).expanduser().resolve()
+    return any(folder == a or a in folder.parents for a in allowed)
+
+
 def check_product(r, path, servers):
     data = load(path)
     if data is None:
@@ -228,6 +240,11 @@ def check_product(r, path, servers):
             missing.append(f"api.collectionPath ({cp})")
     if missing:
         r.add("WARN", f"{name}: paths that don't exist: {', '.join(missing)}", "clone/create them or fix the paths in the config")
+    work_dir = data.get("workDir")
+    if work_dir and Path(work_dir).expanduser().exists() and not covered(work_dir, allowed_dirs()):
+        r.add("WARN", f"{name}: workDir {work_dir} is not in additionalDirectories, so sessions opened "
+              "elsewhere ask before saving there",
+              "in Claude: \"update QA_Agent\" (adds it to ~/.claude/settings.json), or add it there by hand")
     skill = data.get("projectSkill")
     if skill:
         product = Path(skill).expanduser().name
