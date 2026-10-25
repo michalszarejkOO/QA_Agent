@@ -53,10 +53,11 @@ web page.
 - **Never restart, switch, or reconfigure the pinned target.** The delegated app
   URL, device, or app is fixed for the run.
 
-## Recorded evidence (videos and bug screenshots)
+## Recorded evidence (scenario videos and bug folders)
 
-Every run records a video of each happy-path scenario, and a screenshot plus a
-video of each bug, and saves them to a folder the user chose. This is separate
+Every run records a video of each scenario: happy path, error handling and
+edge cases alike. It also gives each bug its own folder holding a screenshot
+and a video, and saves everything to a folder the user chose. This is separate
 from the checkpoint screenshots you take to judge pass/fail (see above), which
 you take either way.
 
@@ -82,25 +83,51 @@ you take either way.
 creating it with `mkdir -p`:
 
 ```
-happy-path/<scenario-id>-<slug>.mp4
-bugs/<bug-n>-<slug>.png
-bugs/<bug-n>-<slug>.mp4
+testing/
+  happy-path/<scenario-id>-<slug>.mp4
+  error-handling/<scenario-id>-<slug>.mp4
+  edge-cases/<scenario-id>-<slug>.mp4
+bugs/
+  <bug-n>-<slug>/
+    screenshot.png
+    video.mp4
 ```
 
-If that folder already exists from an earlier run today, add `-2`, `-3`, ... so
-nothing is overwritten.
+`testing/` holds the test evidence, one video per scenario, whatever the
+result. `bugs/` holds one folder per bug, with everything needed to attach to
+that bug's ticket and nothing else.
+
+If the run folder already exists from an earlier run today, add `-2`, `-3`, ...
+so nothing is overwritten.
+
+**Scenario category.** Every scenario carries one category, set when the
+scenario list is written (`qa-tester` step 2, or your own list when
+standalone):
+
+| Category | Folder | Covers |
+| --- | --- | --- |
+| Happy path | `happy-path/` | The intended flow with valid input, ending in success. |
+| Error handling | `error-handling/` | Invalid input, validation messages, failed or rejected requests, permission denials, empty or error states. |
+| Edge case | `edge-cases/` | Boundaries and limits, unusual but valid input, language/direction, theme, font scale, accessibility, interrupted or repeated actions. |
+
+If a scenario fits more than one, pick the one its expected result is about.
 
 **What to record.**
 
-1. **Happy-path scenarios:** start recording at the scenario's first step and
-   stop after its final expected result is visible. If it passes, save the video
-   to `happy-path/`. If it fails, save it to `bugs/` as that bug's video.
-2. **Bugs:** save a screenshot of the failure state to `bugs/`. If the bug
-   showed up outside a recorded scenario (a negative or edge case, or found while
-   exploring), reproduce it once with recording on, then save that video next to
-   the screenshot. If it doesn't reproduce, say so in the report.
-3. Negative and edge-case scenarios that pass don't need a video. Their
-   checkpoint screenshots are enough.
+1. **Every scenario:** start recording at the scenario's first step and stop
+   after its expected result is visible. Save the video under `testing/` in
+   the scenario's category folder, whether it passed or failed. Add `-FAIL` to
+   the file name of a failed scenario's video (`TC-04-empty-email-FAIL.mp4`).
+   One video per scenario. Don't record several scenarios in one video.
+2. **Bugs:** create `bugs/<bug-n>-<slug>/` and save a screenshot of the failure
+   state there as `screenshot.png`. For the video:
+   - If the bug came from a recorded scenario, copy that scenario's video into
+     the bug folder as `video.mp4`. Keep the original under `testing/`.
+   - If the bug showed up outside a scenario (while exploring), reproduce it
+     once with recording on and save the video as `video.mp4`. If it doesn't
+     reproduce, say so in the report.
+   - If one bug needs more than one screenshot, number them
+     (`screenshot-1.png`, `screenshot-2.png`).
 
 Starting and stopping a recording works differently on each platform; see the
 "Recording" section of each adapter. If recording isn't available (for example,
@@ -108,8 +135,9 @@ the tool is missing or the simulator's recorder is busy), keep testing. Report
 which videos are missing and why. Never present a checkpoint screenshot as a
 video.
 
-At the end of the run, list every saved file with its absolute path so the
-report can link evidence to scenarios and bugs.
+At the end of the run, list every saved file with its absolute path, grouped
+as `testing/` (by category) and `bugs/` (by bug), so the report can link
+evidence to scenarios and bugs.
 
 ## Keeping the user informed
 
@@ -148,7 +176,7 @@ the branch instead.
    before the first scenario.
 4. Capture evidence per the adapter's instructions: screenshots always; console/
    network output whenever a criterion concerns errors, loading states, or API
-   behavior; videos and bug screenshots saved per "Recorded evidence" above.
+   behavior; scenario videos and bug folders saved per "Recorded evidence" above.
 5. Hand the captured evidence back to whatever's judging pass/fail — `qa-tester`'s
    own step 6 when invoked from there, or straight into your own response when
    this skill was triggered standalone. Include the saved-file list.

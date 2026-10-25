@@ -50,7 +50,7 @@ environment blocker (not a product bug) rather than continuing to test around it
    before judging pass/fail.
 6. Use `browser_console_messages` and `browser_network_requests` whenever a
    criterion concerns errors, loading states, or API behavior.
-7. Record videos and save bug screenshots per "Recording" below.
+7. Record a video of every scenario and save bug folders per "Recording" below.
 
 ## Recording
 
@@ -59,8 +59,8 @@ evidence" section. The web mechanics:
 
 - **Video:** call `browser_start_video` with a `filename` such as
   `qa-video/<scenario-id>-<slug>.webm`, then call `browser_stop_video` when the
-  scenario ends. These tools exist only on a server started with
-  `--caps=devtools` (`playwright-video`, above). If they aren't in your tool
+  scenario ends. Do this for every scenario, not just the happy path. These
+  tools exist only on a server started with `--caps=devtools` (`playwright-video`, above). If they aren't in your tool
   list, no video can be recorded this run. Report that, and keep going with
   screenshots only.
 - **Convert to MP4:** Playwright records WebM only, which QuickTime and Jira
@@ -69,7 +69,11 @@ evidence" section. The web mechanics:
   `ffmpeg -hide_banner -loglevel error -y -i <name>.webm -c:v libx264 -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -movflags +faststart -an <name>.mp4 && rm <name>.webm`.
   If `ffmpeg` is missing or the conversion fails, keep the `.webm` and say so
   in the report.
-- **Bug screenshot:** call `browser_take_screenshot` with a `filename`.
+- **Where it goes:** the video's place in the run folder is
+  `testing/<category>/<scenario-id>-<slug>.mp4`. If the scenario failed, add `-FAIL` to its
+  name and `cp` it to `bugs/<bug-n>-<slug>/video.mp4`.
+- **Bug screenshot:** call `browser_take_screenshot` with a `filename`, then `mv`
+  it to `bugs/<bug-n>-<slug>/screenshot.png`.
 - Playwright MCP resolves a relative `filename` against its workspace root and
   refuses paths outside it. Pass a relative name, read the saved path from the
   tool result, then `mv` that file into the run folder. Don't pass the run

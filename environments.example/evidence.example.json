@@ -1,5 +1,5 @@
 {
   "dir": "~/Documents/QA-evidence",
   "mode": "auto",
-  "notes": "Where qa-tester/testing-apps save run evidence: a video per happy-path scenario, and a screenshot plus a video per bug. Each run lands in <dir>/<ticket-or-session>/<YYYY-MM-DD>-<web|ios|android>/{happy-path,bugs}/. mode: \"auto\" (default) records and saves every run without asking; \"ask\" makes the delegating conversation ask the user before each run whether to record and save."
+  "notes": "Where qa-tester/testing-apps save run evidence: a video per scenario (happy path, error handling, edge cases), and a folder per bug with its screenshot and video. Each run lands in <dir>/<ticket-or-session>/<YYYY-MM-DD>-<web|ios|android>/ with testing/{happy-path,error-handling,edge-cases}/ and bugs/<bug-n>-<slug>/. mode: \"auto\" (default) records and saves every run without asking; \"ask\" makes the delegating conversation ask the user before each run whether to record and save."
 }

@@ -20,7 +20,7 @@ actually a web page.
 | Before reporting any control as "does nothing" / "dead button", retest it twice: once via its `@eN` ref from a fresh `snapshot -i`, once via the correctly-converted point coordinate of its visible center. Only report broken if **both** fail. | A ref tap and a coordinate tap can legitimately disagree — see "Accessibility hit-frame checks" below. Reporting off one tap alone risks a false positive. |
 | Always pass `--device "<exact name>"` explicitly once more than one device/simulator matches. | Ambiguous matches fail the command outright (`AMBIGUOUS_MATCH`). |
 | If a physical iOS device is being used for the first time this session, or `open`/`snapshot` fails on signing/provisioning/Developer Mode, read [physical-device-setup.md](./physical-device-setup.md) before improvising. | The setup is multi-layered (device, macOS, Xcode, Apple account) and fails with a different error at each layer — guessing burns turns. |
-| Every run starts with a clean build and install (uninstall the app, rebuild the native project from your own worktree, install the fresh build) unless the product config's `installMode` says otherwise. Never test whatever is already installed by default. See "Clean build and install, every run". | A build left on the device may be stale, from another branch, or a legacy app with a similar name, and its leftover data and sessions hide first-launch bugs. A failed build is a blocker, not a reason to test the old copy. |
+| Test the distributed build already installed on the device (TestFlight on iOS; Google Play internal/closed testing or Firebase App Tester on Android) unless the request explicitly asks to build locally (from source, the branch, the PR, a worktree). Only then build, per the config's `installMode`. See "Install source: distributed build by default". | The distributed build is what testers and the client actually get. A local build is slower, needs signing and a Metro port, and is only worth it when the user wants an unreleased branch tested. A failed local build is a blocker, not a reason to test the installed copy. |
 | When building from source, reserve the Metro port with `scripts/metro-port.sh reserve`, pass it to the build as `--port`, and release it at the end. If a reopened dev client shows a native-module mismatch, check who owns the port and move to a new one (step 5). See "Building from source in parallel". | Parallel runs on two devices otherwise collide on one port and block each other's builds. |
 | Never accept a device passcode, Apple ID password, or macOS/sudo password typed into the chat. Tell the user to type it into the native prompt (Terminal, Xcode, the device) themselves. | Chat history is not a credential store; treat a pasted password as a signal to warn, not to use. |
 
@@ -48,8 +48,9 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
    if only its display name is known. For a **physical** device, connected by cable
    or over Wi-Fi, also run `scripts/list_physical_devices.py` and pick only a row
    with `state=ready`. See "Physical devices: cable or Wi-Fi" below.
-   Then do the build and install per "Clean build and install, every run" below
-   (clean unless `installMode` says otherwise), before opening the app.
+   Then pick the install source per "Install source: distributed build by default"
+   below (the installed TestFlight/Play/App Tester build unless the request asks
+   for a local build), before opening the app.
 3. `agent-device open <bundle-id> --device "<name>" --foreground` to start the session,
    then `agent-device snapshot -i` for the first interactive snapshot with `@eN` refs.
 4. Pick the loop that matches the ask and follow it as documented — don't
@@ -62,8 +63,8 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
 5. Capture evidence as you go: `agent-device screenshot <path>.png` (add
    `--overlay-refs` to show which element is which). Read every screenshot back
    before judging pass/fail — see "Shared discipline" in the parent skill
-   (`../../SKILL.md`). Record videos and save bug screenshots per "Recording"
-   below.
+   (`../../SKILL.md`). Record a video of every scenario and save bug folders
+   per "Recording" below.
 6. `agent-device close` when the session ends, then do the cleanup in "Building from
    source in parallel" if you built the app.
 
@@ -126,43 +127,70 @@ bug.
 What to record, and where it goes, is set in the parent skill's "Recorded
 evidence" section. The mobile mechanics:
 
-- **Video:** run `agent-device record start <run folder>/happy-path/<scenario-id>-<slug>.mp4`
-  after `open`, then `agent-device record stop` when the scenario ends. Stop it in
-  the same `--session` that started it. The default `--scope app` needs an active
-  app session. Use `--scope device` only if a step leaves the app (system
+- **Video:** run `agent-device record start <run folder>/testing/<category>/<scenario-id>-<slug>.mp4`
+  after `open`, then `agent-device record stop` when the scenario ends. Do this
+  for every scenario, not just the happy path. Stop it in the same `--session`
+  that started it. The default `--scope app` needs an active app session. Use `--scope device` only if a step leaves the app (system
   Settings, Control Center).
 - **Android:** a recording longer than 180 s comes back as several MP4 chunks.
   Keep all of them, numbered `-part1`, `-part2`, and so on.
 - **iOS simulator:** `DEVICE_IN_USE` with reason `apple_simulator_recording_busy`
   means another session's recorder holds the simulator. Don't retry in a loop.
   Report the video as missing and continue.
-- **Bug screenshot:** `agent-device screenshot <run folder>/bugs/<bug-n>-<slug>.png`.
-- If a scenario recorded into `happy-path/` fails, `mv` its video into `bugs/`.
+- **Bug screenshot:** `agent-device screenshot <run folder>/bugs/<bug-n>-<slug>/screenshot.png`.
+- If a scenario fails, rename its video with a `-FAIL` suffix and `cp` it to
+  `bugs/<bug-n>-<slug>/video.mp4`. The original stays under `testing/`.
 
-## Clean build and install, every run
+## Install source: distributed build by default
 
 Applies to simulators, emulators and physical devices alike. The product's
 environment config (`surfaces.mobile`) supplies the repo, build command and
 signing quirks.
 
-**Install mode.** Read `installMode` from the product's mobile surface in its
-environment config. A mode named in the brief overrides it for that run.
+**Default: the installed distributed build.** Unless the request explicitly asks
+to build locally, test the app already installed on the device from TestFlight
+(iOS), Google Play internal/closed testing, or Firebase App Tester (Android).
+Don't build, don't uninstall.
+
+1. Confirm the bundle id/package is installed: `agent-device apps --device "<name>"`.
+   Check the config's `knownCaveats` for the right id, and don't pick a legacy
+   app with a similar name.
+2. Log its version and build number (from `agent-device apps`, the app's About
+   screen, or the TestFlight/App Tester listing) and the distribution channel in
+   the run log, so the report shows exactly which build was tested.
+3. When testing a ticket or PR, say in the report whether that build is known to
+   contain the change (release notes, version, or build date after the merge). If
+   you can't tell, say so under "Not done / skipped" rather than assuming it does.
+4. If the app isn't installed, or the device has a local dev build instead of a
+   distributed one (a dev client that asks for a Metro server), stop and report a
+   blocker asking the user to install the build from TestFlight/Play/App Tester.
+   Don't fall back to a local build on your own.
+
+Leftover data from an earlier run stays on the device in this mode. Sign out
+before you start, and list "clean install skipped: distributed build" under
+"Not done / skipped".
+
+**Local build: only when the request asks for it.** Phrases like "build it
+locally", "from source", "from the branch/PR", "fresh build", or a brief naming
+`installMode: clean`/`update`. Then read `installMode` from the product's mobile
+surface in its environment config. A mode named in the brief overrides it for
+that run.
 
 | `installMode` | What the run does |
 | --- | --- |
 | `clean` (default, also when the field is missing) | All five steps below. |
 | `update` | Steps 1, 3, 4 and 5, skipping the uninstall. The fresh build installs over the existing app and keeps its data. Use it to test upgrades or a flow that needs an existing login. |
-| `installed` | No build or install. Test the app already on the device, and log its version and build number (from `agent-device apps` or the app's About screen) in step 5. |
+| `installed` | No build. Use the distributed-build steps above. |
 
 Any other value: treat it as `clean` and say so in the report. Whatever the
-mode, log it in the run log. For `update` and `installed`, also list it under
-"Not done / skipped" as "clean install skipped: installMode=<mode>".
+mode, log it in the run log. For `update`, also list it under "Not done /
+skipped" as "clean install skipped: installMode=update".
 
 The steps, in an order that never changes:
 
 1. **Fresh worktree.** Check out the ticket's branch (or the PR head) in your own
    new worktree. On a standalone run, check out the target branch from
-   [target-branch.md](../target-branch.md) instead. Then and install JS dependencies there. Never build from the shared
+   [target-branch.md](../target-branch.md) instead. Then install JS dependencies there. Never build from the shared
    checkout. Record the commit (`git rev-parse --short HEAD`).
 2. **Uninstall the app from the device**, so no data, session, keychain-backed
    login or cache survives from an earlier run. Use the bundle id/package the
@@ -186,9 +214,8 @@ The steps, in an order that never changes:
    log, so the report shows exactly which build was tested.
 
 If any step fails, stop and report a blocker with the failing command and its
-error. Never fall back to an app that's already on the device. Only
-`installMode: installed` (from config or the brief) means testing the installed
-build. For example, set it in the brief to test a TestFlight or store release.
+error. Never fall back to an app that's already on the device once a local
+build was asked for.
 
 ## Building from source in parallel — never share a Metro port
 

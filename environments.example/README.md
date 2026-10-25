@@ -14,9 +14,11 @@ a product that has both a UI and an API collection).
 - [`app-with-ui.example.json`](./app-with-ui.example.json) — a product `qa-tester`
   drives through a browser or a mobile app via the `testing-apps` skill: app/
   backoffice surfaces, login method, Basic Auth, pools of test credentials. A
-  mobile surface sets `platform` instead of `appUrl`, plus `installMode`:
-  `clean` (default, uninstall and rebuild every run), `update` (fresh build over
-  the existing app, data kept) or `installed` (test what's on the device).
+  mobile surface sets `platform` instead of `appUrl`, plus `installMode`. Runs
+  test the installed TestFlight/Google Play/App Tester build by default;
+  `installMode` only applies when the request asks for a local build: `clean`
+  (default, uninstall and rebuild) or `update` (fresh build over the existing
+  app, data kept).
 - [`api-collection.example.json`](./api-collection.example.json) — a product
   `testing-api` runs an API collection against: which client (Bruno, Postman, or
   Insomnia), repo path, default environment, known stateful-case caveats, and
@@ -24,7 +26,8 @@ a product that has both a UI and an API collection).
 
 - [`evidence.example.json`](./evidence.example.json) — one file for all products,
   saved as `environments/evidence.json`. It sets where `qa-tester` saves run
-  evidence (a video per happy-path scenario, plus a screenshot and video per bug)
+  evidence (a video per scenario, sorted into happy path, error handling and
+  edge cases, plus a separate folder per bug with its screenshot and video)
   and whether it records automatically (`"mode": "auto"`, the default) or asks
   first (`"ask"`). Web videos need a Playwright MCP server named
   `playwright-video` started with `--caps=devtools`. Add it once with

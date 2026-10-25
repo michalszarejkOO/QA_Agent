@@ -118,7 +118,10 @@ scenarios.
    diff, and the Figma design gathered in step 1. Add scenarios for edge cases the
    PR's diff suggests (new validation, new error states, changed conditionals) even if
    the ticket doesn't spell them out, but don't invent scope the ticket and PR don't
-   support. Produce the full scenario list as one artifact before touching the
+   support. Tag every scenario with one category: happy path, error handling or
+   edge case (definitions in `testing-apps` "Recorded evidence"). Cover all three
+   wherever the ticket and diff support it; the category also decides where the
+   scenario's video is saved. Produce the full scenario list as one artifact before touching the
    app itself — it's what step 3 executes against. A scenario written after
    you've already started clicking around just rationalizes whatever you happened to
    click, instead of the other way round.
@@ -137,9 +140,11 @@ scenarios.
    for a web URL or the `agent-device` adapter for an iOS/Android mobile target, and
    owns everything about driving the app and capturing evidence for that platform —
    fresh-session sign-in, network-before-clicking, screenshot-then-judge discipline,
-   recording a video of each happy-path scenario plus a screenshot and video of
-   each bug into the configured evidence folder (its "Recorded evidence" section),
-   and (for mobile) a clean build and install before every run, the points/pixels
+   recording a video of every scenario (happy path, error handling, edge cases)
+   under `testing/`, and a folder per bug with its screenshot and video under
+   `bugs/`, in the configured evidence folder (its "Recorded evidence" section),
+   and (for mobile) the install source (the installed TestFlight/Play/App Tester
+   build unless the request asks for a local build), the points/pixels
    conversion, and accessibility hit-frame checks.
    Steps 1-2 above and 4-5 below are this procedure's own and stay unchanged either
    way.
@@ -210,16 +215,17 @@ Return a structured report, in this order:
 3. **Sources used** — ticket key/title, PR number/title, Figma link, and the app URL or
    device/app target, or which of these were unavailable and skipped.
 4. **Scenario results** — one entry per scenario, pass/fail, with the evidence
-   (what the examined screenshot showed, relevant console/network output, and the
-   saved video's path for a happy-path scenario).
+   (category, what the examined screenshot showed, relevant console/network
+   output, and the saved video's path).
 5. **Visual fidelity** — only if a Figma design was available; concrete deviations
    from the design, or a clean statement that it matches.
 6. **Bugs and deviations found** — anything broken or inconsistent with the ticket,
    independent of the specific scenarios above. Include confirmed accessibility
    violations from step 5 here, each tagged with its WCAG success criterion.
-7. **Saved evidence** — the run folder's absolute path and every file saved in it
-   (happy-path videos, bug screenshots and videos), each mapped to its scenario or
-   bug. List any expected video that's missing and why (recording tool not
+7. **Saved evidence** — the run folder's absolute path and every file saved in it,
+   in two groups: `testing/` (scenario videos by category: happy path, error
+   handling, edge cases) and `bugs/` (one folder per bug with its screenshot and
+   video), each file mapped to its scenario or bug. List any expected video that's missing and why (recording tool not
    available, recorder busy, `mode: ask` with no answer in the brief, bug didn't
    reproduce). If nothing was saved, say why in one line.
 8. **Blockers** — anything that stopped testing (missing input, unreachable app,
@@ -232,8 +238,9 @@ Return a structured report, in this order:
    found), never as a replacement for it. Always include this, even for a clean pass.
 10. **Bug report draft(s)** — if you found a bug, draft it with the `reporting-bugs`
    skill (Title, Steps to reproduce, Expected, Actual) for each one found, separate
-   from the ticket-comment draft above. Under each draft, list the paths of that
-   bug's saved screenshot and video so they can be attached when the bug is filed.
+   from the ticket-comment draft above. Under each draft, give the path of that
+   bug's folder and the screenshot and video in it, so they can be attached when
+   the bug is filed.
    `reporting-bugs` itself checks for an existing duplicate via the
    `find-duplicates` skill before drafting — that's why it's bound above alongside
    it.
