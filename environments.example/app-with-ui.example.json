@@ -33,7 +33,7 @@
       "platform": "expo-react-native",
       "buildCommand": "npx expo run:ios --device <udid> --port <reserved port>",
       "installMode": "clean",
-      "notes": "A mobile surface has 'platform' instead of 'appUrl'. installMode: \"clean\" (default — uninstall, rebuild native projects, install fresh build every run), \"update\" (fresh build installed over the existing app, data kept — for upgrade testing), or \"installed\" (no build, test whatever is on the device). A mode named in the run's brief overrides this for that run."
+      "notes": "A mobile surface has 'platform' instead of 'appUrl'. By default every run tests the build installed from TestFlight/Google Play/App Tester. installMode applies only when the request asks for a local build: \"clean\" (default — uninstall, rebuild native projects, install fresh build), \"update\" (fresh build installed over the existing app, data kept — for upgrade testing), or \"installed\" (no build). A mode named in the run's brief overrides this for that run."
     }
   },
   "repos": {

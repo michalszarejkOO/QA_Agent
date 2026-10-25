@@ -61,8 +61,8 @@ This skill only asks questions and writes JSON config files under
    file, per the example.
 
 4. **Configure evidence recording.** Ask which folder `qa-tester` should save run
-   evidence to (a video per happy-path scenario, plus a screenshot and video per
-   bug), and whether to record and save on every run automatically (default) or
+   evidence to (a video per scenario, sorted into happy path, error handling and
+   edge cases, plus a separate folder per bug with its screenshot and video), and whether to record and save on every run automatically (default) or
    ask before each run. Write `environments/evidence.json` following
    `environments.example/evidence.example.json`, with `mode` set to `"auto"` or
    `"ask"`. It's one file for all products. If it already exists, show the diff

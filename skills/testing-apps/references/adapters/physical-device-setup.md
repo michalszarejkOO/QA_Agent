@@ -1,7 +1,8 @@
 # Physical iOS device setup
 
-One-time-per-Mac (mostly) setup for `agent-device` to drive a real, cabled iPhone/iPad
-instead of a simulator. Each layer fails with a different error; fix them in this
+One-time-per-Mac (mostly) setup for `agent-device` to drive a real iPhone/iPad
+(cabled or over Wi-Fi) instead of a simulator. For finding which device is reachable
+and over which transport, see "Physical devices: cable or Wi-Fi" in `mobile.md`. Each layer fails with a different error; fix them in this
 order rather than guessing. `agent-device help physical-device` has the tool's own
 reference — this file is the symptom-to-fix map for the specific failures actually
 hit, faster than re-deriving them from the general docs.
