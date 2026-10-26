@@ -8,6 +8,9 @@ Confluence site — see `agents/qa-tester.md`'s "Jira ticket" input and
 deliberately no example template for this file elsewhere in the repo; this is where
 it gets created.
 
+It also holds the [Atlassian tool names](#atlassian-tool-names) that every skill
+uses to call Jira and Confluence.
+
 ## Shape
 
 ```json
@@ -73,3 +76,43 @@ has no connector at all yet, the same local setup works for the first site too.
 If the user says no Atlassian integration is needed at all, skip this whole
 reference and tell [product-config.md](./product-config.md) to omit `jira` and
 `api.confluence` from every product.
+
+## Atlassian tool names
+
+Every skill and the `qa-tester` agent that talks to Jira or Confluence uses the
+names below, so a renamed tool is fixed here once. They are the operation names
+of Atlassian's own MCP server (`https://mcp.atlassian.com/v2/mcp`, also behind the
+claude.ai Atlassian connector). The full tool name adds the server's prefix, which
+is whatever the user named it (`mcp__atlassian-<site>__getJiraIssue`,
+`mcp__claude_ai_Atlassian__getJiraIssue`, ...); pick the server for the site from
+`atlassian-connectors.json`.
+
+Two kinds of operation:
+
+- **Direct**: a tool of its own; call it as is (load its schema with ToolSearch
+  first if it's deferred).
+- **Through discover**: no tool of its own. Call that server's `discover` with
+  the goal in words, then run the operation with the execute tool `discover`
+  names (`executeRead` for reads, `executeWrite` for writes), passing `cloudId`
+  at the top level and the operation's arguments in `inputs`. Never guess an
+  operation name; if one below is missing, `discover` the goal again.
+
+| To do this | Operation | How |
+| --- | --- | --- |
+| Find which site a server reaches (cloudId) | `getAccessibleAtlassianResources` | direct |
+| Read one Jira issue (`view: "evidence"` adds its issue links) | `getJiraIssue` | direct |
+| Search Jira with JQL | `searchJiraIssuesUsingJql` | direct |
+| List an issue's web links (Figma, Confluence, other URLs) | `listJiraIssueRemoteIssueLinks` | through discover, `executeRead` |
+| List a project's issue types | `listJiraProjectIssueTypesMetadata` | through discover, `executeRead` |
+| Get an issue type's fields (required ones, allowed values, `customfield_*` ids) | `getJiraIssueTypeMetaWithFields` | through discover, `executeRead` |
+| Create a Jira issue | `createJiraIssue` | direct |
+| Add or edit a Jira comment | `addOrEditJiraIssueComment` | direct |
+| Edit a Jira issue / move it to another status | `editJiraIssue` / `transitionJiraIssue` | direct |
+| Search Confluence (CQL) | `searchConfluence` | direct |
+| Read a Confluence page | `getConfluenceContent` | direct |
+| Create / update a Confluence page | `createConfluenceContent` / `updateConfluenceContent` | direct |
+| Get the body format rules before writing a page or comment body | `getContentFormatGuide`, with `toolName` set to `createConfluencePage` or `updateConfluencePage` for pages, `addOrEditJiraIssueComment` for a Jira comment in HTML | through discover, `executeRead` |
+
+A different Atlassian MCP server (for example the community `mcp-atlassian`, with
+names like `jira_get_issue`) works too: match each row by what it does, not by
+name, and tell the user which tool you used for it.

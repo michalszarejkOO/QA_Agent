@@ -32,8 +32,9 @@ rather than assuming a fixed template covers it.
    from context (e.g. filing into the same project as a linked ticket), ask — never
    guess a project key.
 3. **Fetch the real schema** for that project + issue type with
-   `getJiraIssueTypeMetaWithFields` (or `getJiraProjectIssueTypesMetadata` to first
-   confirm the issue type exists). This is the authoritative required-field list and,
+   `getJiraIssueTypeMetaWithFields` (after `listJiraProjectIssueTypesMetadata`, which
+   gives the issue type's id; both run through `discover`, see
+   [configure-project/references/connectors.md](../configure-project/references/connectors.md#atlassian-tool-names)). This is the authoritative required-field list and,
    for enumerated fields, their allowed values — read it fresh each time rather than
    reusing a remembered field set from a different project.
 4. **Map the draft onto known fields** — title → summary, steps/expected/actual (or

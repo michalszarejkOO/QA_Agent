@@ -1,7 +1,8 @@
 <!--
 Confluence storage-format template for the quality dashboard. Fill every {{PLACEHOLDER}}
 before publishing; delete any row/section that has no data source rather than leaving a
-placeholder unresolved. Call getContentFormatGuide before editing this if it's been a
+placeholder unresolved. Call getContentFormatGuide (toolName createConfluencePage, through
+discover; see configure-project/references/connectors.md) before editing this if it's been a
 while — nesting rules (panels can't contain tables; table cells can hold lists and
 status lozenges) are easy to get wrong from memory.
 

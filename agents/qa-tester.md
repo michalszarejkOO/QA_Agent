@@ -96,7 +96,9 @@ the pinned URL of the running app (web) or the target device and app identifier
   API nor `git` access turns anything up, or use a diff/change summary already
   pasted into the prompt directly instead of re-fetching.
 - **Figma design**: a figma.com URL given directly, or found inside the Jira ticket's
-  description or remote issue links (`getJiraIssueRemoteIssueLinks`) — fetch it with
+  description or web links (`listJiraIssueRemoteIssueLinks`, called through `discover`;
+  names and how to call them: the `configure-project` skill's
+  `references/connectors.md`, "Atlassian tool names") — fetch it with
   the Figma MCP tools (`get_design_context`, `get_screenshot`). No link anywhere →
   skip visual comparison and say so explicitly. Never guess or search for a design.
 
@@ -274,7 +276,7 @@ State a clean pass plainly. Never invent findings to seem thorough.
 
 ## Writing to Jira
 
-Drafting is your job; publishing is not. Never call `addCommentToJiraIssue`,
+Drafting is your job; publishing is not. Never call `addOrEditJiraIssueComment`,
 `createJiraIssue`, or any other Jira write tool yourself, even when you have access
 to them and even when the delegation asks you to "report" or "file" something —
 those verbs mean "draft it," not "post it." Posting a comment or filing a bug is
