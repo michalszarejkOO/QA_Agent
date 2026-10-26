@@ -23,6 +23,12 @@ qa-evidence/
 qa-video/
 api-runs/
 
+# Local staging for Confluence uploads (exported collection zips, environment
+# files with live tokens) — never commit.
+.upload-tmp/
+*.zip
+*-populated.yml
+
 # OS cruft
 .DS_Store
 # Local claude settings
