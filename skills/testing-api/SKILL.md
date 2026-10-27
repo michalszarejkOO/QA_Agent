@@ -114,7 +114,7 @@ End every run with a point-list summary, after the report and drafts:
      "collectionPath": "bruno",
      "defaultEnvironment": "demo",
      "knownCaveats": ["<free text about stateful/order-dependent cases, if any>"],
-     "knownCaveatsFile": "<filename, resolved relative to this same environments/ dir, of a fuller markdown doc — use this instead of/alongside knownCaveats when the caveat list is long enough that keeping it as JSON strings risks drifting out of sync with a richer doc>",
+     "knownCaveatsFile": "<filename of a fuller markdown doc kept next to this config in <workDir>/config/ — use this instead of/alongside knownCaveats when the caveat list is long enough that keeping it as JSON strings risks drifting out of sync with a richer doc>",
      "confluence": {
        "cloudId": "<site>",
        "spaceKey": "<space>",
@@ -124,7 +124,7 @@ End every run with a point-list summary, after the report and drafts:
        "secondaryAttachments": [
          { "name": "<fixed filename>", "sourcePath": "<path relative to repo root>" }
        ],
-       "envRefreshProcedure": "<optional filename, resolved relative to this same environments/ dir, of a doc describing how to mint live values into a secondaryAttachments file before export>"
+       "envRefreshProcedure": "<optional filename of a doc kept next to this config in <workDir>/config/, describing how to mint live values into a secondaryAttachments file before export>"
      }
    }
    ```
@@ -133,6 +133,13 @@ End every run with a point-list summary, after the report and drafts:
    [confluence-publish.md](./references/confluence-publish.md) for how the last two
    are used, and [adapters/bruno.md](./references/adapters/bruno.md) for
    `knownCaveatsFile`.
+   **Finding `knownCaveatsFile` and `envRefreshProcedure`:** they belong next to
+   the product's real config file, in `<workDir>/config/` (the file in
+   `~/.claude/environments/` is a link to it). Look there first. If the file is
+   only in `~/.claude/environments/` (older installs kept it there), use it, and
+   tell the user it belongs in `<workDir>/config/` and that "update QA_Agent"
+   moves it. If it's in neither place, say so before going on: without the env
+   refresh doc the published environment file keeps expired values.
    `client` is one of `"bruno"`, `"postman"`, `"insomnia"` and selects which adapter
    the rest of this procedure loads — everything below is identical in shape across
    clients, only the exact commands and file conventions differ, and those live in
@@ -233,9 +240,11 @@ T0. **Gather ticket context first.** Fetch the ticket (verify the right Jira
 T1. **Resolve the product/client/config** as step 0 above, then resolve the *latest*
     collection specifically: fetch whatever is currently attached to the product's
     Confluence tracker page (if `api.confluence` is configured) and diff it against
-    the local repo checkout. Use the Confluence version as the base for everything
+    the local repo checkout (download as
+    [confluence-publish.md](./references/confluence-publish.md), "Downloading the
+    current collection", describes). Use the Confluence version as the base for everything
     below; tell the user about any divergence rather than silently picking one. If
-    no attachment-reading tool is available this session, say so plainly and fall
+    the download isn't possible this session, say so plainly and fall
     back to the local repo checkout, flagging that as a limitation, not a silent
     substitution.
 

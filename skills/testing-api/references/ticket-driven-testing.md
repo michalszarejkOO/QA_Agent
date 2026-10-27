@@ -46,17 +46,19 @@ Confluence tracker page as a zip attachment without committing to git — this h
 happened before and left richer, more current coverage sitting only on Confluence
 while the repo checkout lagged behind.
 
-1. If the product's config has an `api.confluence` block, look for an
-   attachment-capable Confluence tool in this session (an upload/download tool, not
-   just page CRUD — page-only tools can't read attachment bytes). If one exists,
-   download the attached collection zip and extract it.
+1. If the product's config has an `api.confluence` block, download the attached
+   collection zip as [confluence-publish.md](./confluence-publish.md), "Downloading
+   the current collection", describes, and extract it. The download runs through
+   `discover`, so it won't show up as a tool of its own: don't take its absence
+   from the tool list as "no download tool".
 2. Diff the extracted collection against the local repo checkout's collection
    directory. If they differ, treat the Confluence version as the base for Steps 3–4
    below, and tell the user about the divergence (what's newer where) rather than
    picking one silently.
-3. If no attachment-capable tool is available this session, say so explicitly and
-   fall back to the local repo checkout as the base — call this out as a real
-   limitation of the current session's tool access, not a design choice, so the user
+3. If the download isn't possible (no Atlassian server for that site in this
+   session, or the page or file is missing), say so explicitly and fall back to
+   the local repo checkout as the base — call this out as a real limitation of
+   the current session's tool access, not a design choice, so the user
    knows the run may be working from a stale collection.
 4. Also check for **uncommitted local changes** to the collection (`git status` in
    the repo) before assuming the committed state is current — uncommitted
@@ -124,5 +126,6 @@ Whenever `api.confluence` is configured for the product, finish by re-uploading:
 
 This is mandatory in ticket mode whenever the config exists — independent of
 whether the tests passed, and not something to skip because the run "already has
-enough evidence." If no attachment-capable tool is available this session (see Step
-2), say so plainly here too rather than silently completing a partial publish.
+enough evidence." If the session has no Atlassian server for that site (see
+`confluence-publish.md`, "Which server to use"), say so plainly here too rather
+than silently completing a partial publish.

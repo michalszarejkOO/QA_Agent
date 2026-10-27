@@ -12,6 +12,17 @@ separate session. Never mix the two in one run, or the recording, sign-in and
 screenshots end up in different browsers. Fall back to the plugin server only
 if `playwright-video` isn't connected, and report that videos weren't recorded.
 
+## Window size
+
+`scripts/playwright-mcp.sh` opens the browser maximized with no fixed viewport
+(`scripts/playwright-mcp.config.json`), so the page fills the window and follows
+it when the user resizes it. Don't call `browser_resize` on desktop runs; it pins
+a fixed viewport again and hides content in the user's visible window (user,
+27.10.2026). Resize only when a scenario is explicitly about a breakpoint or mobile
+width, then report that you did. If a run shows a small fixed viewport (check
+`window.innerWidth`), the server was registered without the launcher script. Say
+so instead of working around it.
+
 ## Fresh session, every run
 
 Always start from a fresh, unauthenticated state and sign in yourself as part of

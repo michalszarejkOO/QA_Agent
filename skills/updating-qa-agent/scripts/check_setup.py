@@ -13,7 +13,8 @@ product configs without workDir, Playwright not on its wrapper.
 Full mode prints one line per check, FAIL / WARN / OK / INFO, each problem with
 the command that fixes it, and exits 1 if anything FAILed. On top of the quick
 checks it covers the agent link, dangling skill links, git hooks, the config
-validator, every product's paths, project skill and REPLACE_ME values,
+validator, every product's paths, the docs it points at (knownCaveatsFile,
+envRefreshProcedure), project skill and REPLACE_ME values,
 playwright-video and maestro, and the tools runs need (git, python, node, ffmpeg,
 agent-device, Xcode/adb). Whether each Jira site is reachable through an
 Atlassian MCP server can only be checked from inside Claude; the
@@ -61,6 +62,34 @@ def unlinked_skills():
 
 def pending_migrations():
     return run(sys.executable, "-I", SCRIPTS / "migrations.py", "pending").stdout.split()
+
+
+COMPANION_FIELDS = ("knownCaveatsFile", "confluence.envRefreshProcedure")
+
+
+def companion_files(path, data):
+    """(field, filename, where) for each doc the product config points at.
+
+    where is "config" when the file sits next to the real config file
+    (<workDir>/config/), "environments" when only the old place has it, and
+    None when neither does.
+    """
+    api = data.get("api") or {}
+    found = []
+    for field in COMPANION_FIELDS:
+        value = api
+        for key in field.split("."):
+            value = value.get(key) if isinstance(value, dict) else None
+        if not isinstance(value, str) or not value:
+            continue
+        if (path.resolve().parent / value).is_file():
+            where = "config"
+        elif (ENV_DIR / value).is_file():
+            where = "environments"
+        else:
+            where = None
+        found.append((f"api.{field}", value, where))
+    return found
 
 
 def playwright_on_wrapper():
@@ -240,6 +269,15 @@ def check_product(r, path, servers):
             missing.append(f"api.collectionPath ({cp})")
     if missing:
         r.add("WARN", f"{name}: paths that don't exist: {', '.join(missing)}", "clone/create them or fix the paths in the config")
+    for field, filename, where in companion_files(path, data):
+        if where is None:
+            r.add("FAIL", f"{name}: {field} points at {filename}, which is neither in "
+                  f"{path.resolve().parent} nor in {ENV_DIR}",
+                  "find the file and put it next to the config, or remove the field")
+        elif where == "environments" and path.resolve().parent != ENV_DIR:
+            r.add("WARN", f"{name}: {field} file {filename} is still in {ENV_DIR}, "
+                  "not next to the config in <workDir>/config/",
+                  "in Claude: \"update QA_Agent\" (moves it)")
     work_dir = data.get("workDir")
     if work_dir and Path(work_dir).expanduser().exists() and not covered(work_dir, allowed_dirs()):
         r.add("WARN", f"{name}: workDir {work_dir} is not in additionalDirectories, so sessions opened "

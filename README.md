@@ -23,7 +23,10 @@ removes product links there whose project folder is gone.
 
 Then add your products: ask Claude to run the `configure-project` skill
 (`skills/configure-project/`). It walks you through which Atlassian connectors are
-authorized and which products/repos you're testing, and for each product writes
+authorized (Atlassian's own MCP server only: the claude.ai Atlassian connector or
+`https://mcp.atlassian.com/v2/mcp`, see
+[`connectors.md`](./skills/configure-project/references/connectors.md)) and which
+products/repos you're testing, and for each product writes
 `<workDir>/config/<product>-<env>.json` in the project's own working directory and
 symlinks it into `~/.claude/environments/`. Shape and fields are documented in
 [`environments.example/`](./environments.example/).

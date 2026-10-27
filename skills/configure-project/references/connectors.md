@@ -26,6 +26,17 @@ connector by inside product configs' `jira.connector` field — it does not have
 match the MCP tool prefix, but making it recognizable (e.g. `internal`, `client-x`)
 helps more than a generic `atlassian1`.
 
+## Only Atlassian's own MCP server
+
+QA_Agent supports one Atlassian MCP server: Atlassian's own, either the claude.ai
+Atlassian connector or `https://mcp.atlassian.com/v2/mcp` added to Claude Code
+(below). You can tell it by its tools: it has `getAccessibleAtlassianResources` and
+`discover`. Community servers such as `mcp-atlassian` (tools like
+`confluence_get_page`, `jira_get_issue`) or company plugins take other page formats
+and handle file uploads differently, so publishing to Confluence breaks on them
+(checked 2026-10-27). Don't register them in `atlassian-connectors.json`; if a site
+is reachable only through one, add Atlassian's server for that site instead.
+
 ## Two or more Atlassian sites
 
 Each Atlassian MCP server's OAuth grant covers one site, and claude.ai lets a user
@@ -46,9 +57,13 @@ has no connector at all yet, the same local setup works for the first site too.
 
 1. **List which Atlassian MCP tools/connectors are available this session.** Look for
    tool names matching `mcp__*atlassian*` or `mcp__*Atlassian*` (there may be more
-   than one — different plugins, or the same site connected two ways). Tell the user
-   what you found and ask them to confirm which of these they actually want
-   registered (some sessions have duplicates or stale ones not worth keeping).
+   than one — different plugins, or the same site connected two ways). Keep only
+   Atlassian's own servers (see "Only Atlassian's own MCP server" above); name any
+   other one you find and say it won't be used. Tell the user what you found and ask
+   them to confirm which of these they actually want registered (some sessions have
+   duplicates or stale ones not worth keeping). If no Atlassian server is there yet,
+   walk them through adding one (see "Two or more Atlassian sites": the same command
+   works for the first site).
 
 2. **For each connector the user confirms, resolve its site live.** Call that
    connector's own `getAccessibleAtlassianResources` tool — never ask the user to
@@ -113,6 +128,6 @@ Two kinds of operation:
 | Create / update a Confluence page | `createConfluenceContent` / `updateConfluenceContent` | direct |
 | Get the body format rules before writing a page or comment body | `getContentFormatGuide`, with `toolName` set to `createConfluencePage` or `updateConfluencePage` for pages, `addOrEditJiraIssueComment` for a Jira comment in HTML | through discover, `executeRead` |
 
-A different Atlassian MCP server (for example the community `mcp-atlassian`, with
-names like `jira_get_issue`) works too: match each row by what it does, not by
-name, and tell the user which tool you used for it.
+These names hold only for Atlassian's own server. If the session has no such
+server for the site, stop and tell the user how to add one (see "Two or more
+Atlassian sites") rather than switching to another Atlassian server.

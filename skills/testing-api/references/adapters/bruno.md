@@ -55,8 +55,8 @@ else that mutates server-side state:
 1. Check that product's `environments/*.json` → `api.knownCaveats` for a list of
    named cases with real caveats (e.g. "case X only passes with env var Y set",
    "case Z depends on case W having run first for the same identifier"). If
-   `api.knownCaveatsFile` is also set, load that file too (resolved relative to the
-   same `environments/` directory) — it's the fuller version for products whose
+   `api.knownCaveatsFile` is also set, load that file too (found as SKILL.md step 0
+   says: `<workDir>/config/` first) — it's the fuller version for products whose
    caveat list is too long/structured to keep as flat JSON strings without drifting
    out of sync. Where the two disagree, the file is the more current one.
 2. If nothing is recorded there but a case's name or `docs:` block implies

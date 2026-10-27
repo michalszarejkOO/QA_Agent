@@ -13,6 +13,11 @@
 # Claude Code starts this script directly, so $PPID is the Claude process; the
 # folder is named after it: <cache>/claude-<pid>/.
 #
+# The browser opens maximized with no fixed viewport (playwright-mcp.config.json),
+# so the page always fills the window and follows it when resized — the default
+# fixed 1280x720 viewport hid buttons on the admin SPA. To force a size for one
+# run, pass --viewport-size=WxH (it overrides the config).
+#
 # Env: PLAYWRIGHT_MCP_CACHE (default ~/.cache/playwright-mcp),
 #      PLAYWRIGHT_MCP_MAX_BYTES (default 200000000; older files are evicted past it).
 set -euo pipefail
@@ -20,8 +25,10 @@ set -euo pipefail
 CACHE="${PLAYWRIGHT_MCP_CACHE:-$HOME/.cache/playwright-mcp}"
 OUT="$CACHE/claude-$PPID"
 mkdir -p "$OUT"
+CONFIG="$(cd "$(dirname "$0")" && pwd)/playwright-mcp.config.json"
 
 exec npx -y @playwright/mcp@latest \
   --output-dir "$OUT" \
   --output-max-size "${PLAYWRIGHT_MCP_MAX_BYTES:-200000000}" \
+  --config "$CONFIG" \
   "$@"

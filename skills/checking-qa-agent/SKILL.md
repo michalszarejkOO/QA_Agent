@@ -21,7 +21,9 @@ fixes it, and the user decides.
    Atlassian MCP server available in this session (local ones like
    `atlassian-<name>`, or a claude.ai Atlassian connector) whose
    `getAccessibleAtlassianResources` returns that site. Call it; don't infer
-   from the server's name. Report per site:
+   from the server's name. Only Atlassian's own server counts (it has
+   `getAccessibleAtlassianResources` and `discover`); a site reached only through
+   another one, such as `mcp-atlassian`, is a FAIL. Report per site:
    - **OK** `<site>` via `<server>`.
    - **FAIL** `<site>` not reachable by any server. Fix: `claude mcp add
      --transport http --scope user atlassian-<name> https://mcp.atlassian.com/v2/mcp`,

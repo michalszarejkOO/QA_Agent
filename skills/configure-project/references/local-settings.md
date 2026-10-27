@@ -28,23 +28,11 @@ it. Write paths with `~` as the user typed them:
 }
 ```
 
-If a product configured a Confluence tracker page, mention (don't auto-add without
-asking — these are write-capable tools) that the user will likely also want to
-allowlist the Confluence attachment tools they actually use, e.g.:
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "mcp__<their-confluence-connector>__confluence_upload_attachment",
-      "mcp__<their-confluence-connector>__confluence_upload_attachments"
-    ]
-  }
-}
-```
-
-Only suggest the connector name actually resolved in
-[connectors.md](./connectors.md) — never guess a tool prefix.
+If a product configured a Confluence tracker page, don't suggest allowlisting the
+upload. With Atlassian's MCP server it goes through `executeWrite`, which covers
+every write operation on that site, so an allow rule for it would let any Jira or
+Confluence write through without a prompt. The upload itself is a `curl` command
+run with Bash, which the user approves per run.
 
 ## Procedure
 
@@ -52,8 +40,7 @@ Only suggest the connector name actually resolved in
    theme, plugins, permissions). Parse it as JSON.
 2. Merge the new `additionalDirectories` entries into the existing array (dedupe,
    don't replace the whole array; skip a path already covered by an entry that is
-   its parent) and, only if the user confirms they want it, the suggested `allow`
-   entries the same way. Leave every other key exactly as it was.
+   its parent). Leave every other key exactly as it was.
 3. Show the before/after of `permissions` and confirm before writing: this file
    controls what Claude can do without prompting, everywhere, so an unreviewed
    overwrite is a real risk, not just a formatting concern.
