@@ -73,6 +73,14 @@ A product with no collection repo of its own can keep its collection inside
 may live inside it or anywhere else; `repo` fields keep pointing at them either
 way.
 
+## Old files (`legacyFileKeywords`)
+
+Optional top-level list of words that appear in names of this product's files
+outside `workDir` (e.g. `["Assessment Invoice"]`), besides ticket keys and the
+product name. `configure-project`, migration 007 and `checking-qa-agent` use it to
+find such files (`skills/updating-qa-agent/scripts/find_project_files.py`) and
+offer to move them into `workDir`, always asking first.
+
 ## Project skill (`projectSkill`)
 
 Optional but offered for every product: the folder of a skill that holds

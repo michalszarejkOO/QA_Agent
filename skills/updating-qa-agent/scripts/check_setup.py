@@ -410,6 +410,23 @@ def check_onepassword(r, users):
               "in the 1Password app: Settings > Developer > Integrate with 1Password CLI, then run `op vault list` and approve the dialog")
 
 
+def check_stray_files(r, products):
+    """Product files left outside their workDir (find_project_files.py, read-only)."""
+    script = Path(__file__).with_name("find_project_files.py")
+    if not products or not script.exists():
+        return
+    try:
+        out = subprocess.run([sys.executable, "-I", str(script), "--summary"],
+                             capture_output=True, text=True, timeout=120)
+    except subprocess.TimeoutExpired:
+        return
+    summary = out.stdout.strip()
+    if out.returncode == 0 and summary and summary != "none":
+        r.add("INFO", f"project files outside their working directories ({summary})",
+              f"see them: python3 -I {script}; in Claude: \"pozbieraj pliki projektów\" / \"gather project files\" "
+              "moves them, asking before each move")
+
+
 def full():
     r = Report()
     check_links(r)
@@ -426,6 +443,7 @@ def full():
     check_mcp(r, servers, any_mobile, any_web)
     check_tools(r, any_mobile, any_web)
     check_onepassword(r, uses_onepassword(products))
+    check_stray_files(r, products)
     return r.print()
 
 

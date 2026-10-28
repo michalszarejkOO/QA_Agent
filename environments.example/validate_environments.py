@@ -61,6 +61,10 @@ def check_product_config(data, connectors):
             errors.append("'workDir' must be a non-empty path string")
         elif not Path(work_dir).expanduser().is_dir():
             errors.append(f"'workDir' ({work_dir}) doesn't exist — create it (mkdir -p)")
+    if "legacyFileKeywords" in data:
+        kw = data["legacyFileKeywords"]
+        if not isinstance(kw, list) or not all(isinstance(k, str) and k.strip() for k in kw):
+            errors.append("'legacyFileKeywords' must be a list of non-empty strings")
     if "projectSkill" in data:
         skill = data["projectSkill"]
         if not isinstance(skill, str) or not skill.strip():

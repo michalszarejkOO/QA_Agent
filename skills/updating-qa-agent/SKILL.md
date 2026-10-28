@@ -1,7 +1,7 @@
 ---
 name: updating-qa-agent
 description: Brings an existing QA_Agent install up to date after pulling changes — runs ./setup.sh, then applies every pending migration from this skill's migrations/ folder in order (moving configs, adding new required fields, re-registering MCP servers, cleaning up old locations), asking the user only what can't be worked out, so every machine ends up with the same layout. Also the place where anyone changing QA_Agent records what existing installs need to do. Use after `git pull` on this repo, or when asked to update/refresh/redo the QA_Agent setup.
-when_to_use: "Trigger on: 'aktualizuj skille', 'zaktualizuj QA_Agent', 'zrób na nowo setup', 'zrób setup' on a machine that already has product configs, 'pobrałem zmiany w QA_Agent', 'update the QA agent', 'I pulled the latest QA_Agent', 'refresh my setup', or ./setup.sh reporting pending migrations. Do NOT trigger for a first install with no product configs yet, or for adding a new product (that's configure-project), or for editing one config field by hand."
+when_to_use: "Trigger on: 'aktualizuj skille', 'zaktualizuj QA_Agent', 'zrób na nowo setup', 'zrób setup' on a machine that already has product configs, 'pobrałem zmiany w QA_Agent', 'update the QA agent', 'I pulled the latest QA_Agent', 'refresh my setup', 'pozbieraj pliki projektów', 'gather project files', or ./setup.sh reporting pending migrations. Do NOT trigger for a first install with no product configs yet, or for adding a new product (that's configure-project), or for editing one config field by hand."
 ---
 
 # Updating QA_Agent
@@ -47,6 +47,16 @@ skipped.
    moved, created or deleted (full paths), anything left for the user (e.g.
    `REPLACE_ME` values), and whether Claude Code needs a restart (an MCP server
    was re-registered).
+
+## Gathering project files again
+
+Migration 007 runs once, but files can pile up outside the working directories
+again (`checking-qa-agent` reports them as "project files outside their working
+directories"). When the user asks to gather them ("pozbieraj pliki projektów",
+"gather project files"), follow the Steps of
+[migrations/007-gather-project-files.md](./migrations/007-gather-project-files.md)
+again, whether or not 007 is marked applied: search, then ask before every move,
+never delete anything. Don't mark anything.
 
 ## Writing a migration (for anyone changing QA_Agent)
 

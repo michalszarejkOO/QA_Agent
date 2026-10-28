@@ -201,3 +201,24 @@ entirely — a product needs at least one of the two, per `validate_environments
      after showing the user both paths.
    - If `<workDir>` is inside a git repo, gitignore `config/` there first (see
      the rule in SKILL.md).
+
+10. **Gather the product's files from elsewhere (asks before every move).** Files
+   from before this setup often sit outside `workDir`: collection exports on the
+   Desktop, invoices or screenshots in Downloads, run folders (`api-runs/`,
+   `qa-evidence/`) in other projects, staged uploads in the QA_Agent repo.
+   - Ask for words that appear in such file names besides the ticket prefix and
+     the product name (e.g. `Assessment Invoice`); write them as top-level
+     `"legacyFileKeywords"` (optional, skip if none).
+   - Run
+     `python3 -I <QA_Agent>/skills/updating-qa-agent/scripts/find_project_files.py --product <product> --workdir <workDir> --prefix <PREFIX> ... --name <repo folder> ... --keyword "<word>" ...`.
+     It only reads: it looks on the Desktop, in Downloads, Documents, the
+     QA_Agent repo and run folders under `~/Projects`, and prints each match with
+     its size, why it matched, where it would go, and `[SECRETS]` when the secret
+     scan flags it. It never prints file contents.
+   - Show the list grouped by suggested destination, and **ask before every
+     move**, per group, with the choices: move, leave, or pick files. Never move
+     anything without that yes and never delete anything. Move with `mv -n` (never
+     overwrite); a name already taken at the destination gets a `-2` suffix.
+   - Point out `[SECRETS]` files on the Desktop or in Downloads: moving them into
+     `workDir` (which isn't shared) or deleting them is the user's call.
+   - "unassigned" lines match no product: mention them, don't move them here.
