@@ -169,7 +169,10 @@ describe. Don't try to fix the setup yourself.
 4. **Check visual fidelity when a Figma design is available.** Compare the screenshots
    you took against the Figma screenshot/design context for layout, spacing, colors,
    type, and states. Report concrete deviations (what differs, and by how much) —
-   never a vague "looks a bit off."
+   never a vague "looks a bit off." Figma is the reference, not the size to test at:
+   when the screen is narrower or wider than the frame, a responsive re-layout is
+   not a deviation, but a layout that breaks at that width is a bug (testing-apps
+   web adapter, "Window size").
 5. **Audit accessibility when the ticket or diff plausibly touches it.** If the PR
    touches forms, custom controls, color/contrast, focus order, ARIA attributes, or
    any screen-reader-dependent flow, invoke the `auditing-accessibility` skill against

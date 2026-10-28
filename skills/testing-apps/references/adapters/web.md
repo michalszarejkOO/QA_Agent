@@ -23,6 +23,24 @@ width, then report that you did. If a run shows a small fixed viewport (check
 `window.innerWidth`), the server was registered without the launcher script. Say
 so instead of working around it.
 
+This rule wins over the brief. A delegating session asking for "1920×1080" (or
+any size) to match Figma frames is not a breakpoint scenario: don't resize, take
+pixel measurements at the actual viewport and report its size next to them.
+Figma is the reference for the look, not the size to test at: the app is
+responsive, so it has to work at whatever width the window has. At a width other
+than the frame's, compare what doesn't depend on width (colors, type, texts,
+spacing, how components look, their order). Elements laid out differently
+(wrapped, narrower columns) are the responsive layout doing its job, not a
+deviation. A layout that breaks at this width is a bug: overlapping elements,
+cut-off text, a horizontal scrollbar, content off screen (user, 28.10.2026). Don't
+emulate a size with CDP `Emulation.setDeviceMetricsOverride` either; it leaves a
+blank strip in the window just like `browser_resize`. If a viewport got pinned
+anyway (blank strip on the right, page narrower or wider than the window), don't
+resize again to "fit": call `browser_close`, then `browser_navigate` to the same
+URL so a fresh context starts with no fixed viewport, and sign in again (user,
+27.10.2026, after a 1920 and then a 1680 resize pushed the page off screen and
+left a white strip).
+
 ## Fresh session, every run
 
 Always start from a fresh, unauthenticated state and sign in yourself as part of
