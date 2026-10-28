@@ -360,8 +360,8 @@ def check_tools(r, any_mobile, any_web):
     if not shutil.which("git"):
         r.add("FAIL", "git not found", "xcode-select --install")
     py = version(["python3", "--version"])
-    if py and py < (3, 11):
-        r.add("WARN", f"python3 is {py[0]}.{py[1]}: branch detection (detect_env_branch.py) needs 3.11+",
+    if py and py < (3, 9):
+        r.add("WARN", f"python3 is {py[0]}.{py[1]}: QA_Agent's scripts need 3.9+ (macOS ships 3.9)",
               "brew install python")
     if not shutil.which("npx"):
         r.add("FAIL", "node/npx not found: Playwright MCP, Newman, Bruno and Inso all run through npx",
@@ -374,7 +374,7 @@ def check_tools(r, any_mobile, any_web):
         if not shutil.which("xcrun") and not shutil.which("adb"):
             r.add("WARN", "neither Xcode tools (xcrun) nor adb found: no iOS or Android device access",
                   "install Xcode, or Android platform-tools (brew install android-platform-tools)")
-    if shutil.which("git") and shutil.which("npx") and not (py and py < (3, 11)):
+    if shutil.which("git") and shutil.which("npx") and not (py and py < (3, 9)):
         r.add("OK", "tools: git, python3, node/npx" + (", ffmpeg" if shutil.which("ffmpeg") else ""))
 
 
