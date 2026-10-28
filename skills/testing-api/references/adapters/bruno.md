@@ -38,14 +38,28 @@ only for calling it by hand.
 
 ## Run
 
+The Bruno CLI treats the folder it is started from as the collection: it reads
+the collection file (`opencollection.yml` / `bruno.json`), `environments/<env>.yml`
+and the collection's `.env` from there. Started from the repo root, it finds none
+of them and fails on the environment, or runs without its variables. So always run
+it from the collection folder, in the same command, wherever the session is:
+
 ```
-npx --yes @usebruno/cli run <scope-path> --env <env> -r --output <run folder>/bruno-run.json
+cd "<collection dir>" && npx --yes @usebruno/cli run [<scope>] --env <env> -r --output "<run folder>/bruno-run.json"
 ```
 
-`<scope-path>` is `<collectionPath>` for the full collection or
-`<collectionPath>/<subfolder>` for a scoped run, resolved relative to the repo root.
-`-r` (recursive) is required to actually walk sub-folders. Capture the per-request
-assertion results and the summary table.
+- `<collection dir>` is `<run root>/<collectionPath>`, absolute. `<run root>` is
+  the folder the run uses as repo root: the worktree in generic mode,
+  `<run folder>/confluence-collection/` in ticket mode, or the repo itself when
+  the user asks to run the local checkout. Check that `opencollection.yml` (or
+  `bruno.json`) is there before running.
+- `<scope>` is relative to the collection folder, not the repo: leave it out for
+  the full collection, or give the subfolder (`auth/verify-otp`) for a scoped run.
+- Pass `--output` as an absolute path into the run folder. A relative one would land
+  inside the collection, and in ticket mode end up in the exported zip.
+- `-r` (recursive) is required to actually walk sub-folders.
+
+Capture the per-request assertion results and the summary table.
 
 ## Finding known stateful / order-dependent cases
 

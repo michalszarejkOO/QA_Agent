@@ -43,10 +43,15 @@ file and the `environments/` folder, so both come along in the zip.
 ## Run
 
 ```
-npx --yes newman run <collectionPath>/<name>.postman_collection.json \
-  -e <collectionPath>/environments/<env>.postman_environment.json \
-  --reporters cli,json --reporter-json-export <run folder>/newman-run.json
+npx --yes newman run "<collection dir>/<name>.postman_collection.json" \
+  -e "<collection dir>/environments/<env>.postman_environment.json" \
+  --reporters cli,json --reporter-json-export "<run folder>/newman-run.json"
 ```
+
+Newman resolves relative paths against the shell's current folder, so pass every
+path absolute: `<collection dir>` is `<run root>/<collectionPath>`, where `<run
+root>` is the worktree in generic mode, `<run folder>/confluence-collection/` in
+ticket mode, or the repo itself when the user asks to run the local checkout.
 
 Add `--folder "<folder name>"` to scope the run to one folder (Newman's equivalent
 of Bruno's `-r <scope-path>`; unlike Bruno, Newman takes a folder *name* as it
