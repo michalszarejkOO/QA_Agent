@@ -89,7 +89,11 @@ client too. So:
      `environments`.
 
    These names stay the same on every run, so each upload becomes a new version
-   of the same file.
+   of the same file. **Exception, 1Password:** files go up as they are (see
+   [onepassword-publish.md](./onepassword-publish.md), "What goes into each
+   item"): copy the collection file (Postman, Insomnia) or the collection zip
+   (Bruno), and each environment file, into `<run folder>/publish/`; the
+   environments zip isn't needed there. Confluence always gets zips.
    If an `envRefreshProcedure` is configured and the environments have a target,
    follow it before exporting (see [confluence-publish.md](./confluence-publish.md),
    "Identifiers"); with `environments: "none"` skip it, nothing would use it.
@@ -112,6 +116,9 @@ client too. So:
    - The target can't be reached (no Atlassian server for the site, `op` not signed
      in): say you couldn't check, and ask anyway with that warning.
 
+   For files from 1Password there is nothing to extract (except a Bruno collection
+   zip): compare the downloaded files with those in `<run folder>/publish/`.
+
    **How to compare.** `diff -rq` the two extracted folders, ignoring `.DS_Store`,
    for a collection kept as one file per request (Bruno). For one kept in one JSON
    file (Postman, Insomnia), compare the request names in each, e.g. with a short
@@ -123,7 +130,7 @@ client too. So:
    For environments, compare only the file names and which variables each defines,
    never the values.
 4. **Show the summary and ask.** Put any warning first (a newer version, scan
-   findings, uncommitted changes), then:
+   findings, uncommitted changes, a production environment), then:
    ```
    Publish?
    - Collection → <1Password: <vault> / <collectionItem> | Confluence: <pageTitle> (<link>) | nowhere>
@@ -135,6 +142,11 @@ client too. So:
    - lastUpdate (Confluence only): <date>, commit <commit> on <branch>
    - Check: unchanged since the download (version <N>) | NEWER: version <M> | differs from this export: <summary>
    ```
+   **Production environments.** If an environment file's name looks like
+   production (`prod`, `prd`, `production`, `live`), say so first, in its own
+   line ("this upload includes the production environment <name> with its keys"),
+   and ask about it separately: the user can publish it, leave it out of this
+   upload, or stop. Never publish it on a yes given only to the rest.
    When a newer or different version is published, offer the choices: publish
    anyway (it replaces that version), stop so the user can merge it locally first
    (in ticket mode: take the newer one as the base and run again), or don't
@@ -155,7 +167,7 @@ the same place in the run folder:
 
 | Path | What |
 | --- | --- |
-| `<run folder>/published-base.zip` | The collection zip, as it is published |
+| `<run folder>/published-base.zip` | The collection zip, as it is published (files from 1Password other than a Bruno zip are downloaded straight into `published-collection/`) |
 | `<run folder>/published-collection/` | That zip extracted. It holds `<collectionPath>/` the way the repo does, so it is used as the repo root: generating cases, running the suite and exporting all work from here |
 | `<run folder>/published-base.json` | What was downloaded, per part (`collection`, and `environments` when they were downloaded too): `target`, the target's ids (`pageId` + `attachmentId`, or `vault` + `item` + `id`), `version`, `downloadedAt`. Step 3 compares against it |
 

@@ -155,9 +155,10 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   binding it would only raise the context cost of every test run).
 - `skills/testing-api/` — runs a repo's API test collection (Bruno, Postman, or
   Insomnia) via that tool's CLI against a live environment, exports the collection
-  and its environments as separate zips, optionally publishes them where the
-  product config says (1Password, or a Confluence tracker page for a secret-free
-  collection; after a check for a newer version and your yes), and produces a
+  and its environments separately, optionally publishes them where the product
+  config says (1Password, as plain files in Secure Notes with an "Updated /
+  Changes" note; or a Confluence tracker page for a secret-free collection; after
+  a check for a newer version and your yes), and produces a
   pass/fail report ready to paste into a Jira comment. **Standalone, deliberately
   unbound** from `qa-tester` — this is collection-level API testing, not manual QA
   against a live app. Product- and tool-agnostic: which repo/collection/client and

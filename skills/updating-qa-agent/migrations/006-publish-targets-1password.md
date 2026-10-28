@@ -52,7 +52,7 @@ doesn't need it.
    keys included, as plain variables with a Shared Value. Signing in can wait;
    publishing then asks the user about app changes instead of checking.
 4. **Vault (asks).** For each `1password` product, look for items with the chosen
-   titles (`op item list --categories Document --format json`) and take their vault
+   titles (`op item list --format json`) and take their vault
    if a teammate already created them; otherwise list `op vault list --format
    json` and ask.
 5. **Write (runs by itself after the answers).** Add the `publish` block to the

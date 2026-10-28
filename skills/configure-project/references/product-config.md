@@ -121,7 +121,7 @@ entirely — a product needs at least one of the two, per `validate_environments
         `op vault list` and tell them to approve the 1Password dialog it opens
         (not `op whoami`: it reports "not signed in" even when this works).
         Never ask for their password.
-     2. Look for the items already: `op item list --categories Document --format
+     2. Look for the items already: `op item list --format
         json`, matching `title` exactly. If a teammate created them before, take
         their vault without asking, and say so.
      3. Otherwise list `op vault list --format json` and ask which vault this

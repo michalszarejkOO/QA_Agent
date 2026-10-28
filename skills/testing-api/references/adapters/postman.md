@@ -41,7 +41,10 @@ Point `collectionPath` at the directory containing both the `*.postman_collectio
 file and the `environments/` folder. The default part, `collection`, leaves out
 `environments/`, `.env` files and a `.git` folder;
 `environments` zips `environments/` on its own, since environment files can hold
-live tokens (see [publishing.md](../publishing.md)).
+live tokens (see [publishing.md](../publishing.md)). Publishing to 1Password skips
+the zips: the collection file and each environment file go up as they are, so
+people can import them straight into Postman (see
+[onepassword-publish.md](../onepassword-publish.md), "What goes into each item").
 
 ## Syncing with the Postman app before publishing
 

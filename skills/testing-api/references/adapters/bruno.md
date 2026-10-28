@@ -36,6 +36,9 @@ Zips the collection for import into the Bruno desktop app. The default part,
 [publishing.md](../publishing.md)). Always pass a `dest_zip_path` inside the run
 folder (see the parent skill's step 3); the script's own fallback,
 `~/Desktop/<repo-folder-name>-bruno-<part>.zip`, is only for calling it by hand.
+Publishing to 1Password uses the collection zip but sends each environment file
+(`environments/<env>.yml`) as a file of its own (see
+[onepassword-publish.md](../onepassword-publish.md), "What goes into each item").
 
 ## Run
 
