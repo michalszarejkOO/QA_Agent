@@ -22,16 +22,21 @@ Each part is one Document item, so 1Password keeps its own version history and
 ## Signing in is the user's
 
 Every `op` call needs an unlocked 1Password with the CLI integration on (1Password
-app > Settings > Developer > "Integrate with 1Password CLI"). Start with `op
-whoami`. If it fails, ask the user to unlock 1Password (or run `op signin`
-themselves) and approve the prompt; 1Password may show its own approval dialog on
-the first call. Never ask for, type, or store their password, and never pass a
-service-account token you found somewhere.
+app > Settings > Developer > "Integrate with 1Password CLI"). Check sign-in with
+`op vault list`: with the app integration, 1Password shows its approval dialog for
+it, so tell the user to approve it first. Don't use `op whoami` for this: it reports
+"account is not signed in" even when the integration works (checked 28.10.2026,
+CLI 2.41). If `op vault list` fails, ask the user to unlock 1Password, turn the
+integration on, and approve the dialog themselves; `op account list` showing their
+account means the integration is on. Never ask for, type, or store their password,
+and never pass a service-account token you found somewhere.
 
 ## Commands
 
-The commands below follow 1Password CLI 2. If one fails with an unknown flag,
-check `op document --help` / `op item --help` and say in the report what differed.
+The commands below were checked against 1Password CLI 2.41 on 28.10.2026 (flags,
+and the `version` / `updated_at` / `last_edited_by` fields of `op item get`). If one
+fails with an unknown flag, check `op document --help` / `op item --help` and say in
+the report what differed.
 
 | Step | Command |
 | --- | --- |

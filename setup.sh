@@ -115,7 +115,7 @@ elif command -v brew >/dev/null 2>&1; then
   echo "installing: 1Password CLI (brew install --cask 1password-cli)"
   if brew install --cask 1password-cli; then
     echo "installed: 1Password CLI. Turn on its sign-in once: 1Password app > Settings >"
-    echo "           Developer > Integrate with 1Password CLI, then run 'op whoami'."
+    echo "           Developer > Integrate with 1Password CLI, then run 'op vault list'."
   else
     echo "FAILED:  1Password CLI install; run 'brew install --cask 1password-cli' yourself"
   fi

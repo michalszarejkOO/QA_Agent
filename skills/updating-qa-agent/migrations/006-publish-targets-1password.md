@@ -41,8 +41,9 @@ doesn't need it.
    `brew install --cask 1password-cli`. Without Homebrew, give the user
    https://developer.1password.com/docs/cli/get-started/ and wait. Then ask the
    user to open the 1Password app > Settings > Developer, turn on "Integrate with
-   1Password CLI", and approve the prompt of `op whoami` themselves. Never ask for
-   or type their password. If they want to finish later, stop here and leave the
+   1Password CLI", then run `op vault list` and have them approve the 1Password
+   dialog it opens (`op whoami` reports "not signed in" even when the integration
+   works, so don't use it as the check). Never ask for or type their password. If they want to finish later, stop here and leave the
    migration pending.
 3. **Postman products (asks).** For a product with `client: "postman"` and a
    target, check the Postman MCP server is signed in (`getAuthenticatedUser`); if
@@ -67,8 +68,8 @@ doesn't need it.
 
 ## Verify
 
-- When a part goes to 1Password: `command -v op` finds it, and `op whoami` works
-  after the user's approval.
+- When a part goes to 1Password: `command -v op` finds it, and `op vault list`
+  works after the user's approval.
 - `python3 -I <QA_Agent>/environments.example/validate_environments.py` passes.
 - `check_setup.py --full` reports no FAIL about the 1Password CLI (it only checks
   when a product publishes to 1Password).

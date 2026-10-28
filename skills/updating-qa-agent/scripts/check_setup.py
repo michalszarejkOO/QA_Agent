@@ -407,7 +407,7 @@ def check_onepassword(r, users):
         r.add("OK", f"1Password CLI (op) installed, {len(accounts)} account(s)")
     else:
         r.add("WARN", "1Password CLI (op) has no account yet: publishing to 1Password will fail",
-              "in the 1Password app: Settings > Developer > Integrate with 1Password CLI, then run `op whoami`")
+              "in the 1Password app: Settings > Developer > Integrate with 1Password CLI, then run `op vault list` and approve the dialog")
 
 
 def full():

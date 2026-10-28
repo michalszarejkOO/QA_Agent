@@ -116,10 +116,11 @@ entirely — a product needs at least one of the two, per `validate_environments
      1. If `op` isn't installed (`command -v op`), install it:
         `brew install --cask 1password-cli` (without Homebrew, give the user
         https://developer.1password.com/docs/cli/get-started/). It's required
-        from now on for this product. Then run `op whoami`. If it fails, ask the
-        user to unlock 1Password (and turn on Settings > Developer > Integrate
-        with 1Password CLI) and approve the prompt themselves; never ask for
-        their password.
+        from now on for this product. Ask the user to unlock 1Password and turn
+        on Settings > Developer > Integrate with 1Password CLI, then run
+        `op vault list` and tell them to approve the 1Password dialog it opens
+        (not `op whoami`: it reports "not signed in" even when this works).
+        Never ask for their password.
      2. Look for the items already: `op item list --categories Document --format
         json`, matching `title` exactly. If a teammate created them before, take
         their vault without asking, and say so.
