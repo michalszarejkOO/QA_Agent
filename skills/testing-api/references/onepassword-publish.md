@@ -19,6 +19,16 @@ From `api.publish.onePassword`:
 Each part is one item, so 1Password keeps its own version history and `version`
 number per part. The item's History in the 1Password app shows every upload.
 
+**One product, several tools.** The item titles carry the client, so a product
+tested with Bruno by one person and with Postman by another gets separate items
+(`Emtethal Bruno Collection`, `Emtethal Postman Collection`). That's allowed and
+never blocked: each person publishes only their own tool's items and never
+touches the other's. They are separate collections, though; nothing carries
+changes between them. So when the vault also holds `<Product> <other client>
+Collection`, add one information line to the summary (publishing.md step 4):
+"Also in the vault: <title>, last changed <date>. It is a separate collection;
+changes don't pass between them." Nothing more: no question, no block.
+
 ## What goes into each item
 
 Both items are **Secure Notes** holding files under their own names, for every

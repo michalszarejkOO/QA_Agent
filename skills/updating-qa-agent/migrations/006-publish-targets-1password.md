@@ -33,9 +33,13 @@ doesn't need it.
      `1password`);
    - where the environments go: `1password` (default), `confluence` or `none`. For
      `confluence`, say that the page is readable by everyone with access to it and
-     that the secret scan will stop on tokens.
+     that the secret scan will stop on tokens. For `client: "insomnia"` don't ask:
+     write `none`, the export holds its environments.
    - For a `1password` part: the item names, offering `<Product> <Client>
-     Collection` / `<Product> <Client> Environments`. The vault comes in step 4.
+     Collection` / `<Product> <Client> Environments` with the tool capitalized
+     (`Postman`, `Bruno`, `Insomnia`). A teammate on another tool for the same
+     product gets their own items; mention it if you see them, never block. The
+     vault comes in step 4.
 2. **Install op, only if a part goes to 1password (runs by itself; asks only if
    Homebrew is missing).** If `op` is missing, run
    `brew install --cask 1password-cli`. Without Homebrew, give the user

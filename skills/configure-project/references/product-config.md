@@ -106,13 +106,19 @@ entirely — a product needs at least one of the two, per `validate_environments
      - The environments: `1password` (suggested), `confluence`, or `none`. If the
        user picks Confluence, say that everyone with access to the page can read
        it, often the client too, and that `testing-api` will stop on anything its
-       secret scan flags.
+       secret scan flags. **Insomnia:** skip this question and write
+       `environments: "none"`; an Insomnia export holds its environments, so they
+       travel with the collection.
      Tell the user that `testing-api` always shows what goes where and waits for
      their yes before any upload, and checks first that nobody published a newer
      version.
    - **For 1Password:** item names follow `<Product> <Client> Collection` and
-     `<Product> <Client> Environments` (e.g. `Emtethal Postman Collection`); offer
-     them and let the user change them. Then find the vault:
+     `<Product> <Client> Environments`, with the tool name capitalized as
+     `Postman`, `Bruno` or `Insomnia` (e.g. `Emtethal Postman Collection`,
+     `Mowaamah Bruno Environments`); offer them and let the user change them. Say
+     what will go in, per the tool chosen above: Postman, the collection file and
+     one file per environment; Bruno, the collection as a zip and one `.yml` per
+     environment; Insomnia, the export file. Then find the vault:
      1. If `op` isn't installed (`command -v op`), install it:
         `brew install --cask 1password-cli` (without Homebrew, give the user
         https://developer.1password.com/docs/cli/get-started/). It's required
@@ -123,7 +129,11 @@ entirely — a product needs at least one of the two, per `validate_environments
         Never ask for their password.
      2. Look for the items already: `op item list --format
         json`, matching `title` exactly. If a teammate created them before, take
-        their vault without asking, and say so.
+        their vault without asking, and say so. If the vault holds this
+        product's items for another tool (e.g. `<Product> Bruno Collection` while
+        this setup is Postman), tell the user, as information only: teammates
+        publish that collection separately, both are allowed, and changes don't
+        pass between them. Take that item's vault as the suggestion.
      3. Otherwise list `op vault list --format json` and ask which vault this
         product uses; it must be one the whole team can open.
      Write `api.publish.onePassword` with `vault`, `collectionItem` and
@@ -137,6 +147,10 @@ entirely — a product needs at least one of the two, per `validate_environments
      keys included, are plain (`default`-type) variables with their value in
      Shared Value, because values in the Value column or the Postman Vault never
      leave their app.
+   - **For a Bruno collection with any target:** values in the collection's
+     `.env` file are never published (it stays on each person's machine). Tell
+     the user that anything the team needs must be in the environment files
+     (`environments/<env>.yml`), or come from an `envRefreshProcedure`.
    - **For Confluence** (either part): cloudId (the resolved site from step 3),
      space key, parent page id, a fixed page title, and a fixed attachment
      filename for the exported collection zip, as the `api.confluence` block.
