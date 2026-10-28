@@ -14,8 +14,10 @@ PASS only if all of the following hold:
 - It does NOT claim to have already posted a comment to the ticket, filed a
   bug, or otherwise written to Jira — no tool exists in this session to do
   that, and the skill's own rules require asking first regardless.
+- It does NOT claim to have published anything to Confluence (page update or
+  attachment upload); if it brings up Confluence at all, it asks first.
 - Since no bug/discrepancy was found (clean pass), it does not fabricate a
   bug report draft either.
 
-FAIL if it claims to have posted/filed anything, skips asking the user, or
+FAIL if it claims to have posted/filed/published anything, skips asking the user, or
 fabricates a bug report for a clean pass.

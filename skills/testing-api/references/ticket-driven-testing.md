@@ -48,22 +48,28 @@ while the repo checkout lagged behind.
 
 1. If the product's config has an `api.confluence` block, download the attached
    collection zip as [confluence-publish.md](./confluence-publish.md), "Downloading
-   the current collection", describes, and extract it. The download runs through
-   `discover`, so it won't show up as a tool of its own: don't take its absence
-   from the tool list as "no download tool".
-2. Diff the extracted collection against the local repo checkout's collection
-   directory. If they differ, treat the Confluence version as the base for Steps 3–4
-   below, and tell the user about the divergence (what's newer where) rather than
-   picking one silently.
-3. If the download isn't possible (no Atlassian server for that site in this
+   the current collection", describes. It is extracted into
+   `<run folder>/confluence-collection/`, and the version it came from is recorded
+   in `<run folder>/confluence-base.json`. The download runs through `discover`, so
+   it won't show up as a tool of its own: don't take its absence from the tool
+   list as "no download tool".
+2. Diff `<run folder>/confluence-collection/<collectionPath>` against the local
+   repo checkout's collection directory, and tell the user about any divergence
+   (what's newer where) rather than picking one silently.
+3. From here on, `<run folder>/confluence-collection/` is the collection, used as
+   the repo root: Step 3 adds cases there, Step 4 runs the suite from there, and
+   the export (SKILL.md step 3) zips it. The repo checkout is only for comparing;
+   don't add the generated cases to it unless the user asks.
+4. If the download isn't possible (no Atlassian server for that site in this
    session, or the page or file is missing), say so explicitly and fall back to
    the local repo checkout as the base — call this out as a real limitation of
    the current session's tool access, not a design choice, so the user
    knows the run may be working from a stale collection.
-4. Also check for **uncommitted local changes** to the collection (`git status` in
+5. Also check for **uncommitted local changes** to the collection (`git status` in
    the repo) before assuming the committed state is current — uncommitted
    restructuring or additions from a prior session are common here and must not be
-   discarded or ignored.
+   discarded or ignored. Show them with the divergence in item 2, and copy them
+   into `confluence-collection/` only if the user says to.
 
 ## Step 3: Generate full scenario coverage
 
@@ -102,6 +108,10 @@ this run explicitly names a different environment. This is because `demo` is the
 environment the ticket, the Confluence tracker, and other stakeholders can all
 verify against — a `local`-only result isn't shareable evidence for a ticket.
 
+Run the collection from the folder Step 2 settled on
+(`<run folder>/confluence-collection/` when the download worked), so the result
+is for the same collection that gets exported and published.
+
 ## Step 5: Comment and bug-report drafts — always ask, never auto-post
 
 After the report is written:
@@ -115,17 +125,24 @@ After the report is written:
    Ask the user explicitly: file it on the ticket, or keep it as a copy-pasteable
    draft? Do not file without that answer.
 
-## Step 6: Always publish the collection and environment back to Confluence
+## Step 6: Always offer to publish the collection and environment back to Confluence
 
-Whenever `api.confluence` is configured for the product, finish by re-uploading:
+Whenever `api.confluence` is configured for the product, finish by preparing a
+re-upload of:
 
-- The collection, including any cases generated in Step 3.
+- The collection from `<run folder>/confluence-collection/`, including any cases
+  generated in Step 3.
 - The refreshed environment file (if the product uses one, e.g. a `-populated`
   variant with live-captured values), per `confluence-publish.md`.
 - The `lastUpdate` panel with the current commit/branch.
 
-This is mandatory in ticket mode whenever the config exists — independent of
-whether the tests passed, and not something to skip because the run "already has
-enough evidence." If the session has no Atlassian server for that site (see
-`confluence-publish.md`, "Which server to use"), say so plainly here too rather
+Then follow `confluence-publish.md`, step 4: check whether the page's version is
+still the one recorded in `confluence-base.json`, show the user what goes where,
+and publish only after their yes. If someone uploaded a newer version during the
+run, say so and offer to take it as the base and run again.
+
+Reaching this step is mandatory in ticket mode whenever the config exists —
+independent of whether the tests passed, and not something to skip because the run
+"already has enough evidence." If the session has no Atlassian server for that site
+(see `confluence-publish.md`, "Which server to use"), say so plainly here too rather
 than silently completing a partial publish.

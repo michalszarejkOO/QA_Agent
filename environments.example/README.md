@@ -60,6 +60,7 @@ on demand:
 <workDir>/
   qa-evidence/<ticket or session>/<YYYY-MM-DD>-<web|ios|android>/   testing-apps videos and bug screenshots
   api-runs/<ticket or YYYY-MM-DD-<env>>/                            testing-api CLI results, report, exported collection zip
+    confluence-collection/                                          the collection downloaded from Confluence; ticket runs work from here
   worktrees/<ticket or branch>/                                     fresh checkouts for mobile builds and branch API runs
   reports/                                                          create-quality-metrics HTML dashboards
 ```
