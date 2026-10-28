@@ -1,6 +1,6 @@
 # Letting Claude write to product folders from anywhere
 
-Optional, only if the user asks for it in SKILL.md step 5 (offer it every time:
+Optional, only if the user asks for it in SKILL.md step 6 (offer it every time:
 without it, a session opened outside a product's folder asks for permission each
 time it saves run output there).
 

@@ -26,7 +26,8 @@ VALID_CLIENTS = {"bruno", "postman", "insomnia"}
 VALID_PUBLISH_TARGETS = {"1password", "confluence", "none"}
 VALID_EVIDENCE_MODES = {"auto", "ask"}
 VALID_INSTALL_MODES = {"clean", "update", "installed"}
-META_FILES = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json"}
+VALID_CHECK_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+META_FILES = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
 
 
 def resolve_environments_dir():
@@ -229,6 +230,16 @@ def check_evidence_file(data):
     return errors
 
 
+def check_updates_file(data):
+    errors = []
+    days = data.get("checkDays", ["mon"])
+    if days not in ("daily", "never") and not (
+            isinstance(days, list) and days and all(d in VALID_CHECK_DAYS for d in days)):
+        errors.append(f"'checkDays' must be \"daily\", \"never\" or a non-empty list of {VALID_CHECK_DAYS}, "
+                      f"got {days!r}")
+    return errors
+
+
 def main():
     env_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else resolve_environments_dir()
     if not env_dir.is_dir():
@@ -254,19 +265,21 @@ def main():
             print(f"{connectors_path.name}: invalid JSON — {e}")
 
     any_errors = False
-    evidence_path = env_dir / "evidence.json"
-    if evidence_path.exists():
+    for name, check in (("evidence.json", check_evidence_file), ("qa-agent-updates.json", check_updates_file)):
+        shared_path = env_dir / name
+        if not shared_path.exists():
+            continue
         try:
-            evidence_errors = check_evidence_file(load_json(evidence_path))
+            shared_errors = check(load_json(shared_path))
         except json.JSONDecodeError as e:
-            evidence_errors = [f"invalid JSON — {e}"]
-        if evidence_errors:
+            shared_errors = [f"invalid JSON — {e}"]
+        if shared_errors:
             any_errors = True
-            print(f"{evidence_path.name}:")
-            for e in evidence_errors:
+            print(f"{name}:")
+            for e in shared_errors:
                 print(f"  - {e}")
         else:
-            print(f"{evidence_path.name}: ok")
+            print(f"{name}: ok")
 
     for path in files:
         if path.name in META_FILES:

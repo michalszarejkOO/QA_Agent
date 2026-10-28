@@ -51,7 +51,7 @@ for name in $RETIRED_SKILLS; do
 done
 
 # Product configs live in each project's <workDir>/config/; ENV_DIR only holds
-# symlinks to them (plus the shared atlassian-connectors.json / evidence.json).
+# symlinks to them (plus the shared atlassian-connectors.json, evidence.json, qa-agent-updates.json).
 mkdir -p "$ENV_DIR"
 link "$ENV_DIR" "$REPO_ROOT/environments"
 for cfg in "$ENV_DIR"/*.json; do
@@ -85,6 +85,12 @@ else
   echo "skipped: Playwright MCP registration ('claude' CLI not on PATH); run"
   echo "         skills/testing-apps/scripts/register_playwright_mcp.py once it is"
 fi
+
+# Tell the user when the QA_Agent repo has new changes: a SessionStart hook in the
+# user settings checks at most once a day, whatever folder Claude is opened in.
+# It only informs; updating stays the user's call.
+echo
+python3 -I "$REPO_ROOT/skills/updating-qa-agent/scripts/register_update_hook.py" || true
 
 # The 1Password CLI is required once a product publishes its API collection or
 # environments (which hold tokens) to 1Password (api.publish in its config).
@@ -129,7 +135,8 @@ echo
 echo "Skills and agent linked into $CLAUDE_DIR, and $ENV_DIR is ready."
 
 product_files=$(find "$ENV_DIR" -maxdepth 1 -name '*.json' \
-  ! -name atlassian-connectors.json ! -name evidence.json ! -name qa-agent-migrations.json | head -1)
+  ! -name atlassian-connectors.json ! -name evidence.json ! -name qa-agent-migrations.json \
+  ! -name qa-agent-updates.json | head -1)
 MIGRATIONS_DIR="$REPO_ROOT/skills/updating-qa-agent/scripts"
 MIGRATIONS="$MIGRATIONS_DIR/migrations.py"
 if [ -z "$product_files" ]; then

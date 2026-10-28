@@ -31,7 +31,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 CLAUDE_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude"))
 ENV_DIR = CLAUDE_DIR / "environments"
-META = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json"}
+META = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
 SCRIPTS = REPO / "skills" / "updating-qa-agent" / "scripts"
 WRAPPER = CLAUDE_DIR / "skills" / "testing-apps" / "scripts" / "playwright-mcp.sh"
 
@@ -112,6 +112,35 @@ def companion_files(path, data):
 def playwright_on_wrapper():
     reg = run(sys.executable, "-I", REPO / "skills/testing-apps/scripts/register_playwright_mcp.py", "--check")
     return reg.returncode == 0
+
+
+def run_check_updates(*args):
+    script = Path(__file__).with_name("check_updates.py")
+    if not script.exists():
+        return ""
+    try:
+        out = subprocess.run([sys.executable, "-I", str(script), *args], capture_output=True, text=True, timeout=15)
+    except subprocess.TimeoutExpired:
+        return ""
+    return out.stdout.strip()
+
+
+def remote_updates():
+    """One line when the last fetch saw QA_Agent changes not pulled yet (check_updates.py; no fetch)."""
+    return run_check_updates() or None
+
+
+def update_settings():
+    try:
+        return json.loads(run_check_updates("--settings"))
+    except ValueError:
+        return {"checkDays": ["mon"]}
+
+
+def update_hook_registered():
+    script = Path(__file__).with_name("register_update_hook.py")
+    out = subprocess.run([sys.executable, "-I", str(script), "--check"], capture_output=True, text=True)
+    return out.returncode == 0
 
 
 def quick():
@@ -444,6 +473,20 @@ def full():
     check_tools(r, any_mobile, any_web)
     check_onepassword(r, uses_onepassword(products))
     check_stray_files(r, products)
+    days = update_settings()["checkDays"]
+    when = {"daily": "every day", "never": "never"}.get(days) if isinstance(days, str) else ", ".join(days)
+    r.add("INFO", f"update check: {when}" + ("" if days == "never" else " (first session that day)"),
+          "change it in Claude: \"zmień ustawienia aktualizacji\" / \"change update settings\"")
+    if days == "never":
+        pass
+    elif update_hook_registered():
+        r.add("OK", "update check runs when Claude starts (SessionStart hook)")
+    else:
+        r.add("WARN", "update-check hook not registered: you won't hear about new QA_Agent changes",
+              f"python3 -I {Path(__file__).with_name('register_update_hook.py')} (or run setup.sh)")
+    updates = remote_updates()
+    if updates:
+        r.add("INFO", updates)
     return r.print()
 
 

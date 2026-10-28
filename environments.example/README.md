@@ -12,8 +12,9 @@ directory, `<workDir>/config/<product>-<env>.json`, the same way skills are link
 into `~/.claude/skills/`. So everything about a product (config, project skill,
 evidence, run output) lives in its own folder and goes away with it. Deleting
 a project folder leaves a dangling link: the validator reports it and
-`./setup.sh` removes it. Only the shared files, `atlassian-connectors.json` and
-`evidence.json`, are real files in `~/.claude/environments/`.
+`./setup.sh` removes it. Only the shared files, `atlassian-connectors.json`,
+`evidence.json`, `qa-agent-updates.json` and `qa-agent-migrations.json`, are real
+files in `~/.claude/environments/`.
 
 Run `./setup.sh` first, then add products with the `configure-project` skill (or by
 hand: write `<workDir>/config/<product>-<env>.json` and symlink it into
@@ -50,6 +51,15 @@ a product that has both a UI and an API collection).
   automatic output files instead of the folder Claude was opened in (see
   `skills/testing-apps/references/adapters/web.md`).
   Mobile videos use `agent-device record`.
+
+- [`qa-agent-updates.example.json`](./qa-agent-updates.example.json) — one file
+  for this machine, saved as `environments/qa-agent-updates.json`. `checkDays`
+  sets on which days of the week QA_Agent checks for a newer version of itself:
+  a list such as `["mon"]` (the default) or `["mon", "thu"]`, `"daily"`, or
+  `"never"`. The check runs at the first Claude session on a check day, or the
+  next session if there was none that day; when there are new changes, Claude
+  says so and asks whether to see what's new and update. Nothing is ever pulled
+  without a yes.
 
 ## Working directory (`workDir`)
 

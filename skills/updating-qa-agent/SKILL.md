@@ -1,7 +1,7 @@
 ---
 name: updating-qa-agent
 description: Brings an existing QA_Agent install up to date after pulling changes — runs ./setup.sh, then applies every pending migration from this skill's migrations/ folder in order (moving configs, adding new required fields, re-registering MCP servers, cleaning up old locations), asking the user only what can't be worked out, so every machine ends up with the same layout. Also the place where anyone changing QA_Agent records what existing installs need to do. Use after `git pull` on this repo, or when asked to update/refresh/redo the QA_Agent setup.
-when_to_use: "Trigger on: 'aktualizuj skille', 'zaktualizuj QA_Agent', 'zrób na nowo setup', 'zrób setup' on a machine that already has product configs, 'pobrałem zmiany w QA_Agent', 'update the QA agent', 'I pulled the latest QA_Agent', 'refresh my setup', 'pozbieraj pliki projektów', 'gather project files', or ./setup.sh reporting pending migrations. Do NOT trigger for a first install with no product configs yet, or for adding a new product (that's configure-project), or for editing one config field by hand."
+when_to_use: "Trigger on: 'aktualizuj skille', 'zaktualizuj QA_Agent', 'zrób na nowo setup', 'zrób setup' on a machine that already has product configs, 'pobrałem zmiany w QA_Agent', 'update the QA agent', 'I pulled the latest QA_Agent', 'refresh my setup', a session-start note that QA_Agent has new changes, 'pozbieraj pliki projektów', 'gather project files', 'zmień ustawienia aktualizacji', 'change update settings', or ./setup.sh reporting pending migrations. Do NOT trigger for a first install with no product configs yet, or for adding a new product (that's configure-project), or for editing one config field by hand."
 ---
 
 # Updating QA_Agent
@@ -26,6 +26,32 @@ skipped.
 
 ## Procedure
 
+0. **Pull new changes, if there are any (asks).** Run
+   `python3 -I ~/.claude/skills/updating-qa-agent/scripts/check_updates.py --force`.
+   If it reports new changes on the upstream branch, show **"What's new"** before
+   asking, in the user's language:
+   - Read the full messages: `git -C <repo> log --format='%h %s%n%b' HEAD..@{u}`.
+   - Read each new migration, `git -C <repo> diff --name-only --diff-filter=A
+     HEAD...@{u} -- skills/updating-qa-agent/migrations/`, with `git -C <repo>
+     show @{u}:<path>` ("What changed", and from "Steps" what it will ask).
+   - List new skills or agents: `git -C <repo> diff --name-status HEAD...@{u} --
+     skills agents` (an added `SKILL.md` or agent file).
+   Then write, briefly:
+   - **What's new:** up to about 8 bullets, one per change the user will notice,
+     in plain words (what they can do now or what works differently), not file
+     names. Merge follow-up commits of one point into one bullet; sum up purely
+     internal ones (tests, evals, wording) as one "smaller fixes" line.
+   - **After the update:** each migration with what it will ask, or "none";
+     whether Claude Code needs a restart (a new skill or agent, or a migration
+     that re-registers an MCP server says so) or "no restart".
+   - A warning if the repo has uncommitted changes.
+   Take everything from the commit messages and migration files; never add what
+   they don't say. A vague message ("fix") stays vague: show its title as is.
+   Then ask whether to update. On a yes run `git -C <repo> pull --ff-only`. If
+   the repo has uncommitted changes, or the pull can't fast-forward, stop and
+   explain instead of stashing, merging or resetting anything. The update-check
+   hook (registered by `setup.sh`, settings in `environments/qa-agent-updates.json`)
+   is what tells the user at session start that such changes exist.
 1. **Run `./setup.sh`** from the QA_Agent repo (resolve it from the
    `~/.claude/skills/updating-qa-agent` symlink) and show its output. It does
    everything that needs no decision: links skills and the agent, creates
@@ -57,6 +83,17 @@ directories"). When the user asks to gather them ("pozbieraj pliki projektów",
 [migrations/007-gather-project-files.md](./migrations/007-gather-project-files.md)
 again, whether or not 007 is marked applied: search, then ask before every move,
 never delete anything. Don't mark anything.
+
+## Changing update-check settings
+
+When the user wants QA_Agent to check for new versions on other days
+("zmień ustawienia aktualizacji", "sprawdzaj aktualizacje w poniedziałki i
+czwartki", "nie sprawdzaj aktualizacji", "change update settings"), show what
+`python3 -I <this skill>/scripts/check_updates.py --settings` prints, ask (same
+options as Steps 1 of
+[migrations/008-update-check-settings.md](./migrations/008-update-check-settings.md)),
+and write `checkDays` in `~/.claude/environments/qa-agent-updates.json` (show the
+diff first). It takes effect at the next session; nothing needs re-registering.
 
 ## Writing a migration (for anyone changing QA_Agent)
 

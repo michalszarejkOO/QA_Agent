@@ -24,7 +24,7 @@ repo's `skills/` or `agents/`.
 | Severity | Rule |
 | --- | --- |
 | MUST | Make sure `$CLAUDE_CONFIG_DIR/environments` (or `~/.claude/environments`) exists before writing any config: `./setup.sh` creates it, and if it's missing, create it yourself (`mkdir -p`) rather than stopping. |
-| MUST | Write each product file to `<workDir>/config/<product>-<environment>.json` (the real file) and put only a symlink to it in `~/.claude/environments/`, the same way skills are linked into `~/.claude/skills/`. Everything about a product then lives in its working directory. Only the shared files (`atlassian-connectors.json`, `evidence.json`) are real files in `~/.claude/environments/`. |
+| MUST | Write each product file to `<workDir>/config/<product>-<environment>.json` (the real file) and put only a symlink to it in `~/.claude/environments/`, the same way skills are linked into `~/.claude/skills/`. Everything about a product then lives in its working directory. Only the shared files (`atlassian-connectors.json`, `evidence.json`, `qa-agent-updates.json`) are real files in `~/.claude/environments/`. |
 | NEVER | Put `<workDir>/config/` inside a git repo without gitignoring it: it holds credentials. If `git -C <workDir> rev-parse` succeeds, add `config/` to that repo's `.gitignore` (show the change first). |
 | MUST | Read `environments.example/README.md`, `environments.example/app-with-ui.example.json`, and `environments.example/api-collection.example.json` fresh at the start of every run, not from memory — the shape is the source of truth and this skill must never drift from it. |
 | MUST | Resolve each Atlassian connector's site with a live call to its own `getAccessibleAtlassianResources` tool, never by asking the user to type a site/cloudId from memory — see [references/connectors.md](./references/connectors.md). |
@@ -83,14 +83,27 @@ repo's `skills/` or `agents/`.
    before overwriting; an existing `dir` there stays only as the fallback for runs
    that match no product.
 
-5. **Offer folder access from anywhere.** Ask whether Claude may read and write
+5. **Configure update checks.** Skip if `environments/qa-agent-updates.json`
+   already exists (say what it's set to). Otherwise ask one question with
+   tappable options: "When should I check for a newer version of QA_Agent?"
+   - **once a week** (default; ask which day, Monday suggested),
+   - twice a week (ask which two days, Monday and Thursday suggested),
+   - on days you pick, every day, or never (you update by asking).
+   Write `environments/qa-agent-updates.json` with `checkDays` (`["mon"]`,
+   `["mon", "thu"]`, `"daily"` or `"never"`) following
+   `environments.example/qa-agent-updates.example.json`, and show it. Say how it
+   works: the first Claude session on such a day checks (or the next session
+   when there was none that day), and if there's something new, Claude asks
+   whether to see what's new and update; nothing is pulled without a yes.
+
+6. **Offer folder access from anywhere.** Ask whether Claude may read and write
    the working directories and repo path(s) just configured without asking, from
    whatever folder it's opened in. If yes, follow
    [references/local-settings.md](./references/local-settings.md): it merges them
    into `permissions.additionalDirectories` of the user settings
    (`~/.claude/settings.json`), never overwriting the user's other settings.
 
-6. **Validate.** Run `python3 environments.example/validate_environments.py` (from
+7. **Validate.** Run `python3 environments.example/validate_environments.py` (from
    the repo root) and show the output. If it reports errors, fix the specific file
    and field it names and re-run until clean. On a first install (no product
    files existed before this run), then record every migration as applied, since
@@ -99,11 +112,11 @@ repo's `skills/` or `agents/`.
    products already existed, leave migrations to the `updating-qa-agent` skill
    instead.
 
-7. **Post-setup check.** Run the `checking-qa-agent` skill and include its report:
+8. **Post-setup check.** Run the `checking-qa-agent` skill and include its report:
    it shows what's still missing on this machine (tools, playwright-video, Jira
    sites not reachable yet) with the command for each.
 
-8. **Summarize.** List every file written or updated, every working directory
+9. **Summarize.** List every file written or updated, every working directory
    and project skill created, and every symlink made (full paths), and remind the
    user of anything still marked `REPLACE_ME` that they need to fill in by hand
    before the config is fully live. Note explicitly that connector *authorization*

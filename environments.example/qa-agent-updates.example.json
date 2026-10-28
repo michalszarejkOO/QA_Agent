@@ -1,0 +1,4 @@
+{
+  "checkDays": ["mon", "thu"],
+  "notes": "When QA_Agent checks for a newer version of itself (one file for this machine, saved as environments/qa-agent-updates.json). checkDays: days of the week (mon tue wed thu fri sat sun), e.g. [\"mon\"] once a week (the default) or [\"mon\", \"thu\"] twice; \"daily\"; or \"never\" (update only by asking). The check runs at the first Claude session on a check day; if there was no session that day, the next session checks instead. When there are new changes, Claude says so and asks whether to see what's new and update. Nothing is ever pulled without a yes."
+}

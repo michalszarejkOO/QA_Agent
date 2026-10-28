@@ -51,7 +51,16 @@ yet) or `updating-qa-agent` (pending migrations) applies.
 The first `setup.sh` also enables the repo's git hooks (`core.hooksPath=.githooks`):
 from then on every `git pull` and branch switch re-runs `setup.sh` and prints
 whether the setup needs an update. Git never enables hooks by itself, so that
-first run is always manual. `qa-tester`, `testing-apps` and `testing-api` also
+first run is always manual. `setup.sh` also registers a Claude Code
+SessionStart hook (`skills/updating-qa-agent/scripts/check_updates.py`): whatever
+folder you open Claude in, it fetches the QA_Agent repo and, if there are new
+changes, says a newer version is available and asks whether to see what's new
+and update. It never pulls without your yes. It checks only on the days of the
+week you choose (`checkDays` in `~/.claude/environments/qa-agent-updates.json`,
+e.g. Monday, or Monday and Thursday; also "daily" or "never"; Monday by default),
+at the first session that day, or the next session if you skipped that day.
+`configure-project` asks once, and you can change it any time by saying "change
+update settings" / "zmień ustawienia aktualizacji". `qa-tester`, `testing-apps` and `testing-api` also
 check the setup at the start of a run and warn when it's out of date.
 
 To see whether everything a run needs is in place (links, hooks, configs, MCP
