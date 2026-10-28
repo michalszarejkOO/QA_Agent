@@ -23,6 +23,7 @@ import sys
 from pathlib import Path
 
 VALID_CLIENTS = {"bruno", "postman", "insomnia"}
+VALID_PUBLISH_TARGETS = {"1password", "confluence", "none"}
 VALID_EVIDENCE_MODES = {"auto", "ask"}
 VALID_INSTALL_MODES = {"clean", "update", "installed"}
 META_FILES = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json"}
@@ -95,6 +96,30 @@ def check_product_config(data, connectors):
             for f in ("defaultEnvironment", "ticketEnvironment"):
                 if f in api and (not isinstance(api[f], str) or not api[f].strip()):
                     errors.append(f"'api.{f}' must be a non-empty string")
+            pub = api.get("publish")
+            if pub is not None:
+                if not isinstance(pub, dict):
+                    errors.append("'api.publish' must be an object")
+                else:
+                    targets = []
+                    for part in ("collection", "environments"):
+                        t = pub.get(part, "none")
+                        if t not in VALID_PUBLISH_TARGETS:
+                            errors.append(f"'api.publish.{part}' must be one of {sorted(VALID_PUBLISH_TARGETS)}, got {t!r}")
+                        targets.append(t)
+                    if "1password" in targets:
+                        op = pub.get("onePassword")
+                        if not isinstance(op, dict):
+                            errors.append("'api.publish.onePassword' is required when a part goes to 1password")
+                        else:
+                            for f in ("vault", "collectionItem", "environmentsItem"):
+                                part = "collection" if f == "collectionItem" else "environments" if f == "environmentsItem" else None
+                                if part and pub.get(part) != "1password":
+                                    continue
+                                if not isinstance(op.get(f), str) or not op[f].strip():
+                                    errors.append(f"'api.publish.onePassword.{f}' is required when a part goes to 1password")
+                    if "confluence" in targets and "confluence" not in api:
+                        errors.append("'api.confluence' is required when api.publish sends a part to confluence")
             conf = api.get("confluence")
             if conf is not None:
                 if not isinstance(conf, dict):

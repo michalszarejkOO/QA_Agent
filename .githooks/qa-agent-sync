@@ -6,7 +6,7 @@
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 LINE="━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-changes=$("$REPO_ROOT/setup.sh" 2>&1 | grep -E '^(linked|removed|backing up|switching|adding|skipped)' || true)
+changes=$(QA_AGENT_HOOK=1 "$REPO_ROOT/setup.sh" 2>&1 | grep -E '^(linked|removed|backing up|switching|adding|skipped|missing)' || true)
 status=$(python3 -I "$REPO_ROOT/skills/updating-qa-agent/scripts/check_setup.py" 2>&1)
 code=$?
 

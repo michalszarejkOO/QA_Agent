@@ -27,14 +27,15 @@ config, timing) is recorded.
 ## Export
 
 ```
-./scripts/export-collection.sh <repo_root> [dest_zip_path] [collection_subpath]
+./scripts/export-collection.sh <repo_root> <dest_zip_path> <collectionPath> bruno [collection|environments]
 ```
 
-Zips the collection for import into the Bruno desktop app. Always pass a
-`dest_zip_path` inside the run folder (see the parent skill's step 3); the
-script's own fallback, `~/Desktop/<repo-folder-name>-bruno-collection.zip`, is
-only for calling it by hand.
-`collection_subpath` defaults to `bruno`.
+Zips the collection for import into the Bruno desktop app. The default part,
+`collection`, leaves out `environments/` and `.env` files;
+`environments` zips `environments/` on its own (see
+[publishing.md](../publishing.md)). Always pass a `dest_zip_path` inside the run
+folder (see the parent skill's step 3); the script's own fallback,
+`~/Desktop/<repo-folder-name>-bruno-<part>.zip`, is only for calling it by hand.
 
 ## Run
 
@@ -50,7 +51,7 @@ cd "<collection dir>" && npx --yes @usebruno/cli run [<scope>] --env <env> -r --
 
 - `<collection dir>` is `<run root>/<collectionPath>`, absolute. `<run root>` is
   the folder the run uses as repo root: the worktree in generic mode,
-  `<run folder>/confluence-collection/` in ticket mode, or the repo itself when
+  `<run folder>/published-collection/` in ticket mode, or the repo itself when
   the user asks to run the local checkout. Check that `opencollection.yml` (or
   `bruno.json`) is there before running.
 - `<scope>` is relative to the collection folder, not the repo: leave it out for

@@ -16,7 +16,7 @@ checks it covers the agent link, dangling skill links, git hooks, the config
 validator, every product's paths, the docs it points at (knownCaveatsFile,
 envRefreshProcedure), project skill and REPLACE_ME values,
 playwright-video and maestro, and the tools runs need (git, python, node, ffmpeg,
-agent-device, Xcode/adb). Whether each Jira site is reachable through an
+agent-device, Xcode/adb, the 1Password CLI when a product publishes to 1Password). Whether each Jira site is reachable through an
 Atlassian MCP server can only be checked from inside Claude; the
 checking-qa-agent skill does that part.
 """
@@ -378,6 +378,38 @@ def check_tools(r, any_mobile, any_web):
         r.add("OK", "tools: git, python3, node/npx" + (", ffmpeg" if shutil.which("ffmpeg") else ""))
 
 
+def uses_onepassword(products):
+    """Products whose API collection or environments are published to 1Password."""
+    names = []
+    for p in products:
+        pub = ((load(p) or {}).get("api") or {}).get("publish") or {}
+        if isinstance(pub, dict) and "1password" in (pub.get("collection"), pub.get("environments")):
+            names.append(p.name)
+    return names
+
+
+def check_onepassword(r, users):
+    """The 1Password CLI is required only when a product publishes to 1Password."""
+    if not users:
+        return
+    if not shutil.which("op"):
+        r.add("FAIL", f"1Password CLI (op) not found, but {', '.join(users)} publish(es) to 1Password",
+              "brew install --cask 1password-cli, then in the 1Password app: Settings > Developer > "
+              "Integrate with 1Password CLI")
+        return
+    try:
+        out = subprocess.run(["op", "account", "list", "--format", "json"],
+                             capture_output=True, text=True, timeout=15)
+        accounts = json.loads(out.stdout or "[]") if out.returncode == 0 else []
+    except (subprocess.TimeoutExpired, ValueError):
+        accounts = []
+    if accounts:
+        r.add("OK", f"1Password CLI (op) installed, {len(accounts)} account(s)")
+    else:
+        r.add("WARN", "1Password CLI (op) has no account yet: publishing to 1Password will fail",
+              "in the 1Password app: Settings > Developer > Integrate with 1Password CLI, then run `op whoami`")
+
+
 def full():
     r = Report()
     check_links(r)
@@ -393,6 +425,7 @@ def full():
         any_web |= any(isinstance(s, dict) and "appUrl" in s for s in (data.get("surfaces") or {}).values())
     check_mcp(r, servers, any_mobile, any_web)
     check_tools(r, any_mobile, any_web)
+    check_onepassword(r, uses_onepassword(products))
     return r.print()
 
 

@@ -36,8 +36,13 @@ assuming it's the single-file export.
 ## Export
 
 ```
-./scripts/export-collection.sh <repo_root> [dest_zip_path] <collectionPath> insomnia
+./scripts/export-collection.sh <repo_root> <dest_zip_path> <collectionPath> insomnia
 ```
+
+An Insomnia export keeps its environments inside the same file as the requests, so
+the collection zip can hold their values. Before it goes to Confluence, the secret
+scan in [publishing.md](../publishing.md) matters even more here; for a collection
+whose environments hold secrets, publish it to 1Password instead.
 
 ## Run
 

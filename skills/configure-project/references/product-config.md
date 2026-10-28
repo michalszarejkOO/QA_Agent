@@ -98,11 +98,48 @@ entirely — a product needs at least one of the two, per `validate_environments
      asks when the field is absent), because a change may be deployed elsewhere.
    - Any known stateful/order-dependent test cases worth flagging up front
      (`api.knownCaveats`) — optional, skip if none come to mind yet.
-   - Confluence tracker page for publishing results — skip entirely if not wanted
-     (this makes the whole `api.confluence` block absent, which `testing-api` treats
-     as "no publish step", not an error). If wanted: cloudId (the resolved site from
-     step 3), space key, parent page id, a fixed page title, and a fixed attachment
-     filename for the exported collection zip.
+   - **Where updated collections and environments go** (`api.publish`, see
+     `testing-api`'s `references/publishing.md`). Ask about the two parts
+     separately, because environments hold tokens and logins:
+     - The collection: `1password` (suggested), `confluence`, or `none` (it only
+       stays as a zip in the run folder).
+     - The environments: `1password` (suggested), `confluence`, or `none`. If the
+       user picks Confluence, say that everyone with access to the page can read
+       it, often the client too, and that `testing-api` will stop on anything its
+       secret scan flags.
+     Tell the user that `testing-api` always shows what goes where and waits for
+     their yes before any upload, and checks first that nobody published a newer
+     version.
+   - **For 1Password:** item names follow `<Product> <Client> Collection` and
+     `<Product> <Client> Environments` (e.g. `Emtethal Postman Collection`); offer
+     them and let the user change them. Then find the vault:
+     1. If `op` isn't installed (`command -v op`), install it:
+        `brew install --cask 1password-cli` (without Homebrew, give the user
+        https://developer.1password.com/docs/cli/get-started/). It's required
+        from now on for this product. Then run `op whoami`. If it fails, ask the
+        user to unlock 1Password (and turn on Settings > Developer > Integrate
+        with 1Password CLI) and approve the prompt themselves; never ask for
+        their password.
+     2. Look for the items already: `op item list --categories Document --format
+        json`, matching `title` exactly. If a teammate created them before, take
+        their vault without asking, and say so.
+     3. Otherwise list `op vault list --format json` and ask which vault this
+        product uses; it must be one the whole team can open.
+     Write `api.publish.onePassword` with `vault`, `collectionItem` and
+     `environmentsItem`. Don't create the items now: the first upload does, after
+     the user's yes.
+   - **For a Postman collection with any target:** publishing first syncs the
+     repo files with the Postman app through the Postman MCP server (see
+     `testing-api`'s `adapters/postman.md`). Check it's signed in
+     (`getAuthenticatedUser`); if not, start its `authenticate` and let the user
+     approve in the browser. Tell the user the team rule: variables everyone needs,
+     keys included, are plain (`default`-type) variables with their value in
+     Shared Value, because values in the Value column or the Postman Vault never
+     leave their app.
+   - **For Confluence** (either part): cloudId (the resolved site from step 3),
+     space key, parent page id, a fixed page title, and a fixed attachment
+     filename for the exported collection zip, as the `api.confluence` block.
+     Without any Confluence part, leave that block out.
 
 6. **Staging-like branch.** For the main repo captured above, run
    `python3 -I skills/testing-apps/scripts/detect_env_branch.py <repo>` and show

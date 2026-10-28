@@ -3,8 +3,9 @@
 # from any project on this machine, while this repo stays the single source of
 # truth (edit here, or edit through the symlink — same file either way).
 # Also creates ~/.claude/environments/ (the index of product configs) and the
-# repo's `environments` link to it, and removes product-config symlinks whose
-# project folder is gone.
+# repo's `environments` link to it, removes product-config symlinks whose
+# project folder is gone, and installs the 1Password CLI (op) if a product
+# publishes to 1Password and it's missing.
 #
 # Safe to re-run: already-correct symlinks are left alone, anything else in the
 # way is backed up to <path>.bak before the symlink is created.
@@ -83,6 +84,45 @@ if command -v claude >/dev/null 2>&1; then
 else
   echo "skipped: Playwright MCP registration ('claude' CLI not on PATH); run"
   echo "         skills/testing-apps/scripts/register_playwright_mcp.py once it is"
+fi
+
+# The 1Password CLI is required once a product publishes its API collection or
+# environments (which hold tokens) to 1Password (api.publish in its config).
+# configure-project and migration 006 install it when that's chosen; this keeps it
+# installed. Setups without such a product (e.g. UI testing only) don't need it.
+needs_op=$(python3 -I - "$ENV_DIR" <<'PY'
+import json, sys
+from pathlib import Path
+for f in Path(sys.argv[1]).glob("*.json"):
+    try:
+        pub = (json.loads(f.read_text()).get("api") or {}).get("publish") or {}
+    except (ValueError, OSError, AttributeError):
+        continue
+    if "1password" in (pub.get("collection"), pub.get("environments")):
+        print("yes")
+        break
+PY
+)
+echo
+if [ -z "$needs_op" ]; then
+  :
+elif command -v op >/dev/null 2>&1; then
+  echo "ok:      1Password CLI ($(op --version 2>/dev/null))"
+elif [ -n "${QA_AGENT_HOOK:-}" ]; then
+  # Run from a git hook: never install anything in the middle of a pull.
+  echo "missing: 1Password CLI (op), required by a product that publishes to 1Password; run ./setup.sh"
+elif command -v brew >/dev/null 2>&1; then
+  echo "installing: 1Password CLI (brew install --cask 1password-cli)"
+  if brew install --cask 1password-cli; then
+    echo "installed: 1Password CLI. Turn on its sign-in once: 1Password app > Settings >"
+    echo "           Developer > Integrate with 1Password CLI, then run 'op whoami'."
+  else
+    echo "FAILED:  1Password CLI install; run 'brew install --cask 1password-cli' yourself"
+  fi
+else
+  echo "missing: 1Password CLI (op), required by a product that publishes to 1Password. Install it from"
+  echo "         https://developer.1password.com/docs/cli/get-started/ (or via Homebrew),"
+  echo "         then turn on 1Password app > Settings > Developer > Integrate with 1Password CLI."
 fi
 
 echo

@@ -13,7 +13,9 @@ any wording ("set up QA_Agent", "zrób setup", "skonfiguruj", "update QA_Agent",
 
 1. Run `./setup.sh` from the repo root and show its output. It links skills and
    the agent, enables the git hooks, prepares `~/.claude/environments/`,
-   registers Playwright MCP through its wrapper, and reports what's next.
+   registers Playwright MCP through its wrapper, installs the 1Password CLI
+   (`op`) if a product publishes to 1Password and it's missing, and reports
+   what's next.
 2. Follow what it reports:
    - "No products yet" → run the `configure-project` skill (connectors, then one
      product at a time, each with its own working directory and project skill).

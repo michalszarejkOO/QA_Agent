@@ -18,8 +18,14 @@ This links `agents/qa-tester.md` and every folder under `skills/` into `~/.claud
 `setup.sh` backs it up to `.bak` before swapping in the symlink — safe to re-run.
 
 It also creates `~/.claude/environments/` (global, never committed to any repo), the
-index of products, plus `environments/` in this repo as a convenience link to it, and
-removes product links there whose project folder is gone.
+index of products, plus `environments/` in this repo as a convenience link to it,
+removes product links there whose project folder is gone, and installs the
+1Password CLI (`op`) with Homebrew if a product needs it and it's missing. `op` is
+required once you test an API and publish its collection or environments (which
+hold tokens) to 1Password, the default `configure-project` suggests; setups for
+UI testing only don't need it. Turn on its sign-in once in the 1Password app (Settings > Developer >
+Integrate with 1Password CLI); you always approve access yourself, Claude never
+handles the password.
 
 Then add your products: ask Claude to run the `configure-project` skill
 (`skills/configure-project/`). It walks you through which Atlassian connectors are
@@ -99,7 +105,7 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
 - `skills/configure-project/` — interactive setup wizard for a new clone: asks which
   Atlassian MCP connectors are authorized and for which sites, then asks about each
   product (ticket prefixes, working directory, repo path, web/mobile UI and/or API collection,
-  credentials, Confluence tracker) and writes the resulting
+  credentials, where collections and environments are published) and writes the resulting
   `environments/*.json` files. Never edits any other skill or agent file — config
   only.
 - `agents/qa-tester.md` — the subagent that performs QA on a live application based
@@ -148,16 +154,17 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   (it applies before a feature is delivered, so `qa-tester` would never use it —
   binding it would only raise the context cost of every test run).
 - `skills/testing-api/` — runs a repo's API test collection (Bruno, Postman, or
-  Insomnia) via that tool's CLI against a live environment, exports it to a zip,
-  optionally refreshes a Confluence tracker page (attaching the zip, after you approve
-  what goes there), and produces a
+  Insomnia) via that tool's CLI against a live environment, exports the collection
+  and its environments as separate zips, optionally publishes them where the
+  product config says (1Password, or a Confluence tracker page for a secret-free
+  collection; after a check for a newer version and your yes), and produces a
   pass/fail report ready to paste into a Jira comment. **Standalone, deliberately
   unbound** from `qa-tester` — this is collection-level API testing, not manual QA
   against a live app. Product- and tool-agnostic: which repo/collection/client and
-  (if applicable) which Confluence page comes from
+  (if applicable) where it's published comes from
   `environments/<product>-<env>.json` → the `api` key (`client`: `bruno` |
   `postman` | `insomnia`, plus repo, collectionPath, defaultEnvironment,
-  optionally ticketEnvironment, knownCaveats, optionally confluence). Tool-specific mechanics (how to package the
+  optionally ticketEnvironment, knownCaveats, optionally publish and confluence). Tool-specific mechanics (how to package the
   collection, the exact CLI invocation, where per-case annotations/caveats live)
   live in one adapter file per client (`references/adapters/{bruno,
   postman,insomnia}.md`); everything else (report template, Confluence publishing,
