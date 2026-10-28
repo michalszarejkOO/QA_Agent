@@ -135,7 +135,7 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   skill) carries the `agent-device` mechanics: converting screenshot pixels to
   points for `press`, verifying a "dead button" both by ref and by coordinates (to
   catch real accessibility hit-frame mismatches instead of reporting a false
-  alarm), the gotcha where the daemon holds onto stale environment variables, and a
+  alarm), the shared daemon that holds onto stale environment variables, and a
   separate reference file for one-time signing setup on a physical iPhone. Rules
   shared by both platforms (the real-account/real-payment boundary, "don't judge
   without examining the screenshot") live once, in the main `SKILL.md`, not
@@ -219,8 +219,10 @@ registering the device's UDID with a developer account) took up most of that
 session and was moved into its own reference file so later runs wouldn't
 re-discover it by trial and error. Two lessons from that session are worth knowing
 regardless of project: the `agent-device` daemon holds onto the environment
-variables from when it started (a later `export` doesn't reach it — it has to be
-killed and restarted), and `press <x> <y>` takes iOS points, not screenshot pixels —
+variables from when it started (a later `export` doesn't reach it, and since every
+session shares that daemon, a signed run gets one of its own through
+`AGENT_DEVICE_STATE_DIR` instead of killing it), and `press <x> <y>` takes iOS
+points, not screenshot pixels —
 mixing up the units once produced a false "dead button" report for a control that
 actually worked once tapped in the right place (and still surfaced a real bug: its
 accessibility hit-frame was offset from its visible position — a serious issue in an

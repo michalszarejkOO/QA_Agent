@@ -71,6 +71,7 @@ security find-certificate -c "Apple Development: <name>" -p ~/Library/Keychains/
 
 The team id is the `OU=` field.
 
-Remember: a daemon already running from before these exports were set will ignore
-them. Kill it first (see `mobile.md`'s daemon section) in the same command as the
-export + `open`.
+A daemon already running from before these exports were set ignores them, and the
+default daemon is shared with other sessions, so never kill it. Also set
+`AGENT_DEVICE_STATE_DIR` to a folder named after the team and bundle id, which gives
+this signing config a daemon of its own. See `mobile.md`, "The daemon is shared".

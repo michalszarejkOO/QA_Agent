@@ -24,8 +24,8 @@ execution mechanics in between.
 
 A macOS, Apple TV, or web-only `agent-device` target is out of scope for the mobile
 adapter — `agent-device` supports those too, but this skill's mobile rules
-(physical-device signing, points/pixels conversion, the daemon-env gotcha) are
-specific to iOS/Android handhelds and simulators/emulators. Call `agent-device`
+(physical-device signing, points/pixels conversion, the shared daemon and its
+signing env) are specific to iOS/Android handhelds and simulators/emulators. Call `agent-device`
 directly for a desktop/TV target, or the web adapter if the target is actually a
 web page.
 

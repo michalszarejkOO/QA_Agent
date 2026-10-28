@@ -7,10 +7,10 @@ app: drive it with the `agent-device` CLI (Callstack) instead of a browser.
 
 **Scope: iOS and Android only.** `agent-device` also drives macOS, TV, and web
 targets, but this adapter's rules (physical-device signing, the points/pixels
-conversion, the daemon-env gotcha) are specific to mobile simulators/emulators and
-handheld devices. If the delegated target is a desktop/TV/web app, don't use this
-adapter — call `agent-device` directly, or use the web adapter if the target is
-actually a web page.
+conversion, the shared daemon and its signing env) are specific to mobile
+simulators/emulators and handheld devices. If the delegated target is a
+desktop/TV/web app, don't use this adapter — call `agent-device` directly, or use
+the web adapter if the target is actually a web page.
 
 ## Non-negotiable rules
 
@@ -19,6 +19,7 @@ actually a web page.
 | `agent-device press <x> <y>` takes iOS **points**, not screenshot pixels. Divide screenshot pixel coordinates by the device's scale factor (3x on most modern iPhones) before passing them. | Wrong units silently tap the wrong spot with no error — looks exactly like a dead button. |
 | Before reporting any control as "does nothing" / "dead button", retest it twice: once via its `@eN` ref from a fresh `snapshot -i`, once via the correctly-converted point coordinate of its visible center. Only report broken if **both** fail. | A ref tap and a coordinate tap can legitimately disagree — see "Accessibility hit-frame checks" below. Reporting off one tap alone risks a false positive. |
 | Always pass `--device "<exact name>"` explicitly once more than one device/simulator matches. | Ambiguous matches fail the command outright (`AMBIGUOUS_MATCH`). |
+| Never kill the `agent-device` daemon (`pkill`, `kill`). On a physical iOS device, run with the signing env and `AGENT_DEVICE_STATE_DIR` set per "The daemon is shared". | One daemon serves every session on the Mac; killing it breaks other sessions' runs, and a restart can lose their signing vars. |
 | If a physical iOS device is being used for the first time this session, or `open`/`snapshot` fails on signing/provisioning/Developer Mode, read [physical-device-setup.md](./physical-device-setup.md) before improvising. | The setup is multi-layered (device, macOS, Xcode, Apple account) and fails with a different error at each layer — guessing burns turns. |
 | Test the distributed build already installed on the device (TestFlight on iOS; Google Play internal/closed testing or Firebase App Tester on Android) unless the request explicitly asks to build locally (from source, the branch, the PR, a worktree). Only then build, per the config's `installMode`. See "Install source: distributed build by default". | The distributed build is what testers and the client actually get. A local build is slower, needs signing and a Metro port, and is only worth it when the user wants an unreleased branch tested. A failed local build is a blocker, not a reason to test the installed copy. |
 | When building from source, reserve the Metro port with `scripts/metro-port.sh reserve`, pass it to the build as `--port`, and release it at the end. If a reopened dev client shows a native-module mismatch, check who owns the port and move to a new one (step 5). See "Building from source in parallel". | Parallel runs on two devices otherwise collide on one port and block each other's builds. |
@@ -51,7 +52,9 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
    Then pick the install source per "Install source: distributed build by default"
    below (the installed TestFlight/Play/App Tester build unless the request asks
    for a local build), before opening the app.
-3. `agent-device open <bundle-id> --device "<name>" --foreground` to start the session,
+3. `agent-device open <bundle-id> --device "<name>" --foreground` to start the session
+   (on a physical iOS device, with the signing env and state dir from "The daemon
+   is shared"),
    then `agent-device snapshot -i` for the first interactive snapshot with `@eN` refs.
 4. Pick the loop that matches the ask and follow it as documented — don't
    reimplement it from memory:
@@ -244,7 +247,9 @@ pick the same one. Every build from source must:
    checkout's branch, or close the `default` session, partway through your run.
 4. **Clean up at the end, even on failure or abort.** Kill your processes by
    worktree path (`pkill -f "<worktree path>"`). Stopping an agent does not stop
-   its `expo run:*` or xcodebuild; they keep running and keep the port. Then run
+   its `expo run:*` or xcodebuild; they keep running and keep the port. This
+   pattern only matches your worktree; never widen it to `agent-device`, whose
+   daemon other sessions share (see "The daemon is shared"). Then run
    `metro-port.sh release $PORT`. `metro-port.sh list` shows every current
    reservation and whether its port is still listening.
 5. **Wrong bundle on reopen: start your own Metro on a new port.** A dev client
@@ -271,22 +276,50 @@ pick the same one. Every build from source must:
    bound to your released port, so the report must say which worktree and command
    start a matching Metro.
 
-## The daemon keeps stale environment — restart it when signing config changes
+## The daemon is shared — give a signed run its own, never kill one
 
 `agent-device` starts a background daemon on first use that then persists across
 separate shell calls, holding whatever `AGENT_DEVICE_IOS_TEAM_ID` /
 `AGENT_DEVICE_IOS_BUNDLE_ID` (or other env vars) were set **at the moment it started**.
 Exporting new values in a later command does not reach an already-running daemon —
-builds keep using the old team/bundle id with no warning. If you change signing env
-vars, or a build fails with an unexpected bundle id/team, kill the daemon and reopen in
-the same command:
+builds keep using the old team/bundle id with no warning.
+
+That default daemon (state dir `~/.agent-device`) is one process for every Claude
+session on this Mac. Never `pkill` it, and never stop it yourself: other sessions'
+runs go through it, and killing it on 19.10.2026 broke the runs in parallel windows
+(user, 28.10.2026). Whatever command starts it next decides its environment, so a
+restart can also drop the signing vars another session relies on.
+
+Instead, each `AGENT_DEVICE_STATE_DIR` runs its own daemon, started with the
+environment of the command that starts it. For a physical iOS device (the only
+target that needs signing vars), run every `agent-device` command with a state dir
+named after the signing config. Shell state doesn't carry between calls, so put the
+three exports in front of each command:
 
 ```
-pkill -f "agent-device/dist/src/internal/daemon.js"
-export AGENT_DEVICE_IOS_TEAM_ID=...
-export AGENT_DEVICE_IOS_BUNDLE_ID=...
+export AGENT_DEVICE_IOS_TEAM_ID=<team id>
+export AGENT_DEVICE_IOS_BUNDLE_ID=<runner bundle id>
+export AGENT_DEVICE_STATE_DIR="$HOME/.agent-device-signing/$AGENT_DEVICE_IOS_TEAM_ID-$AGENT_DEVICE_IOS_BUNDLE_ID"
 agent-device open <bundle-id> --device "<name>" --foreground
 ```
+
+- Same team and bundle id, same daemon: parallel sessions with the same signing
+  config share it safely, and the built runner is reused between runs.
+- Changed team or bundle id, new folder, new daemon with the new values. Nothing has
+  to be stopped.
+- The daemon exits by itself after 5 minutes idle with no open sessions. Device
+  claims are host-wide, so two daemons still can't take the same device.
+- After the first `open`, check that `$AGENT_DEVICE_STATE_DIR/daemon.json` exists.
+  If it doesn't, the installed `agent-device` ignores the variable: stop and tell
+  the user to update it (`npm install -g agent-device@latest`), don't fall back to
+  the shared daemon with stale signing.
+- To stop a daemon, use `agent-device daemon stop --state-dir <dir>` (it checks the
+  process is really that daemon), and only for your own signing dir. If the user
+  wants the shared one restarted, warn that it ends other sessions' runs and run
+  `agent-device daemon stop --state-dir ~/.agent-device` only after their yes.
+
+Simulators, emulators and Android devices need no signing vars: use the default
+daemon there.
 
 ## Reference loading
 
