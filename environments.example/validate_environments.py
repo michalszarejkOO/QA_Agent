@@ -92,6 +92,9 @@ def check_product_config(data, connectors):
             for f in ("repo", "collectionPath"):
                 if f not in api:
                     errors.append(f"'api.{f}' is required when 'api' is present")
+            for f in ("defaultEnvironment", "ticketEnvironment"):
+                if f in api and (not isinstance(api[f], str) or not api[f].strip()):
+                    errors.append(f"'api.{f}' must be a non-empty string")
             conf = api.get("confluence")
             if conf is not None:
                 if not isinstance(conf, dict):

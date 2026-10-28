@@ -28,12 +28,14 @@ exists to close that gap without weakening the generic rule for every other requ
    shipped behavior.
    - **No PR linked** → look for a merged feature branch following this repo's
      ticket-key branch convention (e.g. `feature-<TICKET-KEY>`) against the
-     product's default integration branch (commonly `demo` or `main`), and diff
+     product's default integration branch (e.g. `demo`, `stage` or `main`), and diff
      that instead. If the local checkout is behind the remote branch containing the
      merge, don't just test against a stale local checkout — resolve the real merged
      state (e.g. via `git fetch` and diffing against the remote branch, or a
      throwaway worktree) rather than silently testing old code.
-4. If the ticket's description and the actual shipped code disagree on scope (a
+4. Before going on, settle the environment with the user as Step 4 describes, using
+   where the PR or branch was merged as the hint.
+5. If the ticket's description and the actual shipped code disagree on scope (a
    field, a validation rule, a whole case the ticket describes but the code doesn't
    implement), that's a finding for the report's Notes and a candidate for Step 5's
    bug-report draft — not something to quietly test around.
@@ -100,13 +102,28 @@ patterns (e.g. `before-request`/`after-response` scripts capturing runtime
 variables) rather than a one-off manual value — see how prior cases in the same
 collection solved the same problem before inventing a new mechanism.
 
-## Step 4: Run against `demo`, always
+## Step 4: Run on an environment the user named or confirmed
 
-Ticket mode always tests against the `demo` environment, never `local` and never
-whatever `api.defaultEnvironment` happens to say, unless the user's own message for
-this run explicitly names a different environment. This is because `demo` is the
-environment the ticket, the Confluence tracker, and other stakeholders can all
-verify against — a `local`-only result isn't shareable evidence for a ticket.
+A ticket's change can be deployed to a different environment than usual (a hotfix
+on `uat`, a feature still only on `development`), so ticket mode never runs on an
+environment the user hasn't named or confirmed for this run:
+
+1. **The user's message names one** ("test IMS-123 on uat") → use it.
+2. **The config has `api.ticketEnvironment`** → propose it and ask the user to
+   confirm before running anything: "Test on `<env>`? The change may be deployed
+   elsewhere."
+3. **No `api.ticketEnvironment`** → ask which environment to test on. Don't
+   fall back to `api.defaultEnvironment` silently; it's for plain runs, and one
+   product's config files can each have a different one.
+
+When asking, list the collection's environment names, and say where the ticket's
+PR or feature branch was merged if Step 1 found it (map the branch to an
+environment per [target-branch.md](../../testing-apps/references/target-branch.md)).
+Ask right after Step 1, so the rest of the run doesn't stop for it. Never assume an
+environment called `demo` exists, and never use a `local`-type one unless the user
+names it. The environment should be the shared one the ticket, the Confluence
+tracker and other stakeholders can verify against; a `local`-only result isn't
+shareable evidence for a ticket.
 
 Run the collection from the folder Step 2 settled on
 (`<run folder>/confluence-collection/` when the download worked), so the result

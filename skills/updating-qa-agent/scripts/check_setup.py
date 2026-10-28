@@ -67,6 +67,23 @@ def pending_migrations():
 COMPANION_FIELDS = ("knownCaveatsFile", "confluence.envRefreshProcedure")
 
 
+def collection_environments(api):
+    """Environment names from <repo>/<collectionPath>/environments/, or an empty
+    set when there's no such folder (e.g. an Insomnia export keeps them inside)."""
+    if not api.get("repo") or not api.get("collectionPath"):
+        return set()
+    folder = Path(api["repo"]).expanduser() / api["collectionPath"] / "environments"
+    if not folder.is_dir():
+        return set()
+    names = set()
+    for f in folder.iterdir():
+        for suffix in (".postman_environment.json", ".bru", ".yml", ".yaml", ".json"):
+            if f.is_file() and f.name.endswith(suffix):
+                names.add(f.name[: -len(suffix)])
+                break
+    return names
+
+
 def companion_files(path, data):
     """(field, filename, where) for each doc the product config points at.
 
@@ -269,6 +286,13 @@ def check_product(r, path, servers):
             missing.append(f"api.collectionPath ({cp})")
     if missing:
         r.add("WARN", f"{name}: paths that don't exist: {', '.join(missing)}", "clone/create them or fix the paths in the config")
+    env_names = collection_environments(api)
+    for field in ("defaultEnvironment", "ticketEnvironment"):
+        value = api.get(field)
+        if env_names and isinstance(value, str) and value not in env_names:
+            r.add("WARN", f"{name}: api.{field} is {value!r}, but the collection's environments are "
+                  f"{', '.join(sorted(env_names))}",
+                  f"set api.{field} to one of them in the config")
     for field, filename, where in companion_files(path, data):
         if where is None:
             r.add("FAIL", f"{name}: {field} points at {filename}, which is neither in "

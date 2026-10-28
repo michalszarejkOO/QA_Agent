@@ -1,6 +1,6 @@
 ---
 name: testing-api
-description: Runs a repo's API test collection — Bruno, Postman, or Insomnia — against a live environment via that tool's CLI, exports the collection to a zip the user can download and import into the matching desktop app, optionally, after the user approves, refreshes a lastUpdate timestamp on a Confluence tracker page and attaches that zip, and produces a Jira-comment-ready pass/fail report. When the request is driven by a specific backend Jira ticket, switches to ticket mode: reads the ticket and its PR/branch for context, always tests against `demo`, generates full scenario coverage (not just happy path) for any endpoint the collection doesn't already cover, treats the Confluence-attached collection as the latest version, and closes by preparing (never auto-posting) a Jira comment and any bug reports for the user's approval. Use when asked to test the API, run the API test suite, verify endpoints are working, export/re-export an API collection, QA/test a backend Jira ticket, or produce a test summary/report for a Jira ticket, for any product with a Bruno, Postman, or Insomnia collection — not tied to one repo or one tool.
+description: Runs a repo's API test collection — Bruno, Postman, or Insomnia — against a live environment via that tool's CLI, exports the collection to a zip the user can download and import into the matching desktop app, optionally, after the user approves, refreshes a lastUpdate timestamp on a Confluence tracker page and attaches that zip, and produces a Jira-comment-ready pass/fail report. When the request is driven by a specific backend Jira ticket, switches to ticket mode: reads the ticket and its PR/branch for context, tests on the environment the user names or confirms (never a silently assumed one), generates full scenario coverage (not just happy path) for any endpoint the collection doesn't already cover, treats the Confluence-attached collection as the latest version, and closes by preparing (never auto-posting) a Jira comment and any bug reports for the user's approval. Use when asked to test the API, run the API test suite, verify endpoints are working, export/re-export an API collection, QA/test a backend Jira ticket, or produce a test summary/report for a Jira ticket, for any product with a Bruno, Postman, or Insomnia collection — not tied to one repo or one tool.
 when_to_use: "Trigger on: 'przetestuj API', 'uruchom testy API/bruno/postman/insomnia', 'sprawdź czy endpointy działają', 'wygeneruj raport testów do jiry', 'wyeksportuj kolekcję', 'run the API tests', 'test this endpoint', 'export the collection', 'test/QA this backend ticket', a Jira ticket URL/ID for a [BE] or backend-only ticket, or any request to verify API behavior using a committed collection. Product-agnostic: resolve which repo/collection/tool via the environments config (see step 0) or ask if it can't be resolved."
 ---
 
@@ -60,7 +60,7 @@ rules above:
 
 | Severity | Rule |
 | --- | --- |
-| MUST | Always test against the `demo` environment — never `local`, and never a different `api.defaultEnvironment` — unless the user's message explicitly names another environment for this run. |
+| MUST | Test only on an environment the user named or confirmed for this run. If the message names one, use it. Otherwise, before running anything, ask: with `api.ticketEnvironment` set, propose it and ask to confirm (the change may be deployed somewhere else); without it, ask which environment to use. Offer the collection's environment names and, if known, where the ticket's PR was merged. Never assume `demo`, never fall back to `api.defaultEnvironment` silently, never pick a `local`-type one unless the user names it. See [ticket-driven-testing.md](./references/ticket-driven-testing.md), Step 4. |
 | MUST | Before doing anything else, read the ticket's acceptance criteria and its linked PR's diff (or the merged feature branch found by the repo's ticket-key naming convention, if no PR is linked) so the scenarios generated actually target what changed. |
 | MUST | Treat the collection currently attached to the product's Confluence tracker page as the latest version, not whatever's in the local repo checkout — diff the two and flag any divergence to the user rather than silently picking one. Download it into `<run folder>/confluence-collection/` and work only from there: new cases, the run and the export all use that folder. |
 | MUST | Generate full scenario coverage for the ticket's endpoint(s) before executing anything, if the resolved collection doesn't already have it: happy path(s), validation/boundary cases, auth cases (missing/invalid/wrong-role token), and business-logic edge cases — not just the happy path. Follow the resolved adapter's existing naming/`docs:`/assertion conventions. |
@@ -117,7 +117,8 @@ End every run with a point-list summary, after the report and drafts:
      "client": "bruno",
      "repo": "~/Projects/<repo>",
      "collectionPath": "bruno",
-     "defaultEnvironment": "demo",
+     "defaultEnvironment": "staging",
+     "ticketEnvironment": "<optional: environment ticket mode proposes and asks to confirm; absent = ask every time>",
      "knownCaveats": ["<free text about stateful/order-dependent cases, if any>"],
      "knownCaveatsFile": "<filename of a fuller markdown doc kept next to this config in <workDir>/config/ — use this instead of/alongside knownCaveats when the caveat list is long enough that keeping it as JSON strings risks drifting out of sync with a richer doc>",
      "confluence": {
@@ -162,7 +163,8 @@ End every run with a point-list summary, after the report and drafts:
    - **Not found, but the current directory has a recognizable collection** (a
      `bruno/`-style folder, a `*.postman_collection.json`, or an Insomnia export) →
      infer the client from whichever of those is present, use the cwd as repo root,
-     default environment `demo`, and skip the Confluence step (nothing to publish to
+     use the environment the user names (or list the collection's environments and
+     ask), and skip the Confluence step (nothing to publish to
      without config). The run folder is `./api-runs/<YYYY-MM-DD-<env>>/`; say in
      the report that no working directory is configured.
    - **Not found and cwd has no collection** → ask the user which repo/collection/tool
@@ -181,8 +183,9 @@ End every run with a point-list summary, after the report and drafts:
    Run the collection as it is on that branch (a fresh worktree at
    `origin/<branch>`, under `<workDir>/worktrees/`), not the local checkout's branch. Carry over uncommitted
    collection changes only if the user says to. Use the recent MRs the script
-   lists as the run's context. Ticket mode skips this; it always uses `demo` and
-   the ticket's own branch.
+   lists as the run's context. Ticket mode skips this; it uses the ticket
+   environment (see "Additional rules — ticket mode only") and the ticket's own
+   branch.
 
 3. **Export the collection**, per the adapter's export instructions, so the user has
    a file they can re-import into the matching desktop app. Always pass a
@@ -268,9 +271,9 @@ T2. **Check coverage for the ticket's endpoint(s)** against that resolved
     following the resolved adapter's existing naming/`docs:`/assertion conventions.
 
 T3. **Run steps 1 and 3–6 of the generic procedure** (load adapter, export, check
-    `demo` reachability, run the suite, investigate failures) — but environment is
-    always `demo` in ticket mode, never the request's or config's default if that
-    would mean `local`.
+    reachability, run the suite, investigate failures) — but the environment is
+    the one the user named or confirmed for this run (ticket-driven-testing.md,
+    Step 4), never a `local`-type one unless the user names it.
 
 T4. **Write the report** (generic step 7), then **prepare the Jira comment** and
     **ask the user** whether to post it to the ticket now or keep it as

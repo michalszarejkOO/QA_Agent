@@ -85,13 +85,17 @@ entirely — a product needs at least one of the two, per `validate_environments
      collection lives loose (exported files, no repo), offer to copy it into
      `<workDir>/<client>/` in that layout and point `api.repo` there; keep the
      originals untouched and leave secrets out of the copied environment files.
-   - Which environment name is the **shared/stakeholder-visible one** — the one
-     other people (reviewers, the ticket, a tracker page) can verify results
-     against. This becomes `api.defaultEnvironment`. Ask explicitly rather than
-     assuming it's called `demo` — `testing-api`'s ticket mode hardcodes testing
-     against whatever this field says is default, and a team whose shared
-     environment is called `staging`/`uat`/something else needs that reflected here,
-     not silently defaulted to a name that doesn't exist for them.
+   - Which environment a plain "run the API tests" should use when no
+     staging-like branch can be resolved (`api.defaultEnvironment`). Offer the
+     names of the collection's environment files as choices; never assume one is
+     called `demo`.
+   - Which environment backend tickets are usually tested on: the **shared,
+     stakeholder-visible one** that reviewers, the ticket and a tracker page can
+     verify results against (`api.ticketEnvironment`). Offer the collection's
+     environment names, plus "none, ask every time" for teams whose tickets land
+     on different environments. Tell the user that `testing-api`'s ticket mode
+     always confirms the environment before running (it proposes this one, or
+     asks when the field is absent), because a change may be deployed elsewhere.
    - Any known stateful/order-dependent test cases worth flagging up front
      (`api.knownCaveats`) — optional, skip if none come to mind yet.
    - Confluence tracker page for publishing results — skip entirely if not wanted

@@ -30,7 +30,9 @@ a product that has both a UI and an API collection).
   app, data kept).
 - [`api-collection.example.json`](./api-collection.example.json) — a product
   `testing-api` runs an API collection against: which client (Bruno, Postman, or
-  Insomnia), repo path, default environment, known stateful-case caveats, and
+  Insomnia), repo path, default environment, the environment ticket mode
+  proposes for confirmation (`ticketEnvironment`, optional; without it, it asks),
+  known stateful-case caveats, and
   (optionally) a Confluence tracker page to publish results to.
 
 - [`evidence.example.json`](./evidence.example.json) — one file for all products,

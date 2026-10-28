@@ -157,7 +157,7 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   (if applicable) which Confluence page comes from
   `environments/<product>-<env>.json` → the `api` key (`client`: `bruno` |
   `postman` | `insomnia`, plus repo, collectionPath, defaultEnvironment,
-  knownCaveats, optionally confluence). Tool-specific mechanics (how to package the
+  optionally ticketEnvironment, knownCaveats, optionally confluence). Tool-specific mechanics (how to package the
   collection, the exact CLI invocation, where per-case annotations/caveats live)
   live in one adapter file per client (`references/adapters/{bruno,
   postman,insomnia}.md`); everything else (report template, Confluence publishing,
