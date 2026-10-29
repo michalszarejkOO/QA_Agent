@@ -18,9 +18,10 @@ configure-project or migration 008; see environments.example/qa-agent-updates.ex
                "never"          never; the user updates by asking
 A missing file or a bad value means ["mon"]. QA_AGENT_UPDATE_CHECK=0 means never.
 
-The check runs at the first session on a check day. A check day without a
-session isn't lost: the next session after it checks instead. Later sessions
-that day stay silent, whatever the answer was. The last successful check is
+The hook runs when a session starts, is resumed (--continue / --resume) or is
+cleared (/clear); the check itself runs the first of those times on a check day.
+A check day without any of them isn't lost: the next one after it checks
+instead. Later ones that day stay silent, whatever the answer was. The last successful check is
 kept in ~/.cache/qa-agent/update-check.json; an offline start doesn't count, so
 the next session tries again.
 

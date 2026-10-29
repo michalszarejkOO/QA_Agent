@@ -58,7 +58,8 @@ changes, says a newer version is available and asks whether to see what's new
 and update. It never pulls without your yes. It checks only on the days of the
 week you choose (`checkDays` in `~/.claude/environments/qa-agent-updates.json`,
 e.g. Monday, or Monday and Thursday; also "daily" or "never"; Monday by default),
-at the first session that day, or the next session if you skipped that day.
+at the first new, resumed or cleared (`/clear`) session that day, or the next
+one if you skipped that day.
 `configure-project` asks once, and you can change it any time by saying "change
 update settings" / "zmień ustawienia aktualizacji". `qa-tester`, `testing-apps` and `testing-api` also
 check the setup at the start of a run and warn when it's out of date.

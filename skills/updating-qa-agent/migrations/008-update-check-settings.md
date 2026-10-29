@@ -25,8 +25,9 @@ Needed if `~/.claude/environments/qa-agent-updates.json` (or
      `["mon", "thu"]`;
    - other days the user names → their list; every day → `"daily"`;
      never (they update by asking) → `"never"`.
-   Say how it works: the first Claude session on such a day checks; if there
-   was no session that day, the next one does; if there's something new,
+   Say how it works: the first Claude session on such a day checks (a new one,
+   a resumed one, or after `/clear`); if there was none that day, the next one
+   does; if there's something new,
    Claude asks whether to see what's new and update.
 2. **Write the file (runs by itself).** Write
    `environments/qa-agent-updates.json` with `checkDays` and the `notes` text

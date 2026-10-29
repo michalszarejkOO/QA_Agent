@@ -92,8 +92,8 @@ repo's `skills/` or `agents/`.
    Write `environments/qa-agent-updates.json` with `checkDays` (`["mon"]`,
    `["mon", "thu"]`, `"daily"` or `"never"`) following
    `environments.example/qa-agent-updates.example.json`, and show it. Say how it
-   works: the first Claude session on such a day checks (or the next session
-   when there was none that day), and if there's something new, Claude asks
+   works: the first Claude session on such a day checks (a new one, a resumed
+   one, or after `/clear`; or the next one when there was none that day), and if there's something new, Claude asks
    whether to see what's new and update; nothing is pulled without a yes.
 
 6. **Offer folder access from anywhere.** Ask whether Claude may read and write

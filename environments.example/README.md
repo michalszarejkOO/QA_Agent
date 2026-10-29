@@ -56,8 +56,8 @@ a product that has both a UI and an API collection).
   for this machine, saved as `environments/qa-agent-updates.json`. `checkDays`
   sets on which days of the week QA_Agent checks for a newer version of itself:
   a list such as `["mon"]` (the default) or `["mon", "thu"]`, `"daily"`, or
-  `"never"`. The check runs at the first Claude session on a check day, or the
-  next session if there was none that day; when there are new changes, Claude
+  `"never"`. The check runs at the first Claude session on a check day (new,
+  resumed, or after `/clear`), or the next one if there was none that day; when there are new changes, Claude
   says so and asks whether to see what's new and update. Nothing is ever pulled
   without a yes.
 

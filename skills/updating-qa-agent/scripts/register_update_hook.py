@@ -4,10 +4,13 @@
 Usage: register_update_hook.py [--check]
 
 Adds to the user settings (~/.claude/settings.json, or $CLAUDE_CONFIG_DIR) one
-SessionStart hook, matcher "startup", running check_updates.py --hook. Because it
-sits in the user settings, it runs whatever folder Claude is opened in. An
-existing entry for check_updates.py is updated in place (e.g. the repo moved);
-every other hook and setting is left as it is. Safe to run any number of times.
+SessionStart hook, matcher "startup|resume|clear" (a new session, --continue /
+--resume, and /clear, so someone who keeps one terminal and clears it still gets
+checked), running check_updates.py --hook. The check-day rule in that script
+keeps it to once a day. Because it sits in the user settings, it runs whatever
+folder Claude is opened in. An existing entry for check_updates.py is updated in
+place (the repo moved, or the old "startup"-only matcher); every other hook and
+setting is left as it is. Safe to run any number of times.
 
 --check only reports and exits 1 if the hook is missing or points elsewhere.
 """
@@ -19,6 +22,7 @@ from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().with_name("check_updates.py")
 COMMAND = f"python3 -I {shlex.quote(str(SCRIPT))} --hook"
+MATCHER = "startup|resume|clear"
 
 
 def settings_path():
@@ -39,18 +43,25 @@ def main():
         return 1
     groups = data.setdefault("hooks", {}).setdefault("SessionStart", [])
     found = [(g, h) for g in groups if isinstance(g, dict) for h in g.get("hooks", []) if ours(h)]
-    if found and all(h.get("command") == COMMAND for _, h in found):
+    if found and all(h.get("command") == COMMAND and g.get("matcher") == MATCHER for g, h in found):
         print("ok:      QA_Agent update check runs when Claude starts (SessionStart hook)")
         return 0
     if "--check" in sys.argv:
-        print("missing: QA_Agent update-check hook" if not found else "outdated: QA_Agent update-check hook path")
+        print("missing: QA_Agent update-check hook" if not found else "outdated: QA_Agent update-check hook")
         return 1
     if found:
-        for _, h in found:
+        for g, h in found:
             h["command"] = COMMAND
+            if g.get("matcher") == MATCHER:
+                continue
+            if len(g.get("hooks", [])) == 1:
+                g["matcher"] = MATCHER
+            else:  # shares a group with someone else's hooks: move it out, leave theirs as they were
+                g["hooks"].remove(h)
+                groups.append({"matcher": MATCHER, "hooks": [h]})
         action = "updated"
     else:
-        groups.append({"matcher": "startup",
+        groups.append({"matcher": MATCHER,
                        "hooks": [{"type": "command", "command": COMMAND, "timeout": 15}]})
         action = "added"
     path.parent.mkdir(parents=True, exist_ok=True)
