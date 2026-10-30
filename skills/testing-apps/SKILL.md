@@ -1,7 +1,7 @@
 ---
 name: testing-apps
-description: Drives a running app to execute test scenarios and capture evidence — Playwright for a web app, or the agent-device CLI (Callstack) for an iOS/Android mobile app — picking the adapter from whether the target is a URL or a device/bundle id. Used as qa-tester's own execution step (its steps 1-2 gather context and derive scenarios, this skill only replaces the browser/device-execution step, its step 6 reports and drafts bugs). Also usable standalone for direct browser or mobile-device exploration/dogfooding when full ticket/PR/Figma context isn't needed.
-when_to_use: "Trigger as qa-tester's own 'Execute' step for any web or mobile target. Also trigger directly for: 'test the iOS/Android app', 'dogfood <mobile app>', 'exploratory test on iPhone/Android/simulator/emulator', or driving/exploring a running web app in the browser without a full ticket-driven QA run. Do NOT trigger for a macOS or Apple TV target — agent-device also supports those, but this skill's mobile adapter is scoped to iOS/Android handhelds and simulators/emulators only; call agent-device directly for those."
+description: Drives a running app to execute test scenarios and capture evidence — Playwright for a web app, or the agent-device CLI (Callstack) for an iOS/Android mobile app — picking the adapter from whether the target is a URL or a device/bundle id. Used as qa-tester's own execution step (its steps 1-2 gather context and derive scenarios, this skill only replaces the browser/device-execution step, its step 6 reports and drafts bugs). Also usable standalone for direct browser or mobile-device exploration, dogfooding or a quick retest without full ticket/PR/Figma context; a standalone run goes to a subagent, so screenshots and snapshots stay out of the main conversation (see "Where a standalone run happens").
+when_to_use: "Trigger as qa-tester's own 'Execute' step for any web or mobile target. Also trigger directly for: 'test the iOS/Android app', 'dogfood <mobile app>', 'exploratory test on iPhone/Android/simulator/emulator', or driving/exploring a running web app in the browser without a full ticket-driven QA run, including 'przeklikaj', 'sprawdź czy już działa', a retest of a bug or a screenshot of a screen. Do NOT trigger for a macOS or Apple TV target — agent-device also supports those, but this skill's mobile adapter is scoped to iOS/Android handhelds and simulators/emulators only; call agent-device directly for those."
 ---
 
 # Testing apps (web & mobile execution)
@@ -28,6 +28,33 @@ adapter — `agent-device` supports those too, but this skill's mobile rules
 signing env) are specific to iOS/Android handhelds and simulators/emulators. Call `agent-device`
 directly for a desktop/TV target, or the web adapter if the target is actually a
 web page.
+
+## Where a standalone run happens
+
+Every screenshot and page snapshot stays in the context of the conversation
+that took it, and that whole context is sent again with every later turn. So a
+standalone run (exploration, dogfooding, a retest, "check whether X works now")
+**runs in a subagent**, not in the main conversation. `qa-tester` runs are
+subagents already.
+
+1. **In the main conversation, gather the brief** (ask only what's missing): the
+   target (URL, or device and app), environment and branch, which account to
+   sign in with, what to check or retest and what counts as fixed, whether to
+   record evidence (`mode: ask` in evidence.json), and the product's working
+   directory and project skill if the target matches a product config. Don't
+   open the browser or device here.
+2. **Start a subagent** (`general-purpose`, model `sonnet`) with that brief and
+   the instruction: "Load the testing-apps skill and follow it as a standalone
+   run inside a subagent. You can't ask the user: if something the brief
+   doesn't answer blocks the run, stop and report what's needed." For a
+   ticket-driven check, start `qa-tester` instead.
+3. **Relay its summary** (Done / Not done / Proposed additions) and the saved
+   files. If it stopped on a question, ask the user and continue the same
+   subagent with the answer rather than starting a new one.
+
+Stay in the main conversation only for a single look, about three browser or
+device actions at most (open one page, take one screenshot, read one value),
+or when the user explicitly asks to drive it here.
 
 ## Shared discipline (both adapters)
 
@@ -166,8 +193,8 @@ evidence to scenarios and bugs.
 
 ## Keeping the user informed
 
-When this skill runs in the main conversation (standalone, not inside
-`qa-tester`), write one short line before each notable action: signing in and
+When this skill runs in the main conversation (a single look, or the user
+asked to drive it there), write one short line before each notable action: signing in and
 with which test account, starting or stopping a recording, building or opening
 the app, reproducing a bug, skipping a scenario. One line per step, not per
 click. Inside `qa-tester`, log the same actions for its report's run log

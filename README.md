@@ -216,8 +216,10 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   without examining the screenshot") live once, in the main `SKILL.md`, not
   duplicated per adapter. Deliberately scoped to web + mobile (iOS/Android) —
   `agent-device` also supports macOS/TV, but this skill doesn't reach into that.
-  Bound to `qa-tester` (its "Execute" step), and the mobile adapter is also
-  callable directly for dogfooding without a full ticket/PR context.
+  Bound to `qa-tester` (its "Execute" step), and also callable directly for
+  exploration, dogfooding or a quick retest without a full ticket/PR context.
+  Such a direct run goes to a subagent, so its screenshots and snapshots don't
+  stay in the main conversation and get sent again with every later turn.
 - `skills/preparing-refinement-questions/` — generates refinement-session questions
   from a Jira ticket. **Standalone skill, deliberately unbound** from any agent
   (it applies before a feature is delivered, so `qa-tester` would never use it —
