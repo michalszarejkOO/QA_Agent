@@ -22,6 +22,10 @@ Also check each product's `projectSkill`: if its `SKILL.md` has no rule saying
 that files made for the product go into its working directory, that part is
 needed too.
 
+## Fresh install
+
+`skip`: configure-project offers folder access itself (its step 6).
+
 ## Steps
 
 1. **Folder access (asks).** List the product folders that aren't covered yet.

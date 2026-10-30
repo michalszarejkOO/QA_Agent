@@ -6,10 +6,15 @@ Usage:
   migrations.py pending           print pending migration ids, one per line
   migrations.py mark <id> [...]   record migrations as applied
   migrations.py mark-all          record every existing migration as applied
-                                  (a fresh install already has the current layout)
+  migrations.py fresh-install     first setup: record the "skip" migrations as
+                                  applied and print the "ask" ones, which the
+                                  setup then runs as a wizard
   migrations.py lint              check migration files: numbering and sections
 
-Migrations are the files in ../migrations/NNN-<slug>.md. State lives in
+Migrations are the files in ../migrations/NNN-<slug>.md. Each says in its
+"## Fresh install" section whether a new machine needs it too: `ask` (the user
+decides something, so the first setup runs it) or `skip` (it only fixes an older
+install). State lives in
 $CLAUDE_CONFIG_DIR/environments/qa-agent-migrations.json (default
 ~/.claude/environments/), next to the product configs it changes.
 """
@@ -22,7 +27,8 @@ from pathlib import Path
 
 MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "migrations"
 NAME = re.compile(r"^(\d{3})-[a-z0-9-]+\.md$")
-REQUIRED_SECTIONS = ("## What changed", "## Is it needed", "## Steps", "## Verify")
+REQUIRED_SECTIONS = ("## What changed", "## Is it needed", "## Fresh install", "## Steps", "## Verify")
+FRESH_INSTALL = re.compile(r"^## Fresh install\s*\n+\s*`(ask|skip)`", re.MULTILINE)
 
 
 def state_path():
@@ -47,6 +53,12 @@ def migrations():
     return sorted(p.stem for p in MIGRATIONS_DIR.glob("*.md") if NAME.match(p.name))
 
 
+def fresh_install_mode(migration_id):
+    """ "ask" or "skip" from the migration's "## Fresh install" section; None if missing."""
+    match = FRESH_INSTALL.search((MIGRATIONS_DIR / f"{migration_id}.md").read_text())
+    return match.group(1) if match else None
+
+
 def lint():
     errors = []
     files = sorted(MIGRATIONS_DIR.glob("*.md"))
@@ -61,6 +73,8 @@ def lint():
         for section in REQUIRED_SECTIONS:
             if section not in text:
                 errors.append(f"{p.name}: missing section '{section}'")
+        if "## Fresh install" in text and not FRESH_INSTALL.search(text):
+            errors.append(f"{p.name}: '## Fresh install' must start with `ask` or `skip`")
     if numbers != list(range(1, len(numbers) + 1)):
         errors.append(f"numbers must run 001, 002, ... without gaps; found {numbers}")
     return errors
@@ -86,6 +100,15 @@ def main():
                 return 1
             applied.setdefault(mid, date.today().isoformat())
             print(f"marked:  {mid}")
+        save_state(state)
+    elif cmd == "fresh-install":
+        for mid in migrations():
+            if mid in applied:
+                continue
+            if fresh_install_mode(mid) == "ask":
+                print(mid)
+            else:
+                applied[mid] = date.today().isoformat()
         save_state(state)
     elif cmd == "lint":
         errors = lint()

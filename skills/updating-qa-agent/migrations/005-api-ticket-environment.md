@@ -18,6 +18,10 @@ Needed if any product config in `~/.claude/environments/` has an `api` block
 without `api.ticketEnvironment`. A product whose answer was "none, ask every time"
 stays without the field; the applied-migrations record keeps this from asking again.
 
+## Fresh install
+
+`skip`: a fresh install has no old ticket-mode settings to change.
+
 ## Steps
 
 1. **List (runs by itself).** For each product config with an `api` block and no

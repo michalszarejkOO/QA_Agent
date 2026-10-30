@@ -22,6 +22,10 @@ without `api.publish`, or if one sends a part to `1password` while `op` isn't
 installed (`command -v op` prints nothing). A setup with no `api` block at all
 doesn't need it.
 
+## Fresh install
+
+`skip`: configure-project asks where each product publishes from the start.
+
 ## Steps
 
 1. **Per product (asks).** For each product with an `api` block and no

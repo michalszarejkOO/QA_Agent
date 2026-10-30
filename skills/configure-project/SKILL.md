@@ -106,11 +106,16 @@ repo's `skills/` or `agents/`.
 7. **Validate.** Run `python3 environments.example/validate_environments.py` (from
    the repo root) and show the output. If it reports errors, fix the specific file
    and field it names and re-run until clean. On a first install (no product
-   files existed before this run), then record every migration as applied, since
-   this run already built the current layout:
-   `python3 -I skills/updating-qa-agent/scripts/migrations.py mark-all`. When
-   products already existed, leave migrations to the `updating-qa-agent` skill
-   instead.
+   files existed before this run), then run
+   `python3 -I skills/updating-qa-agent/scripts/migrations.py fresh-install`. It
+   records as applied every migration that only fixes older installs (this run
+   already built the current layout) and prints the ones a new machine needs too,
+   because the user decides something in them (e.g. `009-auto-compact-window`).
+   Run each printed migration now as a wizard, the way `updating-qa-agent` does
+   (its step 3): read the file, run "Is it needed", then "Steps" (explain, ask with
+   the suggested default), then "Verify", and mark it applied with
+   `migrations.py mark <id>`. When products already existed, leave migrations to
+   the `updating-qa-agent` skill instead.
 
 8. **Post-setup check.** Run the `checking-qa-agent` skill and include its report:
    it shows what's still missing on this machine (tools, playwright-video, Jira

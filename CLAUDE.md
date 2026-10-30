@@ -35,8 +35,30 @@ any wording ("set up QA_Agent", "zrób setup", "skonfiguruj", "update QA_Agent",
 
 - Keep `skills/` and `agents/` product-agnostic. Product-specific rules go into
   that product's project skill, never here.
-- If a change needs something done on machines that already use QA_Agent, add
-  a migration in the same commit (see `skills/updating-qa-agent/SKILL.md`, "Writing
-  a migration") and run
-  `python3 -I skills/updating-qa-agent/scripts/migrations.py lint`.
+- **Before every commit that touches `skills/`, `agents/`, scripts, hooks,
+  `setup.sh` or `environments.example/`, decide whether other users' installs
+  are affected**: a config field, a user setting (`~/.claude/settings.json`),
+  an MCP registration, a file or folder that moves, a new place output goes,
+  or a new choice the user should make. Say the answer to the user before
+  committing, even when it's "no".
+  - Affected → add a migration in the same commit (see
+    `skills/updating-qa-agent/SKILL.md`, "Writing a migration"). Write its Steps
+    as a wizard (explain, ask with a default, do the rest, show the result) and
+    choose its "Fresh install": `ask` if new users must make the same choice
+    (configure-project then runs it in the first setup), `skip` if it only fixes
+    older installs. Run
+    `python3 -I skills/updating-qa-agent/scripts/migrations.py lint`.
+  - Not affected (skill text only) → no migration.
+  - End the commit message with `Migration: NNN-<slug>` or
+    `Migration: none (<why>)`.
+- **Before opening a pull request, write the release note** in `CHANGELOG.md`
+  under `## Unreleased`, as its own commit ("Changelog: ..."). Read all the
+  branch's commits (`git log <base>..HEAD`), group them by feature and write one
+  bullet per feature, not per commit, in the user's terms: what they can do now,
+  what works differently, what the update will ask (name the migration's
+  question, not its number). Fold purely internal work (tests, evals, wording)
+  into one "Smaller fixes" bullet or leave it out. Use the same bullets as the
+  pull request description. When a version branch is cut (e.g. `1.2.0`), rename
+  `## Unreleased` to the version and start a new empty `## Unreleased` above it.
+  Claude shows these entries to everyone who updates.
 - Repo content is in English.

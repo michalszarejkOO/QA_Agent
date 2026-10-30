@@ -59,7 +59,8 @@ and update. It never pulls without your yes. It checks only on the days of the
 week you choose (`checkDays` in `~/.claude/environments/qa-agent-updates.json`,
 e.g. Monday, or Monday and Thursday; also "daily" or "never"; Monday by default),
 at the first new, resumed or cleared (`/clear`) session that day, or the next
-one if you skipped that day.
+one if you skipped that day. On those days it also notices migrations you
+pulled in the terminal but haven't applied yet, and offers to go through them.
 `configure-project` asks once, and you can change it any time by saying "change
 update settings" / "zmień ustawienia aktualizacji". `qa-tester`, `testing-apps` and `testing-api` also
 check the setup at the start of a run and warn when it's out of date.
@@ -80,12 +81,25 @@ machine ends up with the same setup however many updates it skipped.
 
 ## Making changes to QA_Agent
 
-If your change needs something done on machines that already use QA_Agent, add
-a migration in the same commit: `skills/updating-qa-agent/migrations/NNN-<slug>.md`
-with the sections "What changed", "Is it needed", "Steps" and "Verify" (details in
+Before every commit, decide whether the change affects machines that already use
+QA_Agent (a config field, a user setting, an MCP registration, files that move, a
+new choice the user should make). If it does, add a migration in the same commit:
+`skills/updating-qa-agent/migrations/NNN-<slug>.md` with the sections "What
+changed", "Is it needed", "Fresh install", "Steps" and "Verify" (details in
 [`skills/updating-qa-agent/SKILL.md`](./skills/updating-qa-agent/SKILL.md)), then run
-`python3 -I skills/updating-qa-agent/scripts/migrations.py lint`. A change that
-only edits skill text needs no migration. Removing or renaming a skill folder:
+`python3 -I skills/updating-qa-agent/scripts/migrations.py lint`. Steps are written
+as a wizard. "Fresh install" says whether new users get the same wizard during
+their first setup (`ask`) or not (`skip`, it only fixes older installs). Existing
+users get it at their next update: on their update-check days Claude offers it,
+also when they already pulled in the terminal. End the commit message with
+`Migration: NNN-<slug>` or `Migration: none (<why>)`. A change that only edits
+skill text needs no migration.
+
+Before opening a pull request, add the release note to
+[`CHANGELOG.md`](./CHANGELOG.md) under "Unreleased": one bullet per feature (not
+per commit), written for the people who use QA_Agent, the same text as the pull
+request description. Claude shows these notes to everyone when it offers the
+update. Removing or renaming a skill folder:
 add its old name to `RETIRED_SKILLS` in `setup.sh`. Keep skills and the agent
 product-agnostic (see "Generic skills here, project knowledge in the project").
 

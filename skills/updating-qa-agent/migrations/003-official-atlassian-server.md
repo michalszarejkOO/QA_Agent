@@ -24,6 +24,10 @@ a config points at (`api.knownCaveatsFile`, `api.confluence.envRefreshProcedure`
 names tools of another Atlassian server: `confluence_…` or `jira_…` tool names, or
 `mcp-atlassian`.
 
+## Fresh install
+
+`skip`: configure-project sets up Jira through Atlassian's own server from the start.
+
 ## Steps
 
 1. **List the sites (runs by itself).** For each site, say which server reaches it,

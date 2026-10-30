@@ -35,6 +35,10 @@ already match):
    (`find ~/Projects -maxdepth 4 -type d -name .playwright-mcp`, or the parents of
    the repos named in the product files).
 
+## Fresh install
+
+`skip`: a fresh install is built in the workDir layout from the start.
+
 ## Steps
 
 1. **Playwright (automatic).** `./setup.sh` already ran
