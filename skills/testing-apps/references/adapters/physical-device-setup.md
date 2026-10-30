@@ -75,3 +75,12 @@ A daemon already running from before these exports were set ignores them, and th
 default daemon is shared with other sessions, so never kill it. Also set
 `AGENT_DEVICE_STATE_DIR` to a folder named after the team and bundle id, which gives
 this signing config a daemon of its own. See `mobile.md`, "The daemon is shared".
+
+Symptom of a daemon that started without them: the runner build fails with
+`No Account for Team "2S799L9W4M"` / `No profiles for 'com.callstack.agentdevice.runner'`
+(agent-device's built-in default team), or, with a runner built earlier, `open`
+and `snapshot` hang until `Daemon request timed out`. `mobile.md`, "The daemon is
+shared", shows how to check the daemon's environment.
+
+To make every daemon start with them, the user can add both exports to
+`~/.zshenv` themselves. `checking-qa-agent` warns while they're missing.

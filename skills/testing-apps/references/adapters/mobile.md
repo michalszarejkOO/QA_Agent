@@ -20,6 +20,7 @@ the web adapter if the target is actually a web page.
 | Before reporting any control as "does nothing" / "dead button", retest it twice: once via its `@eN` ref from a fresh `snapshot -i`, once via the correctly-converted point coordinate of its visible center. Only report broken if **both** fail. | A ref tap and a coordinate tap can legitimately disagree — see "Accessibility hit-frame checks" below. Reporting off one tap alone risks a false positive. |
 | Always pass `--device "<exact name>"` explicitly once more than one device/simulator matches. | Ambiguous matches fail the command outright (`AMBIGUOUS_MATCH`). |
 | Never kill the `agent-device` daemon (`pkill`, `kill`). On a physical iOS device, run with the signing env and `AGENT_DEVICE_STATE_DIR` set per "The daemon is shared". | One daemon serves every session on the Mac; killing it breaks other sessions' runs, and a restart can lose their signing vars. |
+| Before the first `open` on a device, check who holds it with `agent-device device status`, not `agent-device session list`. Close your own session at the end of every run, also on failure. See "Device locks". | `session list` only shows the daemon of the current state dir, so a device held from another state dir looks free. An unclosed session keeps its daemon, and the device, held for days. |
 | If a physical iOS device is being used for the first time this session, or `open`/`snapshot` fails on signing/provisioning/Developer Mode, read [physical-device-setup.md](./physical-device-setup.md) before improvising. | The setup is multi-layered (device, macOS, Xcode, Apple account) and fails with a different error at each layer — guessing burns turns. |
 | Test the distributed build already installed on the device (TestFlight on iOS; Google Play internal/closed testing or Firebase App Tester on Android) unless the request explicitly asks to build locally (from source, the branch, the PR, a worktree). Only then build, per the config's `installMode`. See "Install source: distributed build by default". | The distributed build is what testers and the client actually get. A local build is slower, needs signing and a Metro port, and is only worth it when the user wants an unreleased branch tested. A failed local build is a blocker, not a reason to test the installed copy. |
 | When building from source, reserve the Metro port with `scripts/metro-port.sh reserve`, pass it to the build as `--port`, and release it at the end. If a reopened dev client shows a native-module mismatch, check who owns the port and move to a new one (step 5). See "Building from source in parallel". | Parallel runs on two devices otherwise collide on one port and block each other's builds. |
@@ -52,9 +53,10 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
    Then pick the install source per "Install source: distributed build by default"
    below (the installed TestFlight/Play/App Tester build unless the request asks
    for a local build), before opening the app.
-3. `agent-device open <bundle-id> --device "<name>" --foreground` to start the session
+3. Check the device is free (see "Device locks"), then
+   `agent-device open <bundle-id> --device "<name>" --foreground` to start the session
    (on a physical iOS device, with the signing env and state dir from "The daemon
-   is shared"),
+   is shared", and check the daemon got them),
    then `agent-device snapshot -i` for the first interactive snapshot with `@eN` refs.
 4. Pick the loop that matches the ask and follow it as documented — don't
    reimplement it from memory:
@@ -69,8 +71,43 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
    before judging pass/fail — see "Shared discipline" in the parent skill
    (`../../SKILL.md`). Record a video of every scenario and save bug folders
    per "Recording" below.
-6. `agent-device close` when the session ends, then do the cleanup in "Building from
-   source in parallel" if you built the app.
+6. `agent-device close --session <yours>` when the session ends, with the same
+   `AGENT_DEVICE_STATE_DIR` you opened it with, also when the run fails or is
+   aborted. Then do the cleanup in "Building from source in parallel" if you built
+   the app.
+
+## Device locks: check the claim, not the session list
+
+A device belongs to one session at a time. The claim is a file in
+`~/.agent-device/device-claims/`, shared by every daemon on the Mac, and stays
+valid as long as the daemon that owns it is alive. `agent-device session list`
+only asks the daemon of the current `AGENT_DEVICE_STATE_DIR`, so it can come back
+empty while another state dir's daemon holds the device. On 28.10.2026 a session
+left open by a run two days earlier, in its own state dir, held both the iPhone
+and the Samsung; the session list was empty and the device was reported free.
+
+1. **Before the first `open`**, run
+   `agent-device device status --platform <ios|android> --udid <udid>` (or
+   `--serial <serial>`). It reads the claims without contacting a daemon. A
+   `live session=<name>` that isn't your session means the device is held.
+2. **Clear only provably dead claims yourself:** `agent-device device release
+   --stale` (add `--platform` and `--udid`/`--serial`). It refuses live and
+   uncertain owners, so it's safe to run.
+3. **A live owner that isn't yours:** read its claim file
+   (`grep -l '<udid or serial>' ~/.agent-device/device-claims/*.json`), which names
+   `session`, `ownerPid`, `ownerStartTime` and `stateDir`. Check the process with
+   `ps -o lstart=,command= -p <ownerPid>`. Then stop and report a blocker with
+   those four values. Don't close that session, stop its daemon, or retry in a
+   loop: it may be a parallel run that is still going. If the owner looks
+   finished (started on an earlier day, no Claude session working on it), say so
+   and give the user the commands to free it:
+   `AGENT_DEVICE_STATE_DIR=<stateDir> agent-device close --session <session>`, and
+   if the claim survives, `agent-device daemon stop --state-dir <stateDir>`.
+   Re-check with `device status` before opening.
+4. **Use only the state dirs this file names:** the default one, or the
+   signing-config folder from "The daemon is shared". A state dir invented per
+   ticket or per run (`~/.agent-device-<ticket>`) is invisible to every other
+   session's `session list`, and it's where the locks above came from.
 
 ## Physical devices: cable or Wi-Fi
 
@@ -196,8 +233,22 @@ The steps, in an order that never changes:
    new worktree under `<workDir>/worktrees/<ticket or branch>` (the product's
    working directory; add `-2`, `-3`, ... if it's taken). On a standalone run,
    check out the target branch from [target-branch.md](../target-branch.md)
-   instead. Then install JS dependencies there. Never build from the shared
-   checkout. Record the commit (`git rev-parse --short HEAD`).
+   instead. Then install JS dependencies there with the package manager the
+   lockfile belongs to (`yarn.lock` → yarn, `package-lock.json` → npm). Never build
+   from the shared checkout. Record the commit (`git rev-parse --short HEAD`).
+
+   A new worktree has none of the shared checkout's git-ignored files. Before
+   building, and before any `expo start`:
+   - **Env file.** If the repo keeps per-environment files (`.env.stage`,
+     `.env.demo`, ...) and the app reads `.env`, copy the one for the environment
+     under test to `.env`. The product config's caveats say which file points at
+     which backend. Then check the API URL variable in `.env` is set. Without it
+     the build or Metro bundle runs with no API URL, and every network call fails
+     in a way that looks like an app bug.
+   - **Android SDK path.** If `ANDROID_HOME` isn't set, write
+     `sdk.dir=<path>` (usually `$HOME/Library/Android/sdk`) to
+     `android/local.properties` after step 3, which regenerates `android/`.
+     Otherwise Gradle stops with `SDK location not found`.
 2. **Uninstall the app from the device**, so no data, session, keychain-backed
    login or cache survives from an earlier run. Use the bundle id/package the
    build produces (check the config's `knownCaveats`, which can differ from
@@ -220,7 +271,10 @@ The steps, in an order that never changes:
    log, so the report shows exactly which build was tested.
 
 If any step fails, stop and report a blocker with the failing command and its
-error. Never fall back to an app that's already on the device once a local
+error. One exception: an iOS build that fails with `internal error in Code Signing
+subsystem` (xcodebuild exit 65) is a known transient Xcode error. Re-run the same
+build command once; it's incremental and usually succeeds. Only a second failure
+is a blocker. Never fall back to an app that's already on the device once a local
 build was asked for.
 
 ## Building from source in parallel — never share a Metro port
@@ -252,6 +306,17 @@ pick the same one. Every build from source must:
    daemon other sessions share (see "The daemon is shared"). Then run
    `metro-port.sh release $PORT`. `metro-port.sh list` shows every current
    reservation and whether its port is still listening.
+
+   Never stop Metro or expo processes in bulk or by anything but your own worktree
+   path: not `pkill -f expo`, `pkill -f metro` or `pkill node`, not
+   `kill $(lsof -ti :<port>)`, and not another worktree's path. A Metro you didn't
+   start may be serving a dev client that a session still open is testing; once
+   it stops, that app has no JS to load. This also applies to cleanup commands
+   you hand the user: on 28.10.2026 a suggested cleanup of an "old" run's Metro
+   killed two Metros that a session still waiting on the user depended on. If
+   another worktree's process is in your way, report its PID, worktree and start
+   time, say you can't tell whether a session still uses it, and let the user
+   decide. Reserve a different port in the meantime.
 5. **Wrong bundle on reopen: start your own Metro on a new port.** A dev client
    remembers the last Metro URL. After your Metro stops and its port is released,
    another session can start its Metro on that port, and reopening the app loads
@@ -313,6 +378,26 @@ agent-device open <bundle-id> --device "<name>" --foreground
   If it doesn't, the installed `agent-device` ignores the variable: stop and tell
   the user to update it (`npm install -g agent-device@latest`), don't fall back to
   the shared daemon with stale signing.
+- Then confirm the daemon serving that state dir really has the signing vars.
+  Exporting them on a call doesn't reach a daemon that was already running:
+  ```
+  for p in $(pgrep -f internal/daemon.js); do echo "pid $p"; ps eww -p $p | tr ' ' '\n' | grep -E '^AGENT_DEVICE_(STATE_DIR|IOS_TEAM_ID|IOS_BUNDLE_ID)='; done
+  ```
+  The daemon whose `AGENT_DEVICE_STATE_DIR` is yours must show your team and bundle
+  id. If it doesn't, don't run scenarios on it and don't kill it. Use a new state
+  dir instead, or report it.
+- Know the symptom of a daemon without them. The runner build in
+  `$AGENT_DEVICE_STATE_DIR/sessions/<session>/runner.log` fails with
+  `No Account for Team "2S799L9W4M"` or `No profiles for
+  'com.callstack.agentdevice.runner'`; that's agent-device's own default team, not
+  the user's. With a runner that was already built, it shows up instead as
+  `Daemon request timed out` and `** BUILD INTERRUPTED **`, which looks like a
+  Wi-Fi or VPN problem. Check the runner log and the daemon's environment before
+  blaming the network.
+- If the user exports `AGENT_DEVICE_IOS_TEAM_ID` and `AGENT_DEVICE_IOS_BUNDLE_ID`
+  in `~/.zshenv`, every daemon starts with them, including one another session
+  starts. `checking-qa-agent` warns when they're missing. Adding them is the
+  user's call: don't edit their shell profile yourself.
 - To stop a daemon, use `agent-device daemon stop --state-dir <dir>` (it checks the
   process is really that daemon), and only for your own signing dir. If the user
   wants the shared one restarted, warn that it ends other sessions' runs and run
