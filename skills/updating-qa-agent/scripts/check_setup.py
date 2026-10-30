@@ -16,7 +16,7 @@ checks it covers the agent link, dangling skill links, git hooks, the config
 validator, every product's paths, the docs it points at (knownCaveatsFile,
 envRefreshProcedure), project skill and REPLACE_ME values,
 playwright-video and maestro, and the tools runs need (git, python, node, ffmpeg,
-agent-device, Xcode/adb, the 1Password CLI when a product publishes to 1Password). Whether each Jira site is reachable through an
+agent-device, Xcode/adb, the agent-device iOS signing vars, the 1Password CLI when a product publishes to 1Password). Whether each Jira site is reachable through an
 Atlassian MCP server can only be checked from inside Claude; the
 checking-qa-agent skill does that part.
 """
@@ -380,6 +380,23 @@ def check_mcp(r, servers, any_mobile, any_web):
               "(claude.ai connectors aren't listed here; checking-qa-agent verifies each site live)")
 
 
+SIGNING_VARS = ("AGENT_DEVICE_IOS_TEAM_ID", "AGENT_DEVICE_IOS_BUNDLE_ID")
+SHELL_PROFILES = (".zshenv", ".zprofile", ".zshrc", ".bash_profile", ".bashrc", ".profile")
+
+
+def signing_var_set(name):
+    if os.environ.get(name):
+        return True
+    pattern = re.compile(rf"^\s*(export\s+)?{name}=\S", re.M)
+    for profile in SHELL_PROFILES:
+        try:
+            if pattern.search((Path.home() / profile).read_text()):
+                return True
+        except (OSError, UnicodeDecodeError):
+            pass
+    return False
+
+
 def check_tools(r, any_mobile, any_web):
     def version(cmd, pattern=r"(\d+)\.(\d+)"):
         out = run(*cmd)
@@ -403,6 +420,17 @@ def check_tools(r, any_mobile, any_web):
         if not shutil.which("xcrun") and not shutil.which("adb"):
             r.add("WARN", "neither Xcode tools (xcrun) nor adb found: no iOS or Android device access",
                   "install Xcode, or Android platform-tools (brew install android-platform-tools)")
+        if shutil.which("xcrun") and shutil.which("agent-device"):
+            missing = [v for v in SIGNING_VARS if not signing_var_set(v)]
+            if missing:
+                r.add("WARN", f"{' and '.join(missing)} not set in your shell: an agent-device daemon started "
+                      "without them signs its iOS runner with agent-device's default team, and physical-iPhone "
+                      "runs fail (\"No Account for Team 2S799L9W4M\" or \"Daemon request timed out\")",
+                      "add to ~/.zshenv: export AGENT_DEVICE_IOS_TEAM_ID=<your team id> and "
+                      "export AGENT_DEVICE_IOS_BUNDLE_ID=com.<you>.agentdevice.runner "
+                      "(skills/testing-apps/references/adapters/physical-device-setup.md, step 5, finds the team id)")
+            else:
+                r.add("OK", "agent-device iOS signing vars set in your shell")
     if shutil.which("git") and shutil.which("npx") and not (py and py < (3, 9)):
         r.add("OK", "tools: git, python3, node/npx" + (", ffmpeg" if shutil.which("ffmpeg") else ""))
 
