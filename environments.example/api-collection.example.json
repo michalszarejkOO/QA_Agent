@@ -1,24 +1,37 @@
 {
   "product": "acme-api",
-  "environment": "demo",
+  "environment": "staging",
+  "workDir": "~/Projects/acme",
+  "projectSkill": "~/Projects/acme/skills/acme",
   "ticketPrefixes": ["ACME"],
   "api": {
     "client": "bruno",
     "repo": "~/Projects/acme-api",
     "collectionPath": "bruno",
-    "defaultEnvironment": "demo",
+    "defaultEnvironment": "staging",
+    "ticketEnvironment": "demo",
     "knownCaveats": [
       "Name any stateful/order-dependent case here, e.g.: 'auth/verify-otp/01 depends on auth/request-otp/01 having run first for the same identifier.'"
     ],
+    "publish": {
+      "collection": "1password",
+      "environments": "1password",
+      "onePassword": {
+        "vault": "Acme QA",
+        "collectionItem": "Acme Bruno Collection",
+        "environmentsItem": "Acme Bruno Environments"
+      },
+      "notes": "Where testing-api publishes updated collections and environments, after the user's yes: 1password, confluence or none, per part. Environments hold tokens, so keep them in 1Password; a confluence part needs the confluence block below and passes a secret scan first. Without this block nothing is published except, for older configs, the collection to Confluence."
+    },
     "confluence": {
       "cloudId": "your-site.atlassian.net",
       "spaceKey": "SPACE",
       "parentId": "0000000000",
       "pageTitle": "Acme API — Bruno Collection",
       "attachmentName": "acme-api-bruno-collection.zip",
-      "notes": "Omit this whole confluence block if the product has nowhere to publish results — testing-api skips that step when it's absent."
+      "notes": "Only needed when api.publish sends the collection or the environments to Confluence; omit it otherwise."
     },
-    "notes": "'client' is one of \"bruno\", \"postman\", \"insomnia\" and picks which testing-api adapter runs this collection — everything else in this block has the same meaning regardless of client. For Postman, collectionPath should point at a directory containing both the *.postman_collection.json file and an environments/ folder of *.postman_environment.json files, mirroring Bruno's shape."
+    "notes": "'client' is one of \"bruno\", \"postman\", \"insomnia\" and picks which testing-api adapter runs this collection — everything else in this block has the same meaning regardless of client. 'defaultEnvironment' is used by plain runs when no staging-like branch can be resolved; 'ticketEnvironment' (optional) is the shared environment ticket mode proposes and asks the user to confirm before each run; without it, ticket mode asks which environment to use. Both are names of the collection's environment files. For Postman, collectionPath should point at a directory containing both the *.postman_collection.json file and an environments/ folder of *.postman_environment.json files, mirroring Bruno's shape."
   },
   "notes": "This block can live in the same file as the app-with-ui shape if one product has both a UI and an API collection."
 }

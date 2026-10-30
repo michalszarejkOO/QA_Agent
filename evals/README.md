@@ -8,8 +8,8 @@ targets the two places where a wrong decision is silent and easy to miss:
   two cases where it must ask instead of guessing (an unresolvable mobile
   target, mixed backend+frontend signals).
 - `testing-api`'s ticket-mode "never auto-post" gate — that it always prepares
-  a Jira comment/bug draft and asks before posting, never claims to have
-  posted anything itself.
+  a Jira comment/bug draft and asks before posting, or publishing to
+  Confluence or 1Password, never claims to have posted anything itself.
 
 ## Running it
 

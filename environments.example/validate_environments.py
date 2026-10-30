@@ -6,7 +6,8 @@ Defaults to $CLAUDE_CONFIG_DIR/environments if that's set, else
 ~/.claude/environments — the same resolution qa-tester/testing-api/
 routing-qa-tickets use.
 
-Catches config-shape mistakes (missing required fields, wrong types, an
+Catches config-shape mistakes (missing required fields, wrong types, a
+'workDir' that doesn't exist on disk, an
 `api`/`surfaces` block with the wrong nested shape, a product with neither
 block at all) and one class of live drift: a product's `jira.connector`
 naming a connector that either isn't in atlassian-connectors.json at all, or
@@ -22,9 +23,11 @@ import sys
 from pathlib import Path
 
 VALID_CLIENTS = {"bruno", "postman", "insomnia"}
+VALID_PUBLISH_TARGETS = {"1password", "confluence", "none"}
 VALID_EVIDENCE_MODES = {"auto", "ask"}
 VALID_INSTALL_MODES = {"clean", "update", "installed"}
-META_FILES = {"atlassian-connectors.json", "evidence.json"}
+VALID_CHECK_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+META_FILES = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
 
 
 def resolve_environments_dir():
@@ -53,6 +56,22 @@ def check_product_config(data, connectors):
         return value
 
     require("product", str)
+    work_dir = require("workDir", str)
+    if work_dir is not None:
+        if not work_dir.strip():
+            errors.append("'workDir' must be a non-empty path string")
+        elif not Path(work_dir).expanduser().is_dir():
+            errors.append(f"'workDir' ({work_dir}) doesn't exist — create it (mkdir -p)")
+    if "legacyFileKeywords" in data:
+        kw = data["legacyFileKeywords"]
+        if not isinstance(kw, list) or not all(isinstance(k, str) and k.strip() for k in kw):
+            errors.append("'legacyFileKeywords' must be a list of non-empty strings")
+    if "projectSkill" in data:
+        skill = data["projectSkill"]
+        if not isinstance(skill, str) or not skill.strip():
+            errors.append("'projectSkill' must be a non-empty path string when present")
+        elif not (Path(skill).expanduser() / "SKILL.md").is_file():
+            errors.append(f"'projectSkill' ({skill}) has no SKILL.md")
     prefixes = require("ticketPrefixes", list)
     if prefixes:
         if not all(isinstance(p, str) for p in prefixes):
@@ -79,6 +98,33 @@ def check_product_config(data, connectors):
             for f in ("repo", "collectionPath"):
                 if f not in api:
                     errors.append(f"'api.{f}' is required when 'api' is present")
+            for f in ("defaultEnvironment", "ticketEnvironment"):
+                if f in api and (not isinstance(api[f], str) or not api[f].strip()):
+                    errors.append(f"'api.{f}' must be a non-empty string")
+            pub = api.get("publish")
+            if pub is not None:
+                if not isinstance(pub, dict):
+                    errors.append("'api.publish' must be an object")
+                else:
+                    targets = []
+                    for part in ("collection", "environments"):
+                        t = pub.get(part, "none")
+                        if t not in VALID_PUBLISH_TARGETS:
+                            errors.append(f"'api.publish.{part}' must be one of {sorted(VALID_PUBLISH_TARGETS)}, got {t!r}")
+                        targets.append(t)
+                    if "1password" in targets:
+                        op = pub.get("onePassword")
+                        if not isinstance(op, dict):
+                            errors.append("'api.publish.onePassword' is required when a part goes to 1password")
+                        else:
+                            for f in ("vault", "collectionItem", "environmentsItem"):
+                                part = "collection" if f == "collectionItem" else "environments" if f == "environmentsItem" else None
+                                if part and pub.get(part) != "1password":
+                                    continue
+                                if not isinstance(op.get(f), str) or not op[f].strip():
+                                    errors.append(f"'api.publish.onePassword.{f}' is required when a part goes to 1password")
+                    if "confluence" in targets and "confluence" not in api:
+                        errors.append("'api.confluence' is required when api.publish sends a part to confluence")
             conf = api.get("confluence")
             if conf is not None:
                 if not isinstance(conf, dict):
@@ -172,12 +218,25 @@ def check_connectors_file(data):
 
 def check_evidence_file(data):
     errors = []
-    folder = data.get("dir")
-    if not isinstance(folder, str) or not folder.strip():
-        errors.append("'dir' must be a non-empty path string")
+    # 'dir' is optional: evidence goes to each product's workDir, and 'dir' is only
+    # the fallback for runs that match no product config.
+    if "dir" in data:
+        folder = data["dir"]
+        if not isinstance(folder, str) or not folder.strip():
+            errors.append("'dir' must be a non-empty path string when present")
     mode = data.get("mode", "auto")
     if mode not in VALID_EVIDENCE_MODES:
         errors.append(f"'mode' must be one of {sorted(VALID_EVIDENCE_MODES)}, got {mode!r}")
+    return errors
+
+
+def check_updates_file(data):
+    errors = []
+    days = data.get("checkDays", ["mon"])
+    if days not in ("daily", "never") and not (
+            isinstance(days, list) and days and all(d in VALID_CHECK_DAYS for d in days)):
+        errors.append(f"'checkDays' must be \"daily\", \"never\" or a non-empty list of {VALID_CHECK_DAYS}, "
+                      f"got {days!r}")
     return errors
 
 
@@ -206,22 +265,29 @@ def main():
             print(f"{connectors_path.name}: invalid JSON — {e}")
 
     any_errors = False
-    evidence_path = env_dir / "evidence.json"
-    if evidence_path.exists():
+    for name, check in (("evidence.json", check_evidence_file), ("qa-agent-updates.json", check_updates_file)):
+        shared_path = env_dir / name
+        if not shared_path.exists():
+            continue
         try:
-            evidence_errors = check_evidence_file(load_json(evidence_path))
+            shared_errors = check(load_json(shared_path))
         except json.JSONDecodeError as e:
-            evidence_errors = [f"invalid JSON — {e}"]
-        if evidence_errors:
+            shared_errors = [f"invalid JSON — {e}"]
+        if shared_errors:
             any_errors = True
-            print(f"{evidence_path.name}:")
-            for e in evidence_errors:
+            print(f"{name}:")
+            for e in shared_errors:
                 print(f"  - {e}")
         else:
-            print(f"{evidence_path.name}: ok")
+            print(f"{name}: ok")
 
     for path in files:
         if path.name in META_FILES:
+            continue
+        if path.is_symlink() and not path.exists():
+            # The product's workDir (and its config/) was deleted or moved.
+            print(f"{path.name}: dangling symlink to {os.readlink(path)} — remove it (./setup.sh does)")
+            any_errors = True
             continue
         try:
             data = load_json(path)

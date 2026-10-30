@@ -9,8 +9,8 @@ rules for what to do when a source is unavailable.
    confirm with `getAccessibleAtlassianResources` on each connector before trusting a
    previously-known mapping (site-to-connector mappings drift; see
    `~/.claude/environments/atlassian-connectors.json` if this repo already tracks one,
-   but re-verify rather than assuming it's current). Use `searchJiraIssuesUsingJql` /
-   the equivalent search tool. Confirm the real custom-field id for Sprint and any
+   but re-verify rather than assuming it's current). Tool names and how to call them:
+   [configure-project/references/connectors.md](../../configure-project/references/connectors.md#atlassian-tool-names). Use `searchJiraIssuesUsingJql`. Confirm the real custom-field id for Sprint and any
    "Found in Environment"-style field with `getJiraIssueTypeMetaWithFields` before
    writing JQL against it — don't guess `customfield_XXXXX`.
    - **Always show the user the JQL used** for each headline metric, either inline in

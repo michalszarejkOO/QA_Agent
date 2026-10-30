@@ -75,7 +75,8 @@ def incoming_merges(repo, branch, since):
             if m:
                 src = m.group("src")
                 break
-        merges.append((datetime.fromisoformat(date_s), src, subject))
+        # git prints UTC as "Z", which fromisoformat only accepts from Python 3.11
+        merges.append((datetime.fromisoformat(date_s.replace("Z", "+00:00")), src, subject))
     return merges
 
 

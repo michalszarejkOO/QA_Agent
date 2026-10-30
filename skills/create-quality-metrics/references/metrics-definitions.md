@@ -5,7 +5,8 @@ Load when computing metrics (Procedure step 3) or writing the page footer (every
 client-facing definition, the formula, where the number comes from, and a starting
 JQL/query to adapt to the actual project key and sprint/release field names (custom
 field IDs for Sprint differ per Jira instance — confirm the real field id with
-`getJiraIssueTypeMetaWithFields` or by inspecting one issue rather than guessing
+`getJiraIssueTypeMetaWithFields` (through `discover`, see
+[configure-project/references/connectors.md](../../configure-project/references/connectors.md#atlassian-tool-names)) or by inspecting one issue rather than guessing
 `customfield_10020`).
 
 ## Headline metrics

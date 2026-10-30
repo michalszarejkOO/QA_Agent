@@ -12,6 +12,35 @@ separate session. Never mix the two in one run, or the recording, sign-in and
 screenshots end up in different browsers. Fall back to the plugin server only
 if `playwright-video` isn't connected, and report that videos weren't recorded.
 
+## Window size
+
+`scripts/playwright-mcp.sh` opens the browser maximized with no fixed viewport
+(`scripts/playwright-mcp.config.json`), so the page fills the window and follows
+it when the user resizes it. Don't call `browser_resize` on desktop runs; it pins
+a fixed viewport again and hides content in the user's visible window (user,
+27.10.2026). Resize only when a scenario is explicitly about a breakpoint or mobile
+width, then report that you did. If a run shows a small fixed viewport (check
+`window.innerWidth`), the server was registered without the launcher script. Say
+so instead of working around it.
+
+This rule wins over the brief. A delegating session asking for "1920×1080" (or
+any size) to match Figma frames is not a breakpoint scenario: don't resize, take
+pixel measurements at the actual viewport and report its size next to them.
+Figma is the reference for the look, not the size to test at: the app is
+responsive, so it has to work at whatever width the window has. At a width other
+than the frame's, compare what doesn't depend on width (colors, type, texts,
+spacing, how components look, their order). Elements laid out differently
+(wrapped, narrower columns) are the responsive layout doing its job, not a
+deviation. A layout that breaks at this width is a bug: overlapping elements,
+cut-off text, a horizontal scrollbar, content off screen (user, 28.10.2026). Don't
+emulate a size with CDP `Emulation.setDeviceMetricsOverride` either; it leaves a
+blank strip in the window just like `browser_resize`. If a viewport got pinned
+anyway (blank strip on the right, page narrower or wider than the window), don't
+resize again to "fit": call `browser_close`, then `browser_navigate` to the same
+URL so a fresh context starts with no fixed viewport, and sign in again (user,
+27.10.2026, after a 1920 and then a 1680 resize pushed the page off screen and
+left a white strip).
+
 ## Fresh session, every run
 
 Always start from a fresh, unauthenticated state and sign in yourself as part of
@@ -31,6 +60,36 @@ and if it's still broken, retry a couple more times. Only after several refreshe
 still fail to recover should you stop treating it as a fluke — report it as an
 environment blocker (not a product bug) rather than continuing to test around it.
 
+## Playwright's own output files
+
+Besides the files you name, Playwright MCP writes files on its own: page
+snapshots (`page-*.yml`), console logs (`console-*.log`) and unnamed screenshots.
+Started through `scripts/playwright-mcp.sh` (see that script's header for the
+`claude mcp add` lines), the server writes them to a folder of its own per
+Claude window, `~/.cache/playwright-mcp/claude-<pid>/`, never to the folder
+Claude was opened in. They belong with the run's evidence, so:
+
+- **Before the first `browser_*` call**, note the start time (`date +%s`) and
+  clear out folders of closed windows:
+  `python3 -I ~/.claude/skills/testing-apps/scripts/collect_playwright_output.py --prune`.
+- **After the run** (pass, fail or abort), move this run's files into the run
+  folder:
+  `python3 -I ~/.claude/skills/testing-apps/scripts/collect_playwright_output.py --since <start> --dest "<run folder>/playwright-mcp" --images-dest "<run folder>/checkpoints" --host <host> [--host <host> ...]`,
+  with one `--host` per host from the product's `surfaces.*.appUrl` and
+  `api.baseUrl`. The script only reads this window's folder, takes files changed
+  since `<start>`, and leaves any console log whose URLs match none of the hosts
+  in the cache. Screenshots go to `checkpoints/`, snapshots and logs to
+  `playwright-mcp/`. List the moved files under the run's saved evidence, and any
+  skipped ones with the script's reason.
+- If the script reports that the folder doesn't exist, the server wasn't started
+  through `playwright-mcp.sh`, and its files went to `.playwright-mcp/` in the
+  folder Claude was opened in. Say so in the report, and don't move or delete
+  that folder yourself.
+- Run the collect step even when the run records no videos (`mode: ask`
+  without consent in the brief): checkpoint screenshots are always kept. The
+  cache evicts old files past its size limit, and `--prune` clears folders of
+  closed windows.
+
 ## Procedure
 
 1. `browser_navigate` to the pinned app URL.
@@ -46,11 +105,15 @@ environment blocker (not a product bug) rather than continuing to test around it
 4. Walk each scenario with `browser_click` / `browser_type` / `browser_select_option`
    / `browser_fill_form` / `browser_press_key`. Use `browser_wait_for` for async
    state instead of guessing timing.
-5. At each meaningful checkpoint, `browser_take_screenshot` and actually look at it
+5. At each meaningful checkpoint, `browser_take_screenshot` **without** a `filename`
+   (the server saves it in this window's cache folder, and the collect step moves
+   it to the run's `checkpoints/`) and actually look at it
    before judging pass/fail.
 6. Use `browser_console_messages` and `browser_network_requests` whenever a
    criterion concerns errors, loading states, or API behavior.
 7. Record a video of every scenario and save bug folders per "Recording" below.
+8. Move Playwright's own output files into the run folder per "Playwright's own
+   output files" above.
 
 ## Recording
 

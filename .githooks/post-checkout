@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Runs after `git checkout` / `git switch`. $3 is 1 for a branch switch, 0 for a
+# file checkout; only a branch switch changes which skills Claude uses.
+[ "${3:-0}" = "1" ] || exit 0
+[ "$1" = "$2" ] && exit 0
+exec "$(git rev-parse --show-toplevel)/.githooks/qa-agent-sync"
