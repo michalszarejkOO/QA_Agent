@@ -30,9 +30,13 @@ or skip rests with the human or the calling skill.
 3. **Run several JQL searches**, not one exact-phrase guess — vary the terms (e.g.
    the component name alone, the error string alone, a key noun phrase) and scope to
    the relevant project. Default to excluding closed/won't-fix issues unless asked to
-   include them; widen to closed issues if the open search returns nothing.
+   include them; widen to closed issues if the open search returns nothing. Pass
+   `fields: ["summary", "status", "issuetype", "created", "labels"]` to each
+   search (see the `configure-project` skill's `references/connectors.md`,
+   "Searching Jira").
 4. **Judge each candidate against the new item**, not just its keyword overlap —
-   read the candidate's summary/description and compare the actual behavior
+   open each promising candidate with `getJiraIssue` (default view) to read its
+   description, and compare the actual behavior
    described, not only whether words match. Classify each as:
    - **Likely duplicate** — same underlying behavior, same area, same trigger.
    - **Possibly related** — same area or symptom but not clearly the same root cause.

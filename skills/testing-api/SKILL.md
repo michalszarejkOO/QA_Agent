@@ -262,7 +262,8 @@ ordering.
 
 T0. **Gather ticket context first.** Fetch the ticket (verify the right Jira
     connector reaches its site with `getAccessibleAtlassianResources` before
-    trusting any cached mapping — it drifts) and read its acceptance criteria. Find
+    trusting any cached mapping — it drifts) and read its acceptance criteria and
+    comments (see `references/ticket-driven-testing.md` Step 1). Find
     its linked PR and diff it; if none is linked, find the merged feature branch by
     this repo's ticket-key branch convention and diff that instead.
 

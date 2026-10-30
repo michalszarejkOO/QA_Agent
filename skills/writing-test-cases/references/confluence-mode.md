@@ -37,7 +37,10 @@ fresh precondition for every single field (Step E exists to prevent that).
 
 Get the ticket by key (extract it from the URL if given one, e.g. `MWA-394` from
 `.../browse/MWA-394`). Pull the full field set — summary, description, acceptance
-criteria, and any linked design field — not just the summary line.
+criteria, and any linked design field — not just the summary line, plus every
+comment. How: [connectors.md, "Reading a ticket you're going to test"](../../configure-project/references/connectors.md#reading-a-ticket-youre-going-to-test)
+(`view: "evidence"` shows the mapped custom fields; if the design field isn't
+among them, read the issue once with `view: "full"`).
 
 As you read, explicitly list out every distinct **requirement source**, because Step C
 needs one planned case category per source and it's easy to silently drop one while

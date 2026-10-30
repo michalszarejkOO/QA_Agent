@@ -74,8 +74,11 @@ the pinned URL of the running app (web) or the target device and app identifier
   trying any of them blind; match the ticket URL's hostname against it. Multiple
   connectors being connected at once is normal here and doesn't mean you need to
   reconnect/reauthorize anything — each one is an independent, already-authorized
-  identity for its own site. Fetch with the Atlassian/Jira MCP tools —
-  `getJiraIssue`, or `searchJiraIssuesUsingJql` if only a description was given —
+  identity for its own site. Read the ticket the way the `configure-project`
+  skill's `references/connectors.md`, "Reading a ticket you're going to test",
+  says: `getJiraIssue` with `view: "evidence"` (never with `fields`), every
+  comment when there are any (they often change the acceptance criteria), and its
+  web links. Use `searchJiraIssuesUsingJql` if only a description was given —
   or, if the full description/acceptance criteria were already pasted into the
   prompt, use that directly without re-fetching. If the fetch fails because the
   site/cloudId isn't among the accessible resources (check with

@@ -16,7 +16,9 @@ picked up for dev/QA refinement).
 ## Sources
 
 - The Jira ticket: summary, description, existing acceptance criteria, comments,
-  linked issues. Fetch with the Atlassian MCP tools, or use what's already pasted in.
+  linked issues. Fetch with the Atlassian MCP tools as the `configure-project` skill's
+  `references/connectors.md`, "Reading a ticket you're going to test", says, or use
+  what's already pasted in. A question already answered in a comment isn't a question.
 - A linked Figma design, if referenced — states/variants it shows that the ticket
   text doesn't mention are exactly the kind of gap this skill surfaces.
 

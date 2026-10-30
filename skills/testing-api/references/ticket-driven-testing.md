@@ -21,7 +21,10 @@ exists to close that gap without weakening the generic rule for every other requ
    connector-to-site mapping (e.g. a `reference_atlassian_connectors`-style memory
    note, or a product config's `jira.connector` field) — this mapping has been
    observed to drift between sessions without the user reconfiguring anything.
-2. Read the ticket's acceptance criteria/description in full. This is what the
+2. Read the ticket's acceptance criteria/description in full, and every comment
+   (they often clarify or change the criteria), as
+   [connectors.md, "Reading a ticket you're going to test"](../../configure-project/references/connectors.md#reading-a-ticket-youre-going-to-test)
+   says: `view: "evidence"`, never `fields` on `getJiraIssue`. This is what the
    generated scenarios in Step 3 must actually target — not a generic guess at what
    the endpoint "probably" does.
 3. Find the linked PR (dev panel / remote issue links) and diff it for the actual
