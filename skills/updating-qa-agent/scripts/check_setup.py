@@ -16,7 +16,8 @@ checks it covers the agent link, dangling skill links, git hooks, the config
 validator, every product's paths, the docs it points at (knownCaveatsFile,
 envRefreshProcedure), project skill and REPLACE_ME values,
 playwright-video and maestro, and the tools runs need (git, python, node, ffmpeg,
-agent-device, Xcode/adb, the agent-device iOS signing vars, the 1Password CLI when a product publishes to 1Password). Whether each Jira site is reachable through an
+agent-device, Xcode/adb, the agent-device iOS signing vars, the 1Password CLI when a product publishes to 1Password), and the
+auto-compact window against the recommended 200k. Whether each Jira site is reachable through an
 Atlassian MCP server can only be checked from inside Claude; the
 checking-qa-agent skill does that part.
 """
@@ -484,6 +485,48 @@ def check_stray_files(r, products):
               "moves them, asking before each move")
 
 
+RECOMMENDED_COMPACT_WINDOW = 200_000
+COMPACT_ENV = "CLAUDE_CODE_AUTO_COMPACT_WINDOW"
+
+
+def parse_tokens(value):
+    """Reads a token count such as 200000, "200000", "200k" or "1M"; None if it isn't one."""
+    match = re.fullmatch(r"\s*(\d+)\s*([kKmM]?)\s*", str(value))
+    if not match:
+        return None
+    multiplier = {"": 1, "k": 1_000, "m": 1_000_000}[match.group(2).lower()]
+    return int(match.group(1)) * multiplier
+
+
+def compact_window():
+    """Where the auto-compact window comes from: (tokens, source), or (None, None) when unset.
+
+    The environment variable wins over the user setting, as in Claude Code.
+    """
+    env_value = os.environ.get(COMPACT_ENV)
+    if env_value:
+        return parse_tokens(env_value), COMPACT_ENV
+    settings = load(CLAUDE_DIR / "settings.json") or {}
+    if "autoCompactWindow" in settings:
+        return parse_tokens(settings["autoCompactWindow"]), "autoCompactWindow in settings.json"
+    return None, None
+
+
+def check_compact_window(r):
+    tokens, source = compact_window()
+    why = "cost per session explained in README, \"Context and token cost\""
+    fix = "in Claude: /autocompact 200k (this session), or \"autoCompactWindow\": 200000 in ~/.claude/settings.json (every session)"
+    if tokens is None and source is None:
+        r.add("INFO", "auto-compact window not set: sessions on 1M-context models compact only near 1M tokens, "
+              f"so a long day costs about 3x more than at the recommended 200k ({why})", fix)
+    elif tokens is None:
+        r.add("WARN", f"{source} is not a token count (expected e.g. 200000 or 200k)", fix)
+    elif tokens == RECOMMENDED_COMPACT_WINDOW:
+        r.add("OK", f"sessions compact at {tokens // 1000}k tokens (recommended; {source})")
+    else:
+        r.add("INFO", f"sessions compact at {tokens // 1000}k tokens ({source}); recommended is 200k ({why})", fix)
+
+
 def full():
     r = Report()
     check_links(r)
@@ -501,6 +544,7 @@ def full():
     check_tools(r, any_mobile, any_web)
     check_onepassword(r, uses_onepassword(products))
     check_stray_files(r, products)
+    check_compact_window(r)
     days = update_settings()["checkDays"]
     when = {"daily": "every day", "never": "never"}.get(days) if isinstance(days, str) else ", ".join(days)
     r.add("INFO", f"update check: {when}" + ("" if days == "never" else " (first session that day)"),

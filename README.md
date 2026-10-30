@@ -79,6 +79,51 @@ the `updating-qa-agent` skill runs them in order, asks only what it can't work
 out (e.g. a project's working directory), and records what's done, so every
 machine ends up with the same setup however many updates it skipped.
 
+## Context and token cost
+
+Opus 4.7 and later, Sonnet 5 and later and the other current models run in
+Claude Code with a 1M-token context window by default (there's no 200k variant
+to pick in `/model`). With nothing else set, a session compacts only near 1M
+tokens, and every turn (each message and each tool call) sends the whole
+conversation again. A QA session easily has 200–300 turns, so the context size
+is what drives the cost.
+
+**Recommended: compact at 200k tokens.** In `~/.claude/settings.json`:
+
+```json
+"autoCompactWindow": 200000
+```
+
+For the current session only, run `/autocompact 200k`. For one long session where
+every detail matters (a data migration, a long investigation), run
+`/autocompact auto` in it to get the full 1M back. The environment variable
+`CLAUDE_CODE_AUTO_COMPACT_WINDOW` overrides the setting. `checking-qa-agent`
+reports what's set, and migration 009 asks once on existing installs.
+
+What it changes, for one long day on Opus 5.5 (prices as of 30.10.2026: cache
+read $0.20, 1-hour cache write $8, per million tokens). The example session has
+300 turns and would grow to about 600k tokens without compaction:
+
+| Compact at | How the context grows | Average per turn | Reading context, 300 turns | Coming back after a break (cache expired) |
+| --- | --- | --- | --- | --- |
+| 200k (recommended) | saw-tooth up to 200k, ~3 compactions | ~100k | ~$6 | ~$1.60 each |
+| 300k | saw-tooth up to 300k, ~2 compactions | ~150k | ~$9 | ~$2.40 each |
+| 1M (default) | straight up to 600k, no compaction | ~300k | ~$18 | ~$4.80 each |
+
+With a few breaks a day that is roughly $6–10 at 200k, $9–14 at 300k and $18–35
+at 1M. Output tokens cost about the same in all three. A session that never
+passes 200k costs the same whichever window is set. A longer context isn't
+better quality either: the model keeps track of details less well at 600k than
+after a fresh summary. QA_Agent keeps product knowledge in project skills, so a
+compaction rarely loses anything a ticket needs. Starting each new ticket with
+`/clear` keeps sessions short as well.
+
+Other things that add to every session and every subagent: plugins and MCP
+connectors you don't use (their tool lists and skill descriptions load each
+time). Check with `claude plugin list` and `claude plugin details <name>` (it shows
+the token cost), and turn off unused claude.ai connectors in claude.ai → Settings
+→ Connectors.
+
 ## Making changes to QA_Agent
 
 Before every commit, decide whether the change affects machines that already use
