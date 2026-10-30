@@ -134,7 +134,9 @@ is for the same collection that gets exported and published.
 
 After the report is written:
 
-1. Prepare the Jira-comment-ready block (per `report-template.md`). Ask the user
+1. Prepare the Jira-comment-ready block per `report-template.md`, "Ticket comment
+   (ticket mode)": a short business summary, what was tested, the request and
+   response for each changed endpoint, and any issues. Ask the user
    explicitly: post it to the ticket now, or keep it as copy-pasteable text? Do not
    post without that answer, even if the run passed cleanly.
 2. For each bug, scope mismatch, or discrepancy found (including a collection gap

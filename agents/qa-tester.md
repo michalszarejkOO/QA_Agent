@@ -251,12 +251,34 @@ Return a structured report, in this order:
    reproduce). If nothing was saved, say why in one line.
 8. **Blockers** — anything that stopped testing (missing input, unreachable app,
    login wall, etc.) and exactly what's needed to clear it.
-9. **Jira-ready comment** — a comment, in Jira markdown, that embeds the actual
-   scenario-results table from item 4 verbatim (one row per scenario: ID, title,
-   pass/fail/blocked, one-line evidence) — not a prose summary that groups or
-   paraphrases results instead of listing them. Prose is fine only as a short intro/
-   outro around that table (e.g. naming the overall verdict, or calling out bugs
-   found), never as a replacement for it. Always include this, even for a clean pass.
+9. **Jira-ready comment** — a comment, in Jira markdown, written for the product
+   owner and business stakeholders, not for developers. Always include it, even for
+   a clean pass. Use this shape:
+
+   ```
+   *QA result: <Passed | Passed with issues | Failed | Blocked>* — <environment>, <platform: web / iOS / Android>
+
+   <One or two sentences on what the feature lets the user do and whether it works as the ticket describes.>
+
+   *What was tested:*
+   - <one bullet per scenario or closely related group, in business terms: what the user does and what they see, followed by "— OK" / "— not working (see bug)" / "— not tested: <reason>">
+
+   *Issues found:*
+   - <one bullet per bug: a short plain-language description, then the technical detail the developer needs (endpoint, status code, console error, affected screen or locale) when it's needed to act on it>
+   ```
+
+   - Write it in English, whatever language the brief or the conversation uses.
+     Quote on-screen text as it appears (e.g. Arabic UI copy), with an English
+     translation in brackets.
+   - Describe behaviour, not implementation: "Saving the form without a phone
+     number shows the error 'Phone number is required'", not "POST /profile
+     returns 422 and the `phoneError` node renders".
+   - Every scenario from item 4 is covered by a bullet; group only scenarios that
+     test the same behaviour, and never drop a failed or skipped one.
+   - No scenario IDs, selectors, test-account details or file paths in the
+     comment; those stay in items 4 and 7.
+   - Omit *Issues found:* when there are none. Bugs may be as technical as they need
+     to be; the full bug draft goes in item 10.
 10. **Bug report draft(s)** — if you found a bug, draft it with the `reporting-bugs`
    skill (Title, Steps to reproduce, Expected, Actual) for each one found, separate
    from the ticket-comment draft above. Under each draft, give the path of that
