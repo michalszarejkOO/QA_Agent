@@ -209,6 +209,19 @@ entirely — a product needs at least one of the two, per `validate_environments
    - Write the folder as top-level `"projectSkill"`. Every environment file of
      the same product points at the same skill.
    - If the user declines a project skill, leave `projectSkill` out.
+   - **Jira QA comment format** (only with a project skill and a Jira site).
+     Say that after testing, the agent drafts a comment for the ticket
+     (`writing-jira-comments`), and show the default template's short form
+     (`skills/writing-jira-comments/references/default-template.md`). Ask
+     "Which format should QA comments for this product use?":
+     - **Default template** (recommended): add a "## Jira QA comment" section
+       to the project skill with the line "Default template.";
+     - **Default with changes**: ask what to change (heading, statuses,
+       language, sections) and write the section as those changes on top of
+       the default template;
+     - **Our own format**: ask the user to paste an example comment or point
+       to a file; write the section describing it (or linking that file, kept
+       inside the skill folder).
 
 8. **Assemble and confirm.** Merge `workDir`, `projectSkill` and whichever of `surfaces`/`api`
    blocks apply into one JSON object shaped exactly like the example files (both together if the

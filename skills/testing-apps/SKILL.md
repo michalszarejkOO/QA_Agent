@@ -61,7 +61,9 @@ subagents already.
    ticket-driven check, start `qa-tester` instead. If you are that subagent,
    this section is already done: go straight to references/execution.md.
 3. **Relay its summary** (Done / Not done / Proposed additions) and the saved
-   files. If it stopped on a question, ask the user and continue the same
+   files. For a retest of a ticket or bug, offer a Jira comment drafted with
+   the `writing-jira-comments` skill from the subagent's results; post it only
+   after the user's yes. If it stopped on a question, ask the user and continue the same
    subagent with the answer rather than starting a new one.
 
 Stay in the main conversation only for a single look, about three browser or

@@ -56,9 +56,11 @@ T3. **Run run.md steps 1 and 3–6** (load adapter, export, check
     reachability, run the suite, investigate failures) — but the environment is
     the one the user named or confirmed for this run (Step 4 below), never a `local`-type one unless the user names it.
 
-T4. **Write the report** (run.md step 7), then **prepare the Jira comment** and
-    **ask the user** whether to post it to the ticket now or keep it as
-    copy-pasteable text.
+T4. **Write the report** (run.md step 7), then **prepare the Jira comment**
+    with the `writing-jira-comments` skill (the product's format from its
+    project skill, or the default template; the full report stays in
+    `report.md`), and **ask the user** whether to post it to the ticket now or
+    keep it as copy-pasteable text.
 
 T5. **If any bug, scope mismatch, or discrepancy surfaced**, draft a bug report per
     case (Title / Steps to reproduce / Expected / Actual) and ask the user whether

@@ -185,12 +185,14 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   entirely to the `testing-apps` skill. It never edits code, and never publishes
   anything to Jira without the user's explicit approval. Additionally, when a
   ticket/diff plausibly touches accessibility (forms, custom controls, contrast,
-  focus order, ARIA, screen-reader-dependent flows), it explicitly invokes the
-  `auditing-accessibility` skill (outside this repo) and folds confirmed violations
+  focus order, ARIA, screen-reader-dependent flows), it checks the affected
+  screens: with the `auditing-accessibility` skill when that skill is installed
+  (it isn't part of this repo), otherwise from the accessibility tree (labels,
+  roles, focus order; contrast reported as not checked). Confirmed violations go
   into the "Bugs and deviations found" section, tagged with the WCAG criterion.
-  Deliberately left unbound in the frontmatter — like
-  `preparing-refinement-questions` — so it isn't loaded on every agent run
-  regardless of whether the ticket has anything to do with accessibility.
+  The skill is deliberately left unbound in the frontmatter, so it isn't loaded
+  on every agent run regardless of whether the ticket has anything to do with
+  accessibility.
 - `skills/writing-test-cases/` — writes static test cases (Title / Preconditions /
   Steps to reproduce / Expected result) from a ticket/diff, independent of
   execution. Preloaded into `qa-tester` (its "Derive scenarios" step).
