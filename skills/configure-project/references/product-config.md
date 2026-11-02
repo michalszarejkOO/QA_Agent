@@ -184,9 +184,12 @@ entirely — a product needs at least one of the two, per `validate_environments
      [../assets/project-skill-template.md](../assets/project-skill-template.md).
      Fill every `{{…}}` placeholder from the answers already collected (repos as
      table rows, one environments table row per environment file, Jira site and
-     connector). Ask the user for the one-paragraph product description. Show
-     the result before writing. Offer `git init` and a first commit in
-     `<workDir>/skills/`, so later additions are tracked.
+     connector). Ask the user for the one-paragraph product description. Keep
+     the frontmatter within the skill listing rules (see "Skill descriptions"
+     in this repo's `CLAUDE.md`): `description` plus `when_to_use` at most 1536
+     characters, no `<` or `>`. Show the result before writing. Offer
+     `git init` and a first commit in `<workDir>/skills/`, so later additions
+     are tracked.
    - Either way, link it so it loads in any session:
      `ln -s <skill folder> ~/.claude/skills/<product>` (if something else is at that
      path, show it and ask before replacing it).

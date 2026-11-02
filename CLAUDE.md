@@ -51,6 +51,13 @@ any wording ("set up QA_Agent", "zrób setup", "skonfiguruj", "update QA_Agent",
   - Not affected (skill text only) → no migration.
   - End the commit message with `Migration: NNN-<slug>` or
     `Migration: none (<why>)`.
+- **Skill descriptions.** Claude Code lists every skill with its
+  `description` and `when_to_use` and cuts the pair after 1536 characters, so
+  keep the two together within 1536. Don't use `<` or `>` in them (the listing
+  shows `&lt;` `&gt;`; write an example such as `ABC-123` instead of a
+  placeholder), and no colon followed by a space in an unquoted `description`
+  (it breaks strict YAML parsers). The same applies to project skills that
+  configure-project generates from its template.
 - **Before opening a pull request, write the release note** in `CHANGELOG.md`
   under `## Unreleased`, as its own commit ("Changelog: ..."). Read all the
   branch's commits (`git log <base>..HEAD`), group them by feature and write one

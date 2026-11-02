@@ -1,7 +1,7 @@
 ---
 name: {{PRODUCT}}
 description: Project map for {{PRODUCT_TITLE}} (Jira prefix {{TICKET_PREFIXES}}) — where its code, API collection, environment config, Jira/Confluence and tools live, which environment to test on, and the project's known gotchas. Load it first whenever a task touches {{PRODUCT_TITLE}}, then hand off to the generic skills (testing-api, qa-tester, testing-apps, writing-test-cases, reporting-bugs) with the right paths and context.
-when_to_use: "Trigger on any mention of {{PRODUCT_TITLE}}, a {{TICKET_PREFIX_EXAMPLE}}-<number> ticket or a {{JIRA_SITE}}/browse/{{TICKET_PREFIX_EXAMPLE}}-… link, or the {{PRODUCT_TITLE}} environment URLs ({{URL_HOSTS}}). Load before testing-api / qa-tester / writing-test-cases for a {{PRODUCT_TITLE}} ticket. Do NOT trigger for other products — they have their own skill."
+when_to_use: "Trigger on any mention of {{PRODUCT_TITLE}}, a {{TICKET_PREFIX_EXAMPLE}}-123 ticket or a {{JIRA_SITE}}/browse/{{TICKET_PREFIX_EXAMPLE}}-… link, or the {{PRODUCT_TITLE}} environment URLs ({{URL_HOSTS}}). Load before testing-api / qa-tester / writing-test-cases for a {{PRODUCT_TITLE}} ticket. Do NOT trigger for other products — they have their own skill."
 ---
 
 # {{PRODUCT_TITLE}}
