@@ -8,7 +8,8 @@ too, downloads the published copy into its run folder and works there. The local
 folder (often `<workDir>/postman/`) stays, as `api.localCopy`: runs keep it at
 the latest published version, writing into it after every publish and whenever
 they download a newer version, and start from it when the target can't be read.
-It needn't be a git repo any more, and nobody commits in it. Files in it that
+It needn't be a git repo, and nobody commits in it (a `.git` someone
+added by hand can stay; nothing uses it). Files in it that
 aren't part of the collection (upload fixtures a request points at) are left
 alone. A collection kept in a git repo the team shares (a Bruno collection
 inside the backend repo, say) keeps `repo` as before.
@@ -68,16 +69,7 @@ time.
 4. **Update the configs (runs by itself).** In each config of the group, rename
    `api.repo` to `api.localCopy` (same path) and keep `api.collectionPath`.
    Show the diff and run the validator.
-5. **The git history (asks, only when the folder is a git repo).** "<path> is a
-   git repo with <N> commits and no remote. Nobody commits there any more.
-   Remove the git history?"
-   - **Zip `.git` into `<workDir>/archive/<folder>-git-<YYYY-MM-DD>.zip`, then
-     remove it** (recommended); check the zip opens (`unzip -l`) before
-     removing, and remove `.gitignore` with it (it's in the zip's history). The
-     collection files stay;
-   - keep it (harmless; the skills don't commit there).
-   Uncommitted changes in it: show them first, and say they stay in the files.
-6. **The project skill (asks).** Search `<projectSkill>` for the folder's path
+5. **The project skill (asks).** Search `<projectSkill>` for the folder's path
    and for instructions to edit or commit in it. Show each line with a proposed
    replacement: each run downloads the published collection, new cases go in
    through a run and its publish, and the folder is the local copy runs keep
@@ -85,9 +77,8 @@ time.
    the user's yes. Commit in the project skill's repo only if the changed files
    had no other uncommitted changes; otherwise leave the commit to the user and
    say so.
-7. **Show the result.** Per folder: configs changed, whether `.published.json`
-   was written (or why not), what happened to `.git`, project skill lines
-   changed.
+6. **Show the result.** Per folder: configs changed, whether `.published.json`
+   was written (or why not), project skill lines changed.
 
 ## Verify
 
