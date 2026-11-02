@@ -16,8 +16,7 @@ picked up for dev/QA refinement).
 ## Sources
 
 - The Jira ticket: summary, description, existing acceptance criteria, comments,
-  linked issues. Fetch with the Atlassian MCP tools as the `configure-project` skill's
-  `references/connectors.md`, "Reading a ticket you're going to test", says, or use
+  linked issues. Read it with the `reading-jira-tickets` skill, or use
   what's already pasted in. A question already answered in a comment isn't a question.
 - A linked Figma design, if referenced — states/variants it shows that the ticket
   text doesn't mention are exactly the kind of gap this skill surfaces.
@@ -51,8 +50,8 @@ already described, phrased as a question, not a design suggestion.
 
 ## Procedure
 
-1. Read the ticket's summary, description, and existing acceptance criteria (and the
-   Figma design, if linked).
+1. Read the ticket's summary, description, existing acceptance criteria and comments
+   with `reading-jira-tickets` (and the Figma design, if linked).
 2. List every gap using the categories above, one pass per category rather than one
    ticket-wide skim — it's easy to miss a category by reading straight through.
 3. Turn each gap into a direct, answerable question — not a comment or observation.

@@ -44,7 +44,9 @@ diff.
    and `testing-api` do. Note which blocks it has (`api`, `surfaces`, both) — this
    alone can already answer backend-vs-frontend for a single-surface product.
 1. **Gather minimal signals** — cheap, not the full context-gathering step: the
-   ticket's labels/components/summary, and the PR's changed-file list only (e.g. `gh
+   ticket's labels/components/summary (`getJiraIssue` with the default view,
+   through the connector `reading-jira-tickets`, "Which connector", picks; the
+   full read happens in `testing-api` or `qa-tester`), and the PR's changed-file list only (e.g. `gh
    pr diff <n> --name-only`, or `git diff --name-only <base>...<branch>` if resolving
    the branch directly) — not the full diff body.
 2. **Classify backend vs. frontend** against the table above.

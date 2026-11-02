@@ -5,12 +5,9 @@ rules for what to do when a source is unavailable.
 
 ## Order of preference
 
-1. **Jira**, via whichever Atlassian connector is authorized for the project's site —
-   confirm with `getAccessibleAtlassianResources` on each connector before trusting a
-   previously-known mapping (site-to-connector mappings drift; see
-   `~/.claude/environments/atlassian-connectors.json` if this repo already tracks one,
-   but re-verify rather than assuming it's current). Tool names and how to call them:
-   [configure-project/references/connectors.md](../../configure-project/references/connectors.md#atlassian-tool-names). Use `searchJiraIssuesUsingJql`; if you pass `fields`, list every field the metrics read (see "Searching Jira" there), or none. Confirm the real custom-field id for Sprint and any
+1. **Jira**, via the connector for the project's site, picked and checked live as
+   the `reading-jira-tickets` skill's "Which connector" says (mappings drift). Tool names and how to call them:
+   [configure-project/references/connectors.md](../../configure-project/references/connectors.md#atlassian-tool-names). Use `searchJiraIssuesUsingJql`; if you pass `fields`, list every field the metrics read (`reading-jira-tickets`, "Searching Jira"), or none. Confirm the real custom-field id for Sprint and any
    "Found in Environment"-style field with `getJiraIssueTypeMetaWithFields` before
    writing JQL against it — don't guess `customfield_XXXXX`.
    - **Always show the user the JQL used** for each headline metric, either inline in

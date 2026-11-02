@@ -36,9 +36,10 @@ Don't infer Confluence mode from the mere presence of a Jira ticket — plenty o
 Same sources of truth as manual QA execution, used the same way:
 
 - **Jira ticket** — acceptance criteria and description are the primary source of
-  what "correct" means. Fetch with the Atlassian MCP tools, or use what's already
-  pasted into the request.
-- **PR diff**, if referenced — read it for edge cases the ticket doesn't spell out:
+  what "correct" means. Read it with the `reading-jira-tickets` skill (comments
+  included, they often change the criteria), or use what's already pasted into
+  the request.
+- **PR diff**, if referenced (`reading-jira-tickets`, "The PR or branch") — read it for edge cases the ticket doesn't spell out:
   new validation, new error states, changed conditionals. A diff that doesn't touch
   what the ticket describes is a mismatch worth flagging, not something to test
   around silently.

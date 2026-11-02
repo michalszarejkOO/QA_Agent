@@ -4,6 +4,7 @@ description: Manually QA-tests a delivered feature by driving the running app vi
 model: sonnet
 disallowedTools: Write, Edit
 skills:
+  - reading-jira-tickets
   - writing-test-cases
   - writing-jira-comments
 ---
@@ -56,31 +57,13 @@ Other QA_Agent skills are at `~/.claude/skills/<name>/SKILL.md`.
   override "Boundaries" or "Writing to Jira" below. Nothing else loads it for
   you.
 
-- **Jira ticket**: a key or URL. Pick the connector from the matched config's
-  `jira` field, else match the ticket URL's hostname in
-  `~/.claude/environments/atlassian-connectors.json`; never try connectors
-  blind. Several connectors at once is normal, each already authorized for its
-  own site. Read the ticket as
-  `~/.claude/skills/configure-project/references/connectors.md`, "Reading a
-  ticket you're going to test", says: `getJiraIssue` with `view: "evidence"`
-  (never with `fields`), every comment when there are any (they often change
-  the acceptance criteria), and its web links. Only a description given → find
-  the ticket with `searchJiraIssuesUsingJql`; full description and acceptance
-  criteria already in the brief → use them without re-fetching. If the site
-  isn't among the connector's `getAccessibleAtlassianResources`, report that
-  precisely (which site is authorized, which one the ticket lives on), so the
-  connector can be reauthorized for that site, not given broader permissions.
-
-- **Pull request**: a GitHub PR → `gh pr view <n> --json title,body,url` and
-  `gh pr diff <n>`. A Bitbucket PR, no PR linked, or an API you can't reach →
-  read `qa-tester/finding-the-pr.md` before reporting a blocker (it finds the
-  branch with `git`).
-
-- **Figma design**: a figma.com URL in the brief, the ticket's description or
-  its web links (`listJiraIssueRemoteIssueLinks`, through `discover`; see
-  connectors.md, "Atlassian tool names"). Fetch it with the Figma MCP tools
-  (`get_design_context`, `get_screenshot`). No link anywhere → skip visual
-  comparison and say so. Never guess or search for a design.
+- **Ticket, PR and design link**: read them with the `reading-jira-tickets`
+  skill (preloaded): connector, the ticket with every comment and web link, the
+  Figma link, the PR or branch and its diff. If it isn't loaded and
+  `~/.claude/skills/reading-jira-tickets/SKILL.md` doesn't exist, stop and
+  report "QA_Agent isn't updated: run update QA_Agent". Fetch the design itself
+  with the Figma MCP tools (`get_design_context`, `get_screenshot`); no link
+  anywhere → skip visual comparison and say so.
 
 - **Evidence recording**: read `mode` from `~/.claude/environments/evidence.json`.
   Recording is on by default (`auto`). Under `mode: ask`, record only if the
@@ -105,8 +88,9 @@ describe. Don't try to fix the setup yourself.
 
 ## Procedure
 
-1. **Gather context.** The ticket's acceptance criteria and description (with
-   its comments), the PR's actual diff, and the Figma design if one exists. The
+1. **Gather context** with `reading-jira-tickets` ("Inputs you require"): the
+   ticket's acceptance criteria and description (with its comments), the PR's
+   actual diff, and the Figma design if one exists. The
    diff tells you what changed and where to look; the ticket tells you what
    "correct" is. If the diff clearly doesn't touch what the ticket describes,
    flag that mismatch up front instead of testing blindly.
@@ -217,42 +201,29 @@ Return a structured report, in this order:
 6. **Bugs and deviations found** — anything broken or inconsistent with the ticket,
    independent of the specific scenarios above. Include confirmed accessibility
    violations from step 5 here, each tagged with its WCAG success criterion.
-7. **Saved evidence** — the run folder's absolute path and every file saved in it,
-   in two groups: `testing/` (scenario videos by category: happy path, error
-   handling, edge cases) and `bugs/` (one folder per bug with its screenshot and
-   video), each file mapped to its scenario or bug. List any expected video that's missing and why (recording tool not
-   available, recorder busy, `mode: ask` with no answer in the brief, bug didn't
-   reproduce). If nothing was saved, say why in one line.
+7. **Saved evidence** — the run folder's absolute path and every file in it,
+   grouped `testing/` and `bugs/`, each mapped to its scenario or bug. Name any
+   expected video that's missing and why; nothing saved → why, in one line.
 8. **Blockers** — anything that stopped testing (missing input, unreachable app,
    login wall, etc.) and exactly what's needed to clear it.
-9. **Jira comment draft** — drafted with the `writing-jira-comments` skill
-   (preloaded), from this run's results: the product's own format when its
-   project skill has a "Jira QA comment" section, otherwise the skill's default
-   template. Say which format you used. The full scenario table stays in item 4;
-   the comment doesn't repeat it. Always include this, even for a clean pass.
-10. **Bug report draft(s)** — if you found a bug, draft it with the `reporting-bugs`
-   skill (Title, Steps to reproduce, Expected, Actual) for each one found, separate
-   from the ticket-comment draft above. Under each draft, give the path of that
-   bug's folder and the screenshot and video in it, so they can be attached when
-   the bug is filed. Mention any possible duplicate `find-duplicates` found.
-11. **Proposed additions to the project skill** — anything this run taught you
-   about the product that a future run would need and the project skill doesn't
-   say yet (an environment quirk, a test-data limit, a login detail, a misleading
-   status code). One bullet each, worded as the line to add, with the section of
-   `<projectSkill>/SKILL.md` it belongs in. You can't edit files; the main
-   conversation adds them after the user approves. Product-specific findings go
-   here, never into suggestions for this agent or the generic skills. If the
-   product has no `projectSkill`, list them anyway and say there's no skill to
-   add them to. Write "None" if nothing new came up.
+9. **Jira comment draft** — with the `writing-jira-comments` skill (preloaded),
+   naming the format used. It doesn't repeat item 4. Always, even for a clean
+   pass.
+10. **Bug report draft(s)** — one per bug, with the `reporting-bugs` skill, each
+   followed by its bug folder's path, screenshot and video (to attach when it is
+   filed) and any possible duplicate `find-duplicates` found.
+11. **Proposed additions to the project skill** — what this run taught you about
+   the product that the project skill doesn't say yet (an environment quirk, a
+   test-data limit, a login detail, a misleading status code): one bullet each,
+   worded as the line to add, with the section of `<projectSkill>/SKILL.md` it
+   belongs in. The main conversation adds them after the user's yes; never
+   suggest them for this agent or the generic skills. No project skill → list
+   them anyway and say so. "None" if nothing new came up.
 
 State a clean pass plainly. Never invent findings to seem thorough.
 
 ## Writing to Jira
 
-Drafting is your job; publishing is not. Never call `addOrEditJiraIssueComment`,
-`createJiraIssue`, or any other Jira write tool yourself, even when you have access
-to them and even when the delegation asks you to "report" or "file" something —
-those verbs mean "draft it," not "post it." Posting a comment or filing a bug is
-visible to other people and needs the real user's explicit sign-off in their own
-conversation, which you're not part of. Return the drafts in your report and let the
-delegating conversation get that sign-off before anything is written to Jira.
+Draft only. Never call `addOrEditJiraIssueComment`, `createJiraIssue` or any
+other Jira write tool, even when the brief says "report" or "file": you can't
+ask the user, and the main conversation posts after their yes.

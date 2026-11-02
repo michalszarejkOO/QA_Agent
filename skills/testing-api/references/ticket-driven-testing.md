@@ -26,12 +26,9 @@ Follow this instead of (really: layered onto) the generic procedure (SKILL.md an
 Full detail for each numbered step is in the Steps below; this is the
 ordering.
 
-T0. **Gather ticket context first.** Fetch the ticket (verify the right Jira
-    connector reaches its site with `getAccessibleAtlassianResources` before
-    trusting any cached mapping — it drifts) and read its acceptance criteria and
-    comments (Step 1 below). Find
-    its linked PR and diff it; if none is linked, find the merged feature branch by
-    this repo's ticket-key branch convention and diff that instead.
+T0. **Gather ticket context first** with the `reading-jira-tickets` skill: the
+    ticket with its acceptance criteria and comments, and the linked PR or the
+    merged feature branch with its diff (Step 1 below).
 
 T1. **Resolve the product/client/config** as SKILL.md step 0, then resolve the *latest*
     collection specifically: download the published one (wherever
@@ -104,34 +101,17 @@ exists to close that gap without weakening the generic rule for every other requ
 
 ## Step 1: Ticket and PR/branch context
 
-1. Fetch the ticket. Resolve which Jira connector currently reaches its site with
-   `getAccessibleAtlassianResources` before trusting any cached
-   connector-to-site mapping (e.g. a `reference_atlassian_connectors`-style memory
-   note, or a product config's `jira.connector` field) — this mapping has been
-   observed to drift between sessions without the user reconfiguring anything.
-2. Read the ticket's acceptance criteria/description in full, and every comment
-   (they often clarify or change the criteria), as
-   [connectors.md, "Reading a ticket you're going to test"](../../configure-project/references/connectors.md#reading-a-ticket-youre-going-to-test)
-   says: `view: "evidence"`, never `fields` on `getJiraIssue`. This is what the
-   generated scenarios in Step 3 must actually target — not a generic guess at what
-   the endpoint "probably" does.
-3. Find the linked PR (dev panel / remote issue links) and diff it for the actual
-   shipped behavior.
-   - **No PR linked** → look for a merged feature branch following this repo's
-     ticket-key branch convention (e.g. `feature-<TICKET-KEY>`) against the
-     product's default integration branch (e.g. `demo`, `stage` or `main`), and diff
-     that instead. If the local checkout is behind the remote branch containing the
-     merge, don't just test against a stale local checkout — resolve the real merged
-     state rather than silently testing old code.
-   - **Read code without moving the user's checkout.** `git fetch`, then read the
-     remote branch in place: `git show origin/<branch>:<path>`, `git diff`,
-     `git log`, `git grep <pattern> origin/<branch>`. When you need the files on
-     disk, add a throwaway worktree under `<workDir>/worktrees/`. Never
-     `checkout`, `switch`, `reset` or `pull` in the user's clone: it may hold
-     their work, and a detached HEAD left behind confuses the next person.
-4. Before going on, settle the environment with the user as Step 4 describes, using
+1. **Read the ticket and its PR or branch** with the `reading-jira-tickets`
+   skill (`~/.claude/skills/reading-jira-tickets/SKILL.md`; missing → stop and
+   say QA_Agent needs an update): connector, the whole ticket with every
+   comment, the PR or merged branch and its diff, and where it was merged. The
+   acceptance criteria as the comments left them are what the scenarios in
+   Step 3 target, not a guess at what the endpoint "probably" does.
+2. When you need the code on disk, add a throwaway worktree under
+   `<workDir>/worktrees/`; never move the user's checkout.
+3. Before going on, settle the environment with the user as Step 4 describes, using
    where the PR or branch was merged as the hint.
-5. If the ticket's description and the actual shipped code disagree on scope (a
+4. If the ticket's description and the actual shipped code disagree on scope (a
    field, a validation rule, a whole case the ticket describes but the code doesn't
    implement), that's a finding for the report's Notes and a candidate for Step 5's
    bug-report draft — not something to quietly test around.

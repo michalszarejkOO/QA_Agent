@@ -177,7 +177,7 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   credentials, where collections and environments are published) and writes the resulting
   `environments/*.json` files. Never edits any other skill or agent file — config
   only.
-- `agents/qa-tester.md` (rare cases it reads on demand in `agents/qa-tester/`) —
+- `agents/qa-tester.md` (rare cases it reads on demand in `agents/qa-tester/`; the ticket, PR and design link through `reading-jira-tickets`) —
   the subagent, on Sonnet (Opus for one run when you ask for it: "puść na
   Opusie"), that performs QA on a live application based
   on a Jira ticket, a PR diff, and (optionally) a Figma design — execution against
@@ -196,6 +196,17 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
 - `skills/writing-test-cases/` — writes static test cases (Title / Preconditions /
   Steps to reproduce / Expected result) from a ticket/diff, independent of
   execution. Preloaded into `qa-tester` (its "Derive scenarios" step).
+- `skills/reading-jira-tickets/` — reads a ticket fully before a test or a
+  document: picks the connector for its site, the issue with every comment,
+  web link and the linked issues it relies on, the Figma link, the PR or branch
+  and its diff, and how to search Jira with JQL. Read-only. Preloaded into
+  `qa-tester`; testing-api ticket mode, `routing-qa-tickets`, `testing-apps`
+  retests, `writing-test-cases`, `preparing-refinement-questions`,
+  `find-duplicates` and `create-quality-metrics` use it too.
+- `skills/writing-jira-comments/` — drafts the QA comment for a ticket in the
+  product's own format (the project skill's "Jira QA comment" section) or the
+  default template. Draft only; preloaded into `qa-tester`, used by testing-api
+  ticket mode and testing-apps retests.
 - `skills/reporting-bugs/` — drafts a bug report (Title / Steps to reproduce /
   Expected / Actual). `qa-tester` reads it only when a run finds a bug (its
   "Bug report draft" step), so it isn't loaded on every run. Never publishes on
@@ -336,11 +347,14 @@ later followed for Bruno/Postman/Insomnia.
 
 ```yaml
 skills:
+  - reading-jira-tickets
   - writing-test-cases
+  - writing-jira-comments
 ```
 
-Only `writing-test-cases` loads in full on every run of the agent ("Derive
-scenarios"). The rest is read from `~/.claude/skills/` when a run needs it:
+These three load in full on every run of the agent: `reading-jira-tickets`
+(the ticket, PR and design link), `writing-test-cases` ("Derive scenarios") and
+`writing-jira-comments` (the comment draft). The rest is read from `~/.claude/skills/` when a run needs it:
 `testing-apps/references/execution.md` in "Execute" (it picks the web/mobile
 adapter by the shape of the target; the skill's `SKILL.md` is only for
 standalone runs, so it isn't preloaded), and `reporting-bugs` with

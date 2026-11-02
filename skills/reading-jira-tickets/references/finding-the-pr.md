@@ -1,6 +1,6 @@
 # Finding the pull request
 
-Read by `qa-tester` when the change isn't a GitHub PR it can fetch with `gh`.
+Read when the change isn't a GitHub PR you can fetch with `gh` (SKILL.md, "The PR or branch").
 
 - **Bitbucket PR URL:** try `curl` or the Bitbucket REST API first.
 - **No PR linked on the ticket, or the repo is private and the platform's API is

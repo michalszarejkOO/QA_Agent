@@ -43,7 +43,8 @@ subagents already.
 
 1. **In the main conversation, gather the brief** (ask only what's missing): the
    target (URL, or device and app), environment and branch, which account to
-   sign in with, what to check or retest and what counts as fixed, whether to
+   sign in with, what to check or retest and what counts as fixed (for a
+   ticket or bug key, read it with `reading-jira-tickets`), whether to
    record evidence (`mode: ask` in evidence.json), and the product's working
    directory and project skill if the target matches a product config. Resolve
    the branch and environment per "Standalone runs: which branch and

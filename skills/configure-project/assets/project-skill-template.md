@@ -37,7 +37,7 @@ else (notes, plans, scripts, SQL, exports, data dumps) goes into `notes/` or
 
 ## Before you start a {{PRODUCT_TITLE}} task
 
-1. Read the ticket and its acceptance criteria.
+1. Read the ticket with the `reading-jira-tickets` skill (comments, links, PR).
 2. Check "Rules for this project" below before touching test data.
 
 ## Rules for this project

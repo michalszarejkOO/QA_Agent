@@ -129,40 +129,8 @@ Two kinds of operation:
 | Get the body format rules before writing a page or comment body | `getContentFormatGuide`, with `toolName` set to `createConfluencePage` or `updateConfluencePage` for pages, `addOrEditJiraIssueComment` for a Jira comment in HTML | through discover, `executeRead` |
 | Read an issue's comments | `listJiraIssueComments` | direct |
 
-## Reading a ticket you're going to test
-
-Everything a run does follows from how well the ticket was read, so read all of
-it, but without fields nobody uses. Measured on a large ticket (30.10.2026):
-`view: "compact"` (the default) ~500 tokens, `"evidence"` ~2,700, `"full"`
-~6,200, mostly worklogs and metadata.
-
-1. **The issue:** `getJiraIssue` with `view: "evidence"`. It has the full
-   description and acceptance criteria, issue type, parent, every linked issue
-   (key, summary, status), sprint and custom fields, and the number of comments.
-   - **Never pass `fields` to `getJiraIssue`**: the server silently drops fields
-     such as summary, issue type and links, so the ticket looks complete when it
-     isn't.
-   - Don't use `view: "full"`: it adds worklogs, watchers and time tracking, not
-     content. Use it only when a run needs one of those.
-2. **The comments, whenever the count is above 0:** `listJiraIssueComments`, all
-   pages. Comments often clarify or change the acceptance criteria, or say what
-   was agreed to be out of scope; a later comment overrides the description.
-3. **Web links** (Figma, Confluence, other URLs): `listJiraIssueRemoteIssueLinks`.
-4. **Parent or linked issues**, only when the description or comments rely on
-   them (e.g. "as in IP-78"): `getJiraIssue` on each with the default view.
-
-If any of these calls fails, say which part of the ticket wasn't read; never
-test against a ticket you only partly read without saying so.
-
-## Searching Jira
-
-`searchJiraIssuesUsingJql` returns no descriptions in any case. Pass `fields`
-with what the next step uses, e.g. `["summary", "status", "issuetype", "created",
-"labels"]` (about a third smaller than the default). `fields` is honored exactly
-in search, so leave out nothing the step needs: for metrics, list every field a
-metric reads (priority, resolution date, fix versions, components, ...) or
-don't pass `fields` at all. To judge a candidate, open it with `getJiraIssue`
-(default view) instead of widening the search.
+Reading a ticket before a test and searching Jira with JQL: the
+`reading-jira-tickets` skill.
 
 These names hold only for Atlassian's own server. If the session has no such
 server for the site, stop and tell the user how to add one (see "Two or more
