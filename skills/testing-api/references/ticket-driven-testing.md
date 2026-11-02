@@ -120,8 +120,13 @@ exists to close that gap without weakening the generic rule for every other requ
      product's default integration branch (e.g. `demo`, `stage` or `main`), and diff
      that instead. If the local checkout is behind the remote branch containing the
      merge, don't just test against a stale local checkout — resolve the real merged
-     state (e.g. via `git fetch` and diffing against the remote branch, or a
-     throwaway worktree) rather than silently testing old code.
+     state rather than silently testing old code.
+   - **Read code without moving the user's checkout.** `git fetch`, then read the
+     remote branch in place: `git show origin/<branch>:<path>`, `git diff`,
+     `git log`, `git grep <pattern> origin/<branch>`. When you need the files on
+     disk, add a throwaway worktree under `<workDir>/worktrees/`. Never
+     `checkout`, `switch`, `reset` or `pull` in the user's clone: it may hold
+     their work, and a detached HEAD left behind confuses the next person.
 4. Before going on, settle the environment with the user as Step 4 describes, using
    where the PR or branch was merged as the hint.
 5. If the ticket's description and the actual shipped code disagree on scope (a

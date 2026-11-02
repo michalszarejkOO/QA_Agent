@@ -12,5 +12,12 @@ Read by `qa-tester` when the change isn't a GitHub PR it can fetch with `gh`.
   PRs are routinely unlinked there.
 - A diff or change summary already pasted into the brief: use it directly
   instead of re-fetching.
+- **Read code without moving the user's checkout.** `git fetch`, then read the
+  remote branch in place: `git diff origin/<base>...origin/<branch>`,
+  `git show origin/<branch>:<path>`, `git log`, `git grep <pattern>
+  origin/<branch>`. Never `checkout`, `switch`, `reset` or `pull` in the user's
+  clone: it may hold their work, and a detached HEAD left behind confuses the
+  next person. (A mobile build from a branch uses its own worktree, see
+  testing-apps' mobile adapter.)
 
 Only report a blocker when neither the platform API nor `git` turns anything up.

@@ -176,8 +176,10 @@ End every run with a point-list summary, after the report and drafts:
      step 8 is skipped. Create this run's **run folder**,
      `<workDir>/api-runs/<ticket key, or YYYY-MM-DD-<env>>/` (top-level
      `workDir` from the same file; add `-2`, `-3`, ... if it exists). Every file
-     this run writes goes there: the exported zip, the CLI's result file, and the
-     report. Nothing goes to `/tmp` or `~/Desktop`. If the file has
+     this run writes goes there: the exported zip, the CLI's result file, the
+     report, and any helper script you write (a case generator, a one-off
+     check). Nothing goes to `/tmp`, `~/Desktop` or the session's scratchpad
+     directory, even where general instructions suggest it for temporary files. If the file has
      `projectSkill`, read `<projectSkill>/SKILL.md` now (unless this session
      already loaded it) and follow its rules for this product's collection and
      test data.
