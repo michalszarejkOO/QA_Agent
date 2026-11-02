@@ -35,50 +35,32 @@ its local copy (product-config.md step 5).
 
 ## Steps
 
-Group the product configs that point at the same `api.repo` folder (IMS
-development, staging and uat often share one) and go through one folder at a
-time.
+Nothing is downloaded or compared here: the first `testing-api` run does that
+when the folder has no `.published.json` yet (publishing.md, "The local copy").
 
-1. **Explain (runs by itself).** Say in short: the collection is published to
-   <target>, so each run downloads it from there. The folder <path> stays as
-   the local copy of the latest published version: runs update it after every
-   publish, and use it when <target> can't be reached. It no longer has to be a
-   git repo.
-2. **Make it the local copy? (asks).** "Use <path> as the local copy of
-   <target> for <products>?"
-   - **Yes, local copy** (recommended);
-   - keep it as a repo (others edit it, or it should become a shared repo):
-     leave the config as it is and go to the next folder.
-3. **Compare (runs by itself).** Download the published collection and
-   environments into a new, empty `<workDir>/api-runs/<YYYY-MM-DD>-migration-011/`
-   the way `testing-api`'s publishing.md "Downloading the published collection"
-   says (1Password asks for approval once). Compare with the folder: the
-   collection files byte for byte, then by request names (only in the folder,
-   only published, both); the environments by file names, variable names and
-   which values differ, by name only, never values. List files in the folder
-   that the published copy doesn't hold (fixtures, extra collections). Show the
-   result.
-   - **Identical:** write `<path>/.published.json` (publishing.md, "The local
-     copy": versions, `updatedAt`, a SHA-256 per collection and environment
-     file).
-   - **Different:** don't write it. Say that the first run will show the same
-     differences and ask which version to start from; publishing that run then
-     brings both in line.
-   - **Nothing published yet** (the items don't exist): don't write it either.
-     The folder is the base for the first run, whose publish creates the items.
-4. **Update the configs (runs by itself).** In each config of the group, rename
-   `api.repo` to `api.localCopy` (same path) and keep `api.collectionPath`.
-   Show the diff and run the validator.
-5. **The project skill (asks).** Search `<projectSkill>` for the folder's path
-   and for instructions to edit or commit in it. Show each line with a proposed
-   replacement: each run downloads the published collection, new cases go in
-   through a run and its publish, and the folder is the local copy runs keep
-   up to date (edit it by hand only for files outside the collection). Apply on
-   the user's yes. Commit in the project skill's repo only if the changed files
-   had no other uncommitted changes; otherwise leave the commit to the user and
-   say so.
-6. **Show the result.** Per folder: configs changed, whether `.published.json`
-   was written (or why not), project skill lines changed.
+1. **Explain and ask once (asks).** List every folder that needs it, with the
+   products whose configs point at it (IMS development, staging and uat often
+   share one). Say in short: each run downloads the collection from <target>;
+   the folder stays as the local copy of the latest published version, updated
+   after every publish and used when <target> can't be reached; it needn't be a
+   git repo. Ask one question for all of them: "Make these folders local
+   copies?"
+   - **Yes, all** (recommended);
+   - choose per folder (then one short yes/no per folder; a "no" leaves its
+     configs as they are).
+2. **Update the configs (runs by itself).** In each config of the chosen
+   folders, rename `api.repo` to `api.localCopy` (same path), keep
+   `api.collectionPath`, show the diff and run the validator.
+3. **The project skill (asks only if something is found).** Search each
+   affected `<projectSkill>` for instructions to commit in the folder or to
+   edit its collection files by hand. None: say so and go on. Found: show each
+   line with a replacement (new cases go in through a `testing-api` run and its
+   publish, which also updates the folder) and apply on a yes. Commit in the
+   project skill's repo only if the changed files had no other uncommitted
+   changes; otherwise leave the commit to the user and say so.
+4. **Show the result.** Configs changed, project skill lines changed, and that
+   the first run per product will record the folder's version (or ask, if it
+   differs from <target>).
 
 ## Verify
 
