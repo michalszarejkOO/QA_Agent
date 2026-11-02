@@ -177,7 +177,8 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   credentials, where collections and environments are published) and writes the resulting
   `environments/*.json` files. Never edits any other skill or agent file — config
   only.
-- `agents/qa-tester.md` — the subagent that performs QA on a live application based
+- `agents/qa-tester.md` (rare cases it reads on demand in `agents/qa-tester/`) —
+  the subagent that performs QA on a live application based
   on a Jira ticket, a PR diff, and (optionally) a Figma design — execution against
   the live app (Playwright for web, `agent-device` for iOS/Android) is delegated
   entirely to the `testing-apps` skill. It never edits code, and never publishes
@@ -191,11 +192,11 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   regardless of whether the ticket has anything to do with accessibility.
 - `skills/writing-test-cases/` — writes static test cases (Title / Preconditions /
   Steps to reproduce / Expected result) from a ticket/diff, independent of
-  execution. Bound to `qa-tester` (its "Derive scenarios" step).
+  execution. Preloaded into `qa-tester` (its "Derive scenarios" step).
 - `skills/reporting-bugs/` — drafts a bug report (Title / Steps to reproduce /
-  Expected / Actual). Bound to `qa-tester` (its "Bug report draft" step). Never
-  publishes on its own — draft only. Calls `find-duplicates` itself before
-  drafting, which is why that skill is bound to `qa-tester` alongside it.
+  Expected / Actual). `qa-tester` reads it only when a run finds a bug (its
+  "Bug report draft" step), so it isn't loaded on every run. Never publishes on
+  its own — draft only. Calls `find-duplicates` itself before drafting.
 - `skills/find-duplicates/` — checks in Jira whether a similar bug/task already
   exists before a new one is filed; only searches and reports, never files/links
   anything itself. An automatic first step of `reporting-bugs`, hence bound to
