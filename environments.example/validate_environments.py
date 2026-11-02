@@ -95,9 +95,18 @@ def check_product_config(data, connectors):
             client = api.get("client")
             if client not in VALID_CLIENTS:
                 errors.append(f"'api.client' must be one of {sorted(VALID_CLIENTS)}, got {client!r}")
-            for f in ("repo", "collectionPath"):
-                if f not in api:
-                    errors.append(f"'api.{f}' is required when 'api' is present")
+            if "repo" in api and "collectionPath" not in api:
+                errors.append("'api.collectionPath' is required when 'api.repo' is present")
+            if "repo" not in api:
+                # No repo: the published copy is the only copy, so both parts
+                # need a target every run can download from.
+                pub_block = api.get("publish") if isinstance(api.get("publish"), dict) else {}
+                for part in ("collection", "environments"):
+                    if pub_block.get(part) not in ("1password", "confluence"):
+                        errors.append(
+                            f"'api.publish.{part}' must be \"1password\" or \"confluence\" "
+                            "when 'api.repo' is absent (the published copy is the only copy)"
+                        )
             for f in ("defaultEnvironment", "ticketEnvironment"):
                 if f in api and (not isinstance(api[f], str) or not api[f].strip()):
                     errors.append(f"'api.{f}' must be a non-empty string")

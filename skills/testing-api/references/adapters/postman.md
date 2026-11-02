@@ -84,7 +84,8 @@ go on with the files.
    project skill names no workspace, propose adding this one, marked with whose
    account it is on.
 2. **Environments: pull and merge.** `getEnvironment` for each, then rewrite the
-   repo file from it:
+   environment file in the collection folder from the brief (the repo's, or the
+   run folder's copy for a product without `repo`) from it:
    - variables, order, values and types come from Postman;
    - a variable that is empty in Postman but has a value in the file keeps the
      file's value (it's in someone's Value column or Vault), and the summary says
@@ -98,18 +99,22 @@ go on with the files.
    never values, and list per environment which variables have a value.
 3. **Collection: check, don't rewrite.** A collection is too large to pass through
    the conversation safely, and the Postman CLI (`postman collection get`) prints
-   only the v3 format. Compare the cloud collection's `updatedAt` with the last
-   commit of the collection file (`git log -1 --format=%cI -- <file>`). Newer in
-   Postman: ask the user to export it over the repo file (Export, Collection v2.1,
-   same path and name), then compare the request names with the previous version
-   and show what changed. Not newer: say the repo is current, and if the repo
-   has commits after `updatedAt`, that the app is behind them: the user should
-   import the collection again (Replace is fine for a collection).
-4. **Both sides changed.** If the repo file has commits or uncommitted changes
-   since the cloud copy's `updatedAt` and Postman changed too, show both and ask
-   which to keep; never overwrite either silently.
+   only the v3 format. Compare the cloud collection's `updatedAt` with when the
+   files were last changed: the last commit of the collection file
+   (`git log -1 --format=%cI -- <file>`), or, for a product without `repo`, the
+   published version's `updatedAt` in `<run folder>/published-base.json`.
+   Newer in Postman: ask the user to export it over the collection file (Export,
+   Collection v2.1, same path and name), then compare the request names with the
+   previous version and show what changed. Not newer: say the files are current,
+   and if they changed after `updatedAt`, that the app is behind them: the user
+   should import the collection again (Replace is fine for a collection).
+4. **Both sides changed.** If the files changed since the cloud copy's
+   `updatedAt` (repo commits or uncommitted changes, or, without `repo`, cases
+   this run added) and Postman changed too, show both and ask which to keep;
+   never overwrite either silently.
 5. **Commit only when the user says so** (SKILL.md, NEVER rule on git), in the
-   collection's own repo, with the change summary as the message.
+   collection's own repo, with the change summary as the message. Without
+   `repo` there is nothing to commit: the publish carries the change.
 
 **The other way round.** Someone who takes the collection from 1Password or
 Confluence and imports the environment with **Replace** loses their local

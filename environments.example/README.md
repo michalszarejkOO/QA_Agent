@@ -31,7 +31,8 @@ a product that has both a UI and an API collection).
   app, data kept).
 - [`api-collection.example.json`](./api-collection.example.json) — a product
   `testing-api` runs an API collection against: which client (Bruno, Postman, or
-  Insomnia), repo path, default environment, the environment ticket mode
+  Insomnia), repo path (optional when the collection lives only where it is
+  published), default environment, the environment ticket mode
   proposes for confirmation (`ticketEnvironment`, optional; without it, it asks),
   known stateful-case caveats, where updated collections and environments are
   published (`publish`: 1Password, Confluence or nowhere, per part), and
@@ -87,10 +88,11 @@ on demand:
   reports/                                                          create-quality-metrics HTML dashboards
 ```
 
-A product with no collection repo of its own can keep its collection inside
-`workDir` too (e.g. `<workDir>/postman/`, pointed at by `api.repo`). Code repos
-may live inside it or anywhere else; `repo` fields keep pointing at them either
-way.
+A product with no collection repo the team shares keeps no local copy at all:
+it leaves out `api.repo`, and every `testing-api` run downloads the collection
+from where it is published (1Password or Confluence) into its run folder. Code
+repos may live inside `workDir` or anywhere else; `repo` fields keep pointing at
+them either way.
 
 ## Old files (`legacyFileKeywords`)
 

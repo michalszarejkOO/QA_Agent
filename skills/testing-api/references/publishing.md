@@ -83,7 +83,9 @@ client too. So:
       1Password and gets only 10 seconds, too short to wait for an approval.
    2. Start the `postman-sync` agent (Agent tool, `subagent_type:
       "postman-sync"`) with the product, its config file, the collection folder
-      (`<run root>/<collectionPath>`) and the workspace the project skill names.
+      (`<run root>/<collectionPath>`), for a product without `repo` also
+      `<run folder>/published-base.json`, and the workspace the project skill
+      names.
    3. Its questions go to the user; continue the same agent with the answers.
    4. Show the user its report: the warning first if there is one, then its
       Shared Value check with the reminder **word for word, every time**, even
@@ -93,7 +95,8 @@ client too. So:
       "without it".
    **Export the parts that have a target.** Run `export-collection.sh` from the
    folder the run used as the repo root (the worktree in generic mode,
-   `<run folder>/published-collection/` in ticket mode), into the run folder:
+   `<run folder>/published-collection/` in ticket mode and in any run without
+   `repo`), into the run folder:
    - collection: `<run folder>/<collection zip>`, where `<collection zip>` is
      `api.confluence.attachmentName` when the config has one, otherwise
      `<product>-<client>-collection.zip`;
@@ -181,7 +184,7 @@ the same place in the run folder:
 | --- | --- |
 | `<run folder>/published-base.zip` | The collection zip, as it is published (files from 1Password other than a Bruno zip are downloaded straight into `published-collection/`) |
 | `<run folder>/published-collection/` | That zip extracted. It holds `<collectionPath>/` the way the repo does, so it is used as the repo root: generating cases, running the suite and exporting all work from here |
-| `<run folder>/published-base.json` | What was downloaded, per part (`collection`, and `environments` when they were downloaded too): `target`, the target's ids (`pageId` + `attachmentId`, or `vault` + `item` + `id`), `version`, `downloadedAt`. Step 3 compares against it |
+| `<run folder>/published-base.json` | What was downloaded, per part (`collection`, and `environments` when they were downloaded too): `target`, the target's ids (`pageId` + `attachmentId`, or `vault` + `item` + `id`), `version`, `updatedAt` (when that version was published: the item's `updated_at` or the attachment's version date), `downloadedAt`. Step 3 compares against it; the Postman sync compares the app with `updatedAt` |
 
 Download from wherever `publish.collection` points (the target's file has the
 steps), extract into `published-collection/`, which must be new and empty
@@ -190,8 +193,23 @@ steps), extract into `published-collection/`, which must be new and empty
 collection's `environments/` folder into `published-collection/<collectionPath>/`:
 from the published environments when `publish.environments` has a target (download
 them the same way into `<run folder>/published-environments/` first), otherwise
-from the repo checkout. A collection published before environments were split out
+from the repo checkout. A product without `repo` downloads this way on every run,
+generic ones too. A collection published before environments were split out
 already holds `environments/`: keep those unless the published environments are
 newer, and say which ones the run uses. With `collection: "none"`, or when the download isn't
 possible, say so and use the repo checkout, as ticket-driven-testing.md Step 2
 describes.
+
+### When the download isn't possible
+
+With `repo`, use the repo checkout (above). **Without `repo`**, use the newest
+copy an earlier run left: among `<workDir>/api-runs/*/published-base.json`, take
+the one with the highest collection `version` (ties: the latest `downloadedAt`),
+and copy its run's `publish/` folder (what that run published or was ready to
+publish), or its `published-collection/` when it has no `publish/`, into this
+run's new, empty `published-collection/`. Write `published-base.json` with that
+version and `"source": "earlier run <folder>"`. Say in the run's first lines and
+in the report's Notes which run and version it is, that it may be stale, and that
+publishing this run has to wait until the target can be read again (step 3
+can't check it). No earlier run either: stop and say the collection can't be
+reached.

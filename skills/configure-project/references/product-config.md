@@ -40,9 +40,10 @@ entirely — a product needs at least one of the two, per `validate_environments
      product, ask for its working directory the same way and add only that field,
      showing the diff first.
    - In the questions below, when the product has no repo yet for something the
-     skills read (most often an API collection kept outside any code repo),
-     suggest a folder inside `workDir` for it (e.g. `<workDir>/postman/`), so
-     that also goes away with the project.
+     skills read, suggest a folder inside `workDir` for it, so that also goes
+     away with the project. An API collection is the exception: one that is
+     published needs no local folder at all (step 5, "Where the collection
+     lives").
 
 3. **Jira site** (skip if the user opted out of Atlassian integration in
    [connectors.md](./connectors.md)) — which registered connector name (from
@@ -79,12 +80,20 @@ entirely — a product needs at least one of the two, per `validate_environments
 5. **Does this product have a committed API test collection?**
    If yes:
    - Which tool: Bruno, Postman, or Insomnia (`api.client`).
-   - Repo path and the collection's path within it (`api.repo`, `api.collectionPath`
-     — for Postman this is a directory containing both the `.postman_collection.json`
-     and an `environments/` folder of `.postman_environment.json` files). If the
-     collection lives loose (exported files, no repo), offer to copy it into
-     `<workDir>/<client>/` in that layout and point `api.repo` there; keep the
-     originals untouched and leave secrets out of the copied environment files.
+   - Where the collection lives. Ask: "Is the collection in a git repo the team
+     shares (e.g. inside the backend repo)?"
+     - **Yes** → the repo path and the collection's path within it (`api.repo`,
+       `api.collectionPath` — for Postman a directory containing both the
+       `.postman_collection.json` and an `environments/` folder of
+       `.postman_environment.json` files).
+     - **No, it's published to 1Password or Confluence** (or loose exported
+       files that will be) → no `repo`: the published copy is the only copy,
+       and every run downloads it (`testing-api`'s config-fields.md, "No
+       `repo`"). Leave `api.repo` out and set `api.collectionPath` to the
+       collection's path inside the published copy (`.` for files at its top).
+       Both publish targets in the next question must then be `1password` or
+       `confluence`. Loose files that aren't published yet go up with the first
+       run's publish; don't copy them into `workDir` as a second copy.
    - Which environment a plain "run the API tests" should use when no
      staging-like branch can be resolved (`api.defaultEnvironment`). Offer the
      names of the collection's environment files as choices; never assume one is
@@ -140,7 +149,7 @@ entirely — a product needs at least one of the two, per `validate_environments
      `environmentsItem`. Don't create the items now: the first upload does, after
      the user's yes.
    - **For a Postman collection with any target:** publishing first syncs the
-     repo files with the Postman app through the `postman-sync` agent (see
+     collection files with the Postman app through the `postman-sync` agent (see
      `testing-api`'s `adapters/postman.md`). It connects with the user's Postman
      API key from 1Password; migration 010 (run with the other `ask` migrations
      in the first setup) asks where that key is. Tell the user the team rule: variables everyone needs,

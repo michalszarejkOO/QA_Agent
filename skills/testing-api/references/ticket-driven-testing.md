@@ -151,7 +151,8 @@ while the repo checkout lagged behind.
    of its own: don't take its absence from the tool list as "no download tool".
 2. Diff `<run folder>/published-collection/<collectionPath>` against the local
    repo checkout's collection directory, and tell the user about any divergence
-   (what's newer where) rather than picking one silently.
+   (what's newer where) rather than picking one silently. No `repo` in the
+   config: skip this and item 5, there is nothing to compare with.
 3. From here on, `<run folder>/published-collection/` is the collection, used as
    the repo root: Step 3 adds cases there, Step 4 runs the suite from there, and
    the export (SKILL.md step 3) zips it. The repo checkout is only for comparing;
@@ -161,7 +162,10 @@ while the repo checkout lagged behind.
    missing), say so explicitly and fall back to
    the local repo checkout as the base — call this out as a real limitation of
    the current session's tool access, not a design choice, so the user
-   knows the run may be working from a stale collection.
+   knows the run may be working from a stale collection. No `repo` in the
+   config: fall back to the copy from an earlier run instead, as
+   [publishing.md](./publishing.md), "When the download isn't possible",
+   describes.
 5. Also check for **uncommitted local changes** to the collection (`git status` in
    the repo) before assuming the committed state is current — uncommitted
    restructuring or additions from a prior session are common here and must not be

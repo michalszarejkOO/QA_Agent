@@ -160,8 +160,8 @@ End every run with a point-list summary, after the report and drafts:
    path). Look for a matching file under `~/.claude/environments/*.json` (or
    `$CLAUDE_CONFIG_DIR/environments/` if that's set — the same global, per-product
    config `qa-tester` uses) with an `api` block:
-   with an `api` block. A run needs `client`, `repo`, `collectionPath` and
-   `defaultEnvironment`; `ticketEnvironment`, `knownCaveats`, `publish` and
+   with an `api` block. A run needs `client` and `defaultEnvironment`, plus
+   either `repo` (with `collectionPath`) or a publish target for the collection; `ticketEnvironment`, `knownCaveats`, `publish` and
    `confluence` are used where the steps below name them. The full shape, the
    optional `knownCaveatsFile`, `secondaryAttachments` and
    `envRefreshProcedure`, and where to find those files are in
@@ -172,7 +172,10 @@ End every run with a point-list summary, after the report and drafts:
    clients, only the exact commands and file conventions differ, and those live in
    the adapter, never in this file.
    - **Found** → use `repo` as the repo root, `client` to pick the adapter, and
-     `collectionPath` for every step below. `publish` is optional; without a target
+     `collectionPath` (`.` when absent) for every step below. **No `repo`**: the
+     published copy is the only copy of the collection (config-fields.md, "No
+     `repo`"), so every run, generic ones too, downloads it into the run folder
+     first and uses `<run folder>/published-collection/` as the repo root. `publish` is optional; without a target
      step 8 is skipped. Create this run's **run folder**,
      `<workDir>/api-runs/<ticket key, or YYYY-MM-DD-<env>>/` (top-level
      `workDir` from the same file; add `-2`, `-3`, ... if it exists). Every file
@@ -206,7 +209,9 @@ End every run with a point-list summary, after the report and drafts:
    Run the collection as it is on that branch (a fresh worktree at
    `origin/<branch>`, under `<workDir>/worktrees/`), not the local checkout's branch. Carry over uncommitted
    collection changes only if the user says to. Use the recent MRs the script
-   lists as the run's context. Ticket mode skips this; it uses the ticket
+   lists as the run's context. **No `repo`:** there is no collection branch;
+   run the downloaded published collection on the environment the user names,
+   otherwise `api.defaultEnvironment`. Ticket mode skips this; it uses the ticket
    environment (see "Ticket mode" above) and the ticket's own
    branch.
 
@@ -218,7 +223,7 @@ End every run with a point-list summary, after the report and drafts:
    `.env` files; export the environments as their own zip (part `environments`)
    too. Export from the folder the run uses: the worktree from step 2 in generic
    mode, or `<run folder>/published-collection/` (as the repo root) in ticket
-   mode. Report the output paths and which folder they came from.
+   mode and in any run without `repo`. Report the output paths and which folder they came from.
 
 4. **Check the target environment.** For a local-style environment, verify the
    expected localhost URL is reachable (e.g. a short `curl -o /dev/null -w

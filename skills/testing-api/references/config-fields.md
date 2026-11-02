@@ -8,7 +8,7 @@ below, or a field isn't clear. The product config is the file in
 ```json
 "api": {
   "client": "bruno",
-  "repo": "~/Projects/<repo>",
+  "repo": "~/Projects/<repo>   (optional: omit when the collection lives only where it is published, see \"No `repo`\")",
   "collectionPath": "bruno",
   "defaultEnvironment": "staging",
   "ticketEnvironment": "<optional: environment ticket mode proposes and asks to confirm; absent = ask every time>",
@@ -36,6 +36,18 @@ below, or a field isn't clear. The product config is the file in
   }
 }
 ```
+
+**No `repo`.** `repo` is optional when the collection lives only where it is
+published: nobody keeps it in a shared git repo, so a local folder would only
+duplicate it. Then `publish.collection` and `publish.environments` must both be
+`1password` or `confluence`, and `collectionPath` is the collection's path inside
+the published copy (`.` when absent). Every run, generic ones too, downloads the
+published copy into its run folder and works there; new cases reach the team
+when the run publishes. If the target can't be read, the run uses the newest
+copy an earlier run left ([publishing.md](./publishing.md), "When the download
+isn't possible"). Keep `repo` when the collection lives in a git repo the team
+shares (a Bruno collection inside the backend repo, say): the repo is then where
+changes are reviewed, and publishing only hands out a copy.
 
 `publish` says where the collection and its environments are published, see
 [publishing.md](./publishing.md); `confluence` is needed only when a
