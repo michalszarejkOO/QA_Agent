@@ -80,6 +80,10 @@ diff.
      only").
    - `mode: "auto"` or missing → nothing to ask; `qa-tester` records by default.
 
+   `qa-tester` runs on Sonnet. If the user asks for Opus for this ticket ("puść
+   na Opusie", "run it on Opus"), pass model `opus` in the Agent call; that
+   applies to this run only.
+
    Stop here once `qa-tester` is invoked.
 5. **Mixed signals** (both backend- and frontend-shaped paths touched) → don't pick
    one silently. Report the split plainly — which touched paths/areas read as backend,

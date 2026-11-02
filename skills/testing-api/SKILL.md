@@ -57,9 +57,9 @@ to other people: the Jira comment, bugs and publishing.
    environment or "asks after reading the ticket", model), and, when the run
    downloads from 1Password (ticket mode with `api.publish.collection:
    "1password"`), that 1Password will ask for approval during it.
-2. **Start a subagent** (`general-purpose`): model `sonnet` for a generic run,
-   `opus` for ticket mode (understanding the ticket and the diff, writing the
-   missing cases and telling a bug from a caveat need the stronger model).
+2. **Start a subagent** (`general-purpose`, model `sonnet`, in both modes).
+   If the user asks for Opus for this run ("puść na Opusie", "run it on
+   Opus"), start it with model `opus` instead; that applies to this run only.
    Give it the brief and this instruction: "Load the testing-api skill and
    follow it as the run inside a subagent. You can't ask the user: wherever
    the skill says to ask, stop and report the question with its options and

@@ -178,7 +178,8 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   `environments/*.json` files. Never edits any other skill or agent file — config
   only.
 - `agents/qa-tester.md` (rare cases it reads on demand in `agents/qa-tester/`) —
-  the subagent that performs QA on a live application based
+  the subagent, on Sonnet (Opus for one run when you ask for it: "puść na
+  Opusie"), that performs QA on a live application based
   on a Jira ticket, a PR diff, and (optionally) a Figma design — execution against
   the live app (Playwright for web, `agent-device` for iOS/Android) is delegated
   entirely to the `testing-apps` skill. It never edits code, and never publishes
@@ -234,7 +235,7 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   Changes" note; or a Confluence tracker page for a secret-free collection; after
   a check for a newer version and your yes), and produces a
   pass/fail report ready to paste into a Jira comment. The run itself goes to a
-  subagent (Sonnet for a plain run, Opus for a ticket), so CLI output and
+  subagent on Sonnet (Opus for one run when you ask for it: "puść na Opusie"), so CLI output and
   response bodies stay out of the main conversation; the main conversation
   gathers the brief, asks the questions, and posts, files or publishes only after
   your yes. **Standalone, deliberately

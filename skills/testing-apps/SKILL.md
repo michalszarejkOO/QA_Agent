@@ -53,7 +53,8 @@ subagents already.
    (`./setup.sh`, then the `updating-qa-agent` skill). If they'd rather test
    now, continue; outputs then fall back as the warning says. Don't open the
    browser or device here.
-2. **Start a subagent** (`general-purpose`, model `sonnet`) with that brief and
+2. **Start a subagent** (`general-purpose`, model `sonnet`; model `opus` for
+   this run only when the user asks for Opus, e.g. "puść na Opusie") with that brief and
    the instruction: "Load the testing-apps skill and follow it as a standalone
    run inside a subagent. You can't ask the user: if something the brief
    doesn't answer blocks the run, stop and report what's needed." For a
