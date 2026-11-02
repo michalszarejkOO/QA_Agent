@@ -1,7 +1,7 @@
 ---
 name: routing-qa-tickets
 description: Classifies a bare Jira ticket and/or PR link as a backend or frontend change — and, if frontend, as web or mobile — before any testing begins, then dispatches to the testing-api skill (backend) or the qa-tester agent (frontend, with the resolved web URL or mobile device target). Use when asked to test, QA, or verify a ticket/PR that doesn't already say which kind of change it is or already come with a target — a bare ticket key/link with a generic ask to test it, with no mention of API/backend/endpoint and no web URL or device/bundle id supplied.
-when_to_use: "Trigger on: 'test MWA-123', 'QA this PR', a bare Jira ticket key/URL or PR link with a generic ask to test/verify/check it, before it's known whether the change is frontend or backend. Do NOT trigger when the request already says backend/API/an endpoint (goes straight to testing-api) or already supplies a web URL or a mobile device/bundle id (goes straight to qa-tester) — those are already unambiguous and routing them through here just adds a step."
+when_to_use: "Trigger on: 'test MWA-123', 'QA this PR', a bare Jira ticket key/URL or PR link with a generic ask to test/verify/check it, before it's known whether the change is frontend or backend. Do NOT trigger when the request already says backend/API/an endpoint (goes straight to testing-api) or already supplies a web URL or a mobile device/bundle id (goes straight to qa-tester) — those are already unambiguous and routing them through here just adds a step. Also not for a retest of a fixed bug or a ticket sent back to QA (retesting-tickets)."
 ---
 
 # Routing QA tickets
@@ -24,6 +24,9 @@ and doesn't publish anywhere.
   reporting) run unchanged — this skill does not re-fetch or re-derive anything they
   already own.
 - Never guesses when the signals disagree or are absent — see steps 5 and 6.
+- A retest (a fixed bug, a ticket sent back to QA, "sprawdź czy poprawione")
+  goes to the `retesting-tickets` skill, which picks API or UI per ticket
+  itself.
 
 ## Classification signals
 

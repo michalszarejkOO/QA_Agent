@@ -1,7 +1,7 @@
 ---
 name: testing-apps
-description: Drives a running app to execute test scenarios and capture evidence — Playwright for a web app, or the agent-device CLI (Callstack) for an iOS/Android mobile app — picking the adapter from whether the target is a URL or a device/bundle id. Used as qa-tester's own execution step (its steps 1-2 gather context and derive scenarios, this skill only replaces the browser/device-execution step, its step 6 reports and drafts bugs). Also usable standalone for direct browser or mobile-device exploration, dogfooding or a quick retest without full ticket/PR/Figma context; a standalone run goes to a subagent, so screenshots and snapshots stay out of the main conversation (see "Where a standalone run happens").
-when_to_use: "Trigger as qa-tester's own 'Execute' step for any web or mobile target. Also trigger directly for: 'test the iOS/Android app', 'dogfood the mobile app', 'exploratory test on iPhone/Android/simulator/emulator', or driving/exploring a running web app in the browser without a full ticket-driven QA run, including 'przeklikaj', 'sprawdź czy już działa', a retest of a bug or a screenshot of a screen. Do NOT trigger for a macOS or Apple TV target — agent-device also supports those, but this skill's mobile adapter is scoped to iOS/Android handhelds and simulators/emulators only; call agent-device directly for those."
+description: Drives a running app to execute test scenarios and capture evidence — Playwright for a web app, or the agent-device CLI (Callstack) for an iOS/Android mobile app — picking the adapter from whether the target is a URL or a device/bundle id. Used as qa-tester's own execution step (its steps 1-2 gather context and derive scenarios, this skill only replaces the browser/device-execution step, its step 6 reports and drafts bugs). Also usable standalone for direct browser or mobile-device exploration or dogfooding without full ticket/PR/Figma context; a standalone run goes to a subagent, so screenshots and snapshots stay out of the main conversation (see "Where a standalone run happens").
+when_to_use: "Trigger as qa-tester's own 'Execute' step for any web or mobile target. Also trigger directly for: 'test the iOS/Android app', 'dogfood the mobile app', 'exploratory test on iPhone/Android/simulator/emulator', or driving/exploring a running web app in the browser without a full ticket-driven QA run, including 'przeklikaj', 'sprawdź czy już działa' or a screenshot of a screen. Do NOT trigger for a retest of a Jira ticket or bug (retesting-tickets), or for a macOS or Apple TV target — agent-device also supports those, but this skill's mobile adapter is scoped to iOS/Android handhelds and simulators/emulators only; call agent-device directly for those."
 ---
 
 # Testing apps (web & mobile execution)
@@ -37,14 +37,15 @@ Apple TV) are in [references/execution.md](./references/execution.md),
 
 Every screenshot and page snapshot stays in the context of the conversation
 that took it, and that whole context is sent again with every later turn. So a
-standalone run (exploration, dogfooding, a retest, "check whether X works now")
+standalone run (exploration, dogfooding, "check whether X works now")
 **runs in a subagent**, not in the main conversation. `qa-tester` runs are
-subagents already.
+subagents already. A retest of a Jira ticket or bug is the `retesting-tickets`
+skill: it reads the ticket and its related issues and uses this skill's
+execution itself.
 
 1. **In the main conversation, gather the brief** (ask only what's missing): the
    target (URL, or device and app), environment and branch, which account to
-   sign in with, what to check or retest and what counts as fixed (for a
-   ticket or bug key, read it with `reading-jira-tickets`), whether to
+   sign in with, what to check and what counts as working, whether to
    record evidence (`mode: ask` in evidence.json), and the product's working
    directory and project skill if the target matches a product config. Resolve
    the branch and environment per "Standalone runs: which branch and
@@ -62,9 +63,7 @@ subagents already.
    ticket-driven check, start `qa-tester` instead. If you are that subagent,
    this section is already done: go straight to references/execution.md.
 3. **Relay its summary** (Done / Not done / Proposed additions) and the saved
-   files. For a retest of a ticket or bug, offer a Jira comment drafted with
-   the `writing-jira-comments` skill from the subagent's results; post it only
-   after the user's yes. If it stopped on a question, ask the user and continue the same
+   files. If it stopped on a question, ask the user and continue the same
    subagent with the answer rather than starting a new one.
 
 Stay in the main conversation only for a single look, about three browser or

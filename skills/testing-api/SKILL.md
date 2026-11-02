@@ -1,7 +1,7 @@
 ---
 name: testing-api
-description: Runs a repo's API test collection — Bruno, Postman, or Insomnia — against a live environment via that tool's CLI, exports the collection for the desktop app, optionally, after the user approves, publishes the collection and its environments to the product's configured place (1Password or Confluence), and produces a Jira-comment-ready pass/fail report. When the request is driven by a specific backend Jira ticket, switches to ticket mode, which reads the ticket and its PR/branch for context, tests on the environment the user names or confirms, generates full scenario coverage for any endpoint the collection doesn't already cover, treats the published collection as the latest version, and closes by preparing (never auto-posting) a Jira comment and any bug reports for the user's approval. Use when asked to test the API, run the API test suite, verify endpoints are working, export/re-export an API collection, QA/test a backend Jira ticket, or produce a test summary/report for a Jira ticket. Product, repo and tool come from ~/.claude/environments.
-when_to_use: "Trigger on: 'przetestuj API', 'uruchom testy API/bruno/postman/insomnia', 'sprawdź czy endpointy działają', 'wygeneruj raport testów do jiry', 'wyeksportuj kolekcję', 'run the API tests', 'test this endpoint', 'export the collection', 'opublikuj kolekcję', 'publish the collection', 'test/QA this backend ticket', a Jira ticket URL/ID for a [BE] or backend-only ticket, or any request to verify API behavior using a committed collection."
+description: Runs a repo's API test collection — Bruno, Postman, or Insomnia — against a live environment via that tool's CLI, exports the collection for the desktop app, optionally, after the user approves, publishes the collection and its environments to the product's configured place (1Password or Confluence), and produces a Jira-comment-ready pass/fail report. When the request is driven by a specific backend Jira ticket, switches to ticket mode, which reads the ticket and its PR/branch for context, tests on the environment the user names or confirms, generates full scenario coverage for any endpoint the collection doesn't already cover, treats the published collection as the latest version, and closes by preparing (never auto-posting) a Jira comment and any bug reports for the user's approval. Use when asked to test the API, run the API test suite, verify endpoints are working, export/re-export an API collection, or QA/test a backend Jira ticket. Product, repo and tool come from ~/.claude/environments.
+when_to_use: "Trigger on: 'przetestuj API', 'uruchom testy API/bruno/postman/insomnia', 'sprawdź czy endpointy działają', 'wygeneruj raport testów do jiry', 'wyeksportuj kolekcję', 'run the API tests', 'test this endpoint', 'export the collection', 'opublikuj kolekcję', 'publish the collection', 'test/QA this backend ticket', a Jira ticket URL/ID for a [BE] or backend-only ticket, or any request to verify API behavior using a committed collection. Not for a retest of a fixed ticket (retesting-tickets)."
 ---
 
 # Testing an API collection
@@ -103,6 +103,10 @@ The rules for the run itself (environment, scope, caveats, report, no claimed
 PASS) are in [run.md](./references/run.md), "Rules for the run".
 
 ### Ticket mode
+
+A retest of a fixed bug or a ticket sent back to QA is the `retesting-tickets`
+skill, not ticket mode: it runs only the requests involved, using this skill's
+adapter and collection steps.
 
 When the request names or links a specific backend ticket, load
 [ticket-driven-testing.md](./references/ticket-driven-testing.md) and follow it:

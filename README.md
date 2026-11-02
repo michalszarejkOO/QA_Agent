@@ -200,13 +200,19 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   document: picks the connector for its site, the issue with every comment,
   web link and the linked issues it relies on, the Figma link, the PR or branch
   and its diff, and how to search Jira with JQL. Read-only. Preloaded into
-  `qa-tester`; testing-api ticket mode, `routing-qa-tickets`, `testing-apps`
-  retests, `writing-test-cases`, `preparing-refinement-questions`,
+  `qa-tester`; testing-api ticket mode, `routing-qa-tickets`,
+  `retesting-tickets` (with parent and related issues), `writing-test-cases`, `preparing-refinement-questions`,
   `find-duplicates` and `create-quality-metrics` use it too.
 - `skills/writing-jira-comments/` — drafts the QA comment for a ticket in the
   product's own format (the project skill's "Jira QA comment" section) or the
   default template. Draft only; preloaded into `qa-tester`, used by testing-api
-  ticket mode and testing-apps retests.
+  ticket mode and `retesting-tickets`.
+- `skills/retesting-tickets/` — retests tickets sent back to QA (a fixed bug, a
+  task reworked after a failed test): reads each with its parent and related
+  issues, checks the fix is deployed, repeats the failing steps plus a few
+  checks around the fix through the API or the app, and returns Fixed, Not
+  fixed, Fixed with a regression or Can't verify per ticket with comment
+  drafts. Runs in a subagent; never posts or transitions.
 - `skills/reporting-bugs/` — drafts a bug report (Title / Steps to reproduce /
   Expected / Actual). `qa-tester` reads it only when a run finds a bug (its
   "Bug report draft" step), so it isn't loaded on every run. Never publishes on
@@ -234,7 +240,8 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   to a subagent doesn't load the execution rules. Deliberately scoped to web + mobile (iOS/Android) —
   `agent-device` also supports macOS/TV, but this skill doesn't reach into that.
   Used by `qa-tester` in its "Execute" step, and also callable directly for
-  exploration, dogfooding or a quick retest without a full ticket/PR context.
+  exploration or dogfooding without a full ticket/PR context (a ticket retest
+  is `retesting-tickets`).
   Such a direct run goes to a subagent, so its screenshots and snapshots don't
   stay in the main conversation and get sent again with every later turn.
 - `skills/preparing-refinement-questions/` — generates refinement-session questions

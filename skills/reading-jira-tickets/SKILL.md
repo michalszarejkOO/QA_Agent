@@ -1,6 +1,6 @@
 ---
 name: reading-jira-tickets
-description: Reads a Jira ticket fully before testing or writing about it — picks the Atlassian connector for the ticket's site, fetches the issue with every comment, web link and the linked issues it relies on, finds the Figma design and the PR or branch with its diff, and says which part couldn't be read. Also how to search Jira with JQL without losing fields. Read-only; never comments, edits or transitions. Used by qa-tester (UI), testing-api ticket mode (API), routing-qa-tickets, testing-apps retests, writing-test-cases, preparing-refinement-questions, find-duplicates and create-quality-metrics, and on request.
+description: Reads a Jira ticket fully before testing or writing about it — picks the Atlassian connector for the ticket's site, fetches the issue with every comment, web link and the linked issues it relies on, finds the Figma design and the PR or branch with its diff, and says which part couldn't be read. Also how to search Jira with JQL without losing fields. Read-only; never comments, edits or transitions. Used by qa-tester (UI), testing-api ticket mode (API), routing-qa-tickets, retesting-tickets (with parent and related issues), writing-test-cases, preparing-refinement-questions, find-duplicates and create-quality-metrics, and on request.
 when_to_use: "Trigger on: 'przeczytaj ticket IP-123', 'co jest w tickecie', 'read ABC-123 before testing', 'find the PR for this ticket', the context step of qa-tester, testing-api ticket mode, writing-test-cases or preparing-refinement-questions, a JQL search for find-duplicates. Do NOT trigger for writing to Jira (writing-jira-comments, creating-jira-tickets) or for registering connectors (configure-project)."
 ---
 
@@ -48,10 +48,37 @@ tokens, `"evidence"` ~2,700, `"full"` ~6,200, mostly worklogs and metadata.
    (through `discover`, `executeRead`).
 4. **Parent or linked issues**, only when the description or comments rely on
    them (e.g. "as in IP-78"): `getJiraIssue` on each with the default view.
+   A retest, or a caller that asks for the ticket's surroundings, reads them
+   as "Related issues" below.
 
 Only a description given, no key: find the ticket with JQL ("Searching Jira").
 The full description and acceptance criteria already in the brief: use them
 without fetching again.
+
+## Related issues
+
+When the caller needs what surrounds the ticket (`retesting-tickets`, a bug's
+origin, a sub-task's story). The evidence view already lists the parent,
+sub-tasks and linked issues with their link type and status; open them like
+this, one level deep:
+
+- **Parent** (story, epic): `getJiraIssue`, default view. With `view:
+  "evidence"` when its acceptance criteria decide what correct is for this
+  ticket (a bug or sub-task of it).
+- **Linked issues**, by link type: "is caused by", "relates to", "duplicates"
+  or "is duplicated by", "clones", "blocks" or "is blocked by". Open each with
+  the default view; the status matters (a duplicate already fixed, a blocker
+  still open).
+- **Sub-tasks:** open the ones that changed what is being tested.
+- **Bugs on a story:** `searchJiraIssuesUsingJql` with
+  `issue in linkedIssues(ABC-123) AND issuetype = Bug` and
+  `fields: ["summary", "status", "issuetype"]`.
+- **Comments of a related issue:** only when it holds the fix or the agreed
+  behaviour.
+
+Go deeper only when a related issue says the real change lives elsewhere
+("fixed in IP-412"). Hand back one line per related issue: key, type, link
+type, status and why it matters.
 
 ## The design
 
@@ -87,7 +114,8 @@ don't pass `fields` at all. To judge a candidate, open it with `getJiraIssue`
 ## What to hand back
 
 The acceptance criteria as the comments left them, what the comments changed
-or put out of scope, linked issues that matter, the Figma link or "no design",
+or put out of scope, linked issues that matter (or "Related issues" when
+asked), the Figma link or "no design",
 the PR or branch with its diff (or what was tried), and where it was merged.
 
 If any call fails, say which part wasn't read. Never test or write against a
