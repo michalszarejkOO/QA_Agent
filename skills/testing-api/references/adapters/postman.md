@@ -65,6 +65,12 @@ through an export or the API. A value kept only in the **Value** column, or in t
 `secret`-type field), stays in that person's app. So variables the whole team
 needs, keys included, are plain (`default`-type) variables with their value in
 Shared Value; secret type and the Vault are for one person's own values.
+An empty Shared Value is fine for a variable the collection's own scripts set
+during a run (tokens, ids, helper variables tests add), environment or
+collection variable alike. Only variables requests read and no script sets
+(API keys such as an `x-api-key` header, credentials, base URLs, ids of
+existing data) need one, and only those are reported as missing
+(`postman-sync`, "Which variables need a value").
 
 **How.** The `postman-sync` agent does the steps below (publishing.md step 1
 starts it). It is the only place the Postman MCP server connects, with the

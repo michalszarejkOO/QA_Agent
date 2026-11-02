@@ -53,16 +53,39 @@ your report to the user; you can't ask the user anything yourself.
 They may go into the collection folder's environment files and nowhere else: never in your
 report, a summary, a commit message or a log. Name variables, never their values.
 
+## Which variables need a value
+
+Before reporting, sort every environment variable, and every collection
+variable (the `variable` array of each collection file) that has no value, into
+one of three groups, by searching all collection files from the brief:
+
+- **Filled by the run**: some script sets it (`pm.environment.set`,
+  `pm.collectionVariables.set`, `pm.variables.set` or `pm.globals.set` with
+  that name). Tokens, ids from earlier requests and helper variables tests add
+  are here. Empty is fine: don't warn about them and don't list them by name;
+  give one line with how many there are.
+- **Needed**: a request or script reads it (`{{name}}` in a URL, header, auth,
+  body or `pm.*.get("name")`) and no script sets it. API keys
+  (`x-api-key`-style headers), credentials, base URLs and ids of data that
+  must already exist are here. Without a value the endpoints that use it fail,
+  so these are the ones the user must hear about.
+- **Unused**: nothing reads or sets it. One line with the names, as cleanup the
+  user may want; never a warning.
+
 ## Report
 
 Return, in this order:
 
-1. **Warning first**, if any: variables empty both in Postman and in the repo
-   file (per environment, names only). Publishing them hands the team an empty
-   value.
+1. **Warning first**, if any: **needed** variables (above) that are empty both
+   in Postman and in the file, per environment, names only, each with the
+   requests or header that use it (e.g. "`qiwa_api_key`: header `x-api-key` in
+   QIWA / Get establishment"). Publishing them hands the team an endpoint that
+   fails. Variables filled by the run never go here.
 2. **Shared Value check**, always, even when everything is fine. Per environment:
    - variables with a Shared Value (names only),
-   - variables without one (names only), and among them:
+   - **needed** variables without one (names only); for the ones filled by the
+     run, only their count ("12 filled by the run, empty is fine"), and among
+     the needed ones:
      - the ones the file still has a value for (kept from the file; the value
        lives only in someone's Value column or Postman Vault),
      - `secret`-type variables: the Postman API returns no value for them, so an
