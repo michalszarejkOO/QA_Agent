@@ -2,13 +2,13 @@
 
 Load this when the request names or links a specific backend ticket (a Jira ID or
 URL, e.g. "test MWA-510", "QA the backend for TICKET-123") rather than a bare "run
-the API tests" request. It layers on top of the generic procedure in SKILL.md —
+the API tests" request. It layers on top of the generic procedure in SKILL.md and run.md —
 everything not covered here (adapter mechanics, the report template, the
 publishing mechanics) is unchanged.
 
 ## Rules
 
-These apply on top of SKILL.md's "Non-negotiable rules":
+These apply on top of the "Non-negotiable rules" in SKILL.md and "Rules for the run" in run.md:
 
 | Severity | Rule |
 | --- | --- |
@@ -22,7 +22,7 @@ These apply on top of SKILL.md's "Non-negotiable rules":
 
 ## Order
 
-Follow this instead of (really: layered onto) SKILL.md's generic procedure.
+Follow this instead of (really: layered onto) the generic procedure (SKILL.md and run.md).
 Full detail for each numbered step is in the Steps below; this is the
 ordering.
 
@@ -47,16 +47,16 @@ T1. **Resolve the product/client/config** as SKILL.md step 0, then resolve the *
     substitution.
 
 T2. **Check coverage for the ticket's endpoint(s)** against that resolved
-    collection. If it's missing entirely, or only has a thin/assertion-less
+    collection (its tests collection, when the config has `testsCollection`). If it's missing entirely, or only has a thin/assertion-less
     placeholder, generate a full set of cases before running anything — happy
     path(s), validation/boundary cases, auth cases, and business-logic edge cases —
     following the resolved adapter's existing naming/`docs:`/assertion conventions.
 
-T3. **Run SKILL.md steps 1 and 3–6** (load adapter, export, check
+T3. **Run run.md steps 1 and 3–6** (load adapter, export, check
     reachability, run the suite, investigate failures) — but the environment is
     the one the user named or confirmed for this run (Step 4 below), never a `local`-type one unless the user names it.
 
-T4. **Write the report** (SKILL.md step 7), then **prepare the Jira comment** and
+T4. **Write the report** (run.md step 7), then **prepare the Jira comment** and
     **ask the user** whether to post it to the ticket now or keep it as
     copy-pasteable text.
 
@@ -155,7 +155,7 @@ while the repo checkout lagged behind.
    config: skip this and item 5, there is nothing to compare with.
 3. From here on, `<run folder>/published-collection/` is the collection, used as
    the repo root: Step 3 adds cases there, Step 4 runs the suite from there, and
-   the export (SKILL.md step 3) zips it. The repo checkout is only for comparing;
+   the export (run.md step 3) zips it. The repo checkout is only for comparing;
    don't add the generated cases to it unless the user asks.
 4. If the download isn't possible (no Atlassian server for that site in this
    session, `op` not installed or not signed in, or the page, file or item is
@@ -194,6 +194,24 @@ Cover, at minimum:
   state (already-done actions, conflicting prior state, idempotency, single-use
   tokens/codes) — read the diff from Step 1 for what the implementation actually
   guards against, don't guess.
+
+**Where the cases go.** With `api.testsCollection`
+([config-fields.md](./config-fields.md), "The tests collection"):
+
+- **Tests collection:** every generated case, under the main collection's domain
+  folder for the endpoint (create it there if the tests collection doesn't have
+  it yet), in a folder for the endpoint itself (`PUT /v1/users/me/phone`). Never a
+  folder named after the ticket; each case's description names the ticket.
+- **Main collection:** only when it has no request for the endpoint yet, add
+  one: in the folder of its domain, named for what it does without a ticket key
+  (`PUT Change phone number`), its description naming the ticket, with a working
+  happy-path body and no saved examples. No fitting folder: create one named
+  after the resource (`Users` for `/v1/users/...`) and say so in the summary.
+  Don't move or rename existing requests or folders unless the user asks; flow
+  folders stay as they are.
+
+Without `testsCollection`, the cases go into the main collection, following the
+project skill's rules for it.
 
 If the endpoint depends on a stateful chain (an OTP flow, a token exchange) to
 reach a real success case, build that chain using the collection's existing
@@ -250,7 +268,7 @@ After the report is written:
 Whenever the product has a publish target, finish by preparing an upload of:
 
 - The collection from `<run folder>/published-collection/`, including any cases
-  generated in Step 3.
+  generated in Step 3, and the tests collection when the config has one.
 - The environments, including a refreshed live-populated file if the product uses
   one (`envRefreshProcedure`).
 - On Confluence, the `lastUpdate` panel with the current commit/branch.

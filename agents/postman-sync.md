@@ -18,7 +18,9 @@ your report to the user; you can't ask the user anything yourself.
 
 - the product and its config file (`~/.claude/environments/<product>-<env>.json`),
 - the collection folder (`<run root>/<collectionPath>`): the
-  `*.postman_collection.json` file and its `environments/` folder. It is a git
+  `*.postman_collection.json` files (the main collection, and the tests
+  collection when the config has `api.testsCollection`) and the
+  `environments/` folder. It is a git
   repo, or, for a product without `repo`, a copy in the run folder; then the
   brief also names `<run folder>/published-base.json`, whose `updatedAt` stands
   in for the last commit,

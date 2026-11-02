@@ -60,8 +60,9 @@ to other people: the Jira comment, bugs and publishing.
 2. **Start a subagent** (`general-purpose`, model `sonnet`, in both modes).
    If the user asks for Opus for this run ("puść na Opusie", "run it on
    Opus"), start it with model `opus` instead; that applies to this run only.
-   Give it the brief and this instruction: "Load the testing-api skill and
-   follow it as the run inside a subagent. You can't ask the user: wherever
+   Give it the brief and this instruction: "Load the testing-api skill, read
+   its references/run.md, and follow both as the run inside a subagent. You
+   can't ask the user: wherever
    the skill says to ask, stop and report the question with its options and
    the default. Don't post, file or publish anything."
 3. **When it stops with a question**, ask the user and continue the same
@@ -70,35 +71,36 @@ to other people: the Jira comment, bugs and publishing.
    drafts, then ask about each (post the comment? file this bug?) and act on
    the answers here. If the product has a publish target, do step 8 here, in
    the main conversation, from the files the subagent left in the run folder.
-   Relay its summary and add proposed project-skill lines only on a yes.
+   Relay its summary (run.md, "Keeping the user informed") and add proposed
+   project-skill lines only on a yes.
 
-**If you are that subagent:** the brief and the setup check are done. Start at
-step 0 with the brief (skip its setup check), ask nothing, and stop after step 7 (generic) or after the drafts (ticket mode,
-T4–T5 without the questions). Return, in this order: the report, the Jira
-comment draft, bug drafts, what's ready to publish (the files in the run
-folder and the version they're based on, `published-base.json`), the summary
-("Keeping the user informed") and the run log.
+**If you are that subagent:** the brief and the setup check are done. Read
+[run.md](./references/run.md) now if you haven't. Start at step 0 with the
+brief (skip its setup check), ask nothing, and stop after step 7 (generic) or
+after the drafts (ticket mode, T4–T5 without the questions). Return, in this
+order: the report, the Jira comment draft, bug drafts, what's ready to publish
+(the files in the run folder and the version they're based on,
+`published-base.json`), the summary (run.md, "Keeping the user informed") and
+the run log.
 
 Stays in the main conversation, with no subagent: an export only ("wyeksportuj
 kolekcję"), publishing an export that already exists, or a run whose results
 are already in the conversation (only the report and the questions are left).
+An export or a run here reads [run.md](./references/run.md) for its steps.
 
 ## Non-negotiable rules
 
 | Severity | Rule |
 | --- | --- |
 | MUST | Resolve the target repo, client, and collection path before doing anything else (step 0) — never assume the current directory has the collection, and never guess the client from habit when the config says otherwise. |
-| MUST | In generic mode, test the staging-like branch's environment (step 2, [target-branch.md](../testing-apps/references/target-branch.md)) unless the user names another one. Fall back to `api.defaultEnvironment` only when no branch can be resolved. A `local`-type environment requires the app running locally — check reachability first and say clearly if it's down, rather than letting the run fail with a confusing connection error. |
-| MUST | Run the resolved adapter's CLI scoped to the folder implied by the request — the whole collection by default, or a specific subfolder when the user names an endpoint or area. |
-| MUST | Before writing the report, check the resolved adapter's per-case caveat convention for any test case that looks order- or state-dependent, including any product-specific caveats listed in that product's config (`api.knownCaveats`), and surface real caveats in the report's Notes — a clean pass/fail count that hides a non-representative test is misleading evidence. |
-| MUST | In generic (non-ticket) mode, when an executed folder/endpoint has only happy-path cases — no validation/boundary, auth, or business-logic cases — flag that gap in the report's Notes. This is an observation only: never generate cases to fill it in generic mode, that stays scoped to ticket mode's step T2. A clean "N/N PASS" next to thin coverage is misleading on its own. |
-| MUST | Use the report template in [report-template.md](./references/report-template.md) verbatim in structure — same headers, same table shape — so reports stay consistent across runs, products, and tools. Fill it from the actual CLI output, never from memory of a previous run. |
 | MUST | If (and only if) the product's config names a publish target, end the run by offering to publish the freshly exported collection and/or environments there, per [publishing.md](./references/publishing.md) — this is independent of test results, not conditional on them passing. |
 | NEVER | Upload anything (to 1Password or Confluence: create an item or page, upload a file, update a body) before the user says yes to the summary in [publishing.md](./references/publishing.md), step 4: what goes where, from which folder, and which version each replaces. Before that summary, always read the published version and compare it with this run's base; a newer or different version is named there, never overwritten silently. No answer, or anything but a clear yes, means don't publish. |
 | NEVER | Put environments, `.env` files or anything with live tokens into the collection zip, or upload any file to Confluence that `scan_secrets.py` flags without the user's yes after seeing its list. Environments with secrets belong in 1Password. Never print a secret's value. |
 | NEVER | Put collection content (request bodies, raw exports, file dumps) inline in a Confluence page body. It stays a `lastUpdate` marker; the zip is attached as a file, not pasted as text. |
 | NEVER | Commit, push, or otherwise persist results/exports into git without being asked. The zip export is a local artifact, not a repo change. |
-| NEVER | Claim a PASS the CLI did not report. If any request fails, show the failing assertion(s) and response detail, and reflect the real status in the report. |
+
+The rules for the run itself (environment, scope, caveats, report, no claimed
+PASS) are in [run.md](./references/run.md), "Rules for the run".
 
 ### Ticket mode
 
@@ -112,42 +114,15 @@ generic procedure. Two of its rules, because nothing may slip past them:
 | MUST | Test only on an environment the user named or confirmed for this run. Never assume `demo`, never fall back to `api.defaultEnvironment` silently. |
 | MUST | Never post the Jira comment or file a bug without asking: prepare them as drafts and ask the user about each. |
 
-## Keeping the user informed
-
-Before each notable step, write one short line saying what you're about to do:
-resolving the config, fetching the ticket or PR, downloading the published
-collection, generating new cases, exporting, running the suite, publishing. Say which environment and folder a run targets before starting it.
-In a subagent nothing reaches the user before you return, so keep the same
-lines as a run log and return it with the summary.
-
-End every run with a point-list summary, after the report and drafts:
-
-- **Done:** each thing completed (cases generated, suite run with pass/fail
-  counts, export paths, what was published where, with its new version).
-- **Not done / skipped:** each step that wasn't done, with its reason (no
-  publish target, environment unreachable, user chose not to post or
-  publish, and so on). If nothing was skipped, write "Nothing skipped."
-  In ticket mode, also say that cases generated this run are only in
-  `<run folder>/published-collection/` (and wherever it was published), not in
-  the repo checkout.
-- **Proposed additions to the project skill:** each new product-specific finding
-  (a stateful case, an environment quirk, a misleading status code), worded as
-  the line to add to `<projectSkill>/SKILL.md`, or "None". Add them only after
-  the user approves, and never to this skill or Claude's memory.
-
 ## Reference Loading
 
 | Reference | Load when | Covers |
 | --- | --- | --- |
-| [adapters/bruno.md](./references/adapters/bruno.md) | `api.client` is `"bruno"` | Collection layout, `docs:` block convention, export/run commands |
-| [adapters/postman.md](./references/adapters/postman.md) | `api.client` is `"postman"` | Collection/environment JSON shape, per-request description convention, Newman export/run commands, syncing the repo files with the Postman app before publishing (the `postman-sync` agent), which variable values leave the app |
-| [adapters/insomnia.md](./references/adapters/insomnia.md) | `api.client` is `"insomnia"` | Export shape, `inso` CLI invocation — flag as less battle-tested, confirm syntax against `inso --help` before relying on it |
-| [config-fields.md](./references/config-fields.md) | Step 0, when the config has `knownCaveatsFile`, `secondaryAttachments` or `envRefreshProcedure`, or a field isn't clear | The full `api` block, the optional fields, where their files live |
-| [report-template.md](./references/report-template.md) | Generating the final report, every run | The exact report templates (header fields, results table, coverage bullets, Notes) and the ticket-mode Jira comment (business summary, what was tested, request and response) |
+| [run.md](./references/run.md) | Inside the subagent, right after this file; in the main conversation for an export or a run without a subagent | Steps 1-7 (adapter, request, export, environment check, run, failures, report), the rules for the run, the run log and closing summary, and the references the run loads (adapters, report template, target branch) |
+| [config-fields.md](./references/config-fields.md) | Step 0, when the config has `testsCollection`, `knownCaveatsFile`, `secondaryAttachments` or `envRefreshProcedure`, the collection folder holds several collection files, or a field isn't clear | The full `api` block, the optional fields, where their files live |
 | [publishing.md](./references/publishing.md) | Step 8 whenever the config names a publish target; downloading the published collection in ticket mode | What goes where (`api.publish`), the secret scan, comparing with the published version, the summary and question before any upload, `published-collection/` and `published-base.json` |
 | [onepassword-publish.md](./references/onepassword-publish.md) | A part's target is `1password` | Vault and item names from config, `op` sign-in (the user's, one approval per stage), Secure Note items with the files as they are (a zip only for a Bruno collection), notes and tags, reading the version, uploading, downloading |
 | [confluence-publish.md](./references/confluence-publish.md) | A part's target is `confluence` | Reading cloudId/space/folder/title/attachment name from config, reading attachment versions, the generate-body script, find-or-create/update procedure, attaching the files, downloading the attached collection |
-| [target-branch.md](../testing-apps/references/target-branch.md) | Generic mode, when the request names no environment | Picking the staging-like branch (user, config `targetBranch`, detection from merged MRs), mapping it to a collection environment, using recent MRs as context |
 | [ticket-driven-testing.md](./references/ticket-driven-testing.md) | The request names or links a specific backend ticket | Ticket mode's rules and order (T0–T6), where the run stops to ask, gathering ticket/PR context, resolving the published collection as the latest one, generating full scenario coverage, and the ask-before-posting comment/bug-report step |
 
 ## Procedure
@@ -159,12 +134,11 @@ End every run with a point-list summary, after the report and drafts:
    in scope from the user's request (a repo name, a ticket prefix, or an explicit
    path). Look for a matching file under `~/.claude/environments/*.json` (or
    `$CLAUDE_CONFIG_DIR/environments/` if that's set — the same global, per-product
-   config `qa-tester` uses) with an `api` block:
-   with an `api` block. A run needs `client` and `defaultEnvironment`, plus
+   config `qa-tester` uses) with an `api` block. A run needs `client` and `defaultEnvironment`, plus
    either `repo` (with `collectionPath`) or a publish target for the collection; `ticketEnvironment`, `knownCaveats`, `publish` and
    `confluence` are used where the steps below name them. The full shape, the
-   optional `knownCaveatsFile`, `secondaryAttachments` and
-   `envRefreshProcedure`, and where to find those files are in
+   optional `testsCollection` (a separate collection for test cases),
+   `knownCaveatsFile`, `secondaryAttachments` and `envRefreshProcedure`, and where to find those files are in
    [config-fields.md](./references/config-fields.md): read it when the config
    has one of the optional fields, or a field isn't clear.
    `client` is one of `"bruno"`, `"postman"`, `"insomnia"` and selects which adapter
@@ -198,63 +172,9 @@ End every run with a point-list summary, after the report and drafts:
    - **Not found and cwd has no collection** → ask the user which repo/collection/tool
      to run against rather than guessing.
 
-1. **Load the resolved adapter** from the table above and follow it for every
-   tool-specific detail in the steps below — this file only describes the shared
-   shape of each step.
-
-2. **Parse the rest of the request.** If it names a folder/area under the
-   collection (e.g. "content", "auth/verify-otp"), scope both the run and the report
-   to that folder. If it names an environment ("local", "demo"), use that.
-   Otherwise, in generic mode, resolve the staging-like branch and its environment
-   per [target-branch.md](../testing-apps/references/target-branch.md): config
-   `targetBranch`, then detection from merged MRs, then `api.defaultEnvironment`.
-   Run the collection as it is on that branch (a fresh worktree at
-   `origin/<branch>`, under `<workDir>/worktrees/`), not the local checkout's branch. Carry over uncommitted
-   collection changes only if the user says to. Use the recent MRs the script
-   lists as the run's context. **No `repo`:** there is no collection branch;
-   run the downloaded published collection on the environment the user names,
-   otherwise `api.defaultEnvironment`. Ticket mode skips this; it uses the ticket
-   environment (see "Ticket mode" above) and the ticket's own
-   branch.
-
-3. **Export the collection**, per the adapter's export instructions, so the user has
-   a file they can re-import into the matching desktop app. Always pass a
-   destination inside the run folder, under the fixed name
-   [publishing.md](./references/publishing.md) step 1 gives, so repeat exports
-   keep the same predictable name. The collection zip never holds environments or
-   `.env` files; export the environments as their own zip (part `environments`)
-   too. Export from the folder the run uses: the worktree from step 2 in generic
-   mode, or `<run folder>/published-collection/` (as the repo root) in ticket
-   mode and in any run without `repo`. Report the output paths and which folder they came from.
-
-4. **Check the target environment.** For a local-style environment, verify the
-   expected localhost URL is reachable (e.g. a short `curl -o /dev/null -w
-   "%{http_code}"` against any known route) before running anything; if it isn't,
-   tell the user and ask whether to fall back to the default remote environment
-   rather than running a suite that will fail uniformly on connection errors. A
-   public remote environment is still worth a quick reachability check, but failure
-   there is a real signal, not an environment problem.
-
-5. **Run the suite** with the adapter's CLI invocation, scoped to the full
-   collection or the folder from step 2. Capture the per-request/assertion results
-   and the summary the CLI prints.
-
-6. **Investigate any failure** before reporting: show which assertion failed, the
-   actual status/response, and whether the adapter's per-case caveat convention (or
-   the product's `api.knownCaveats`) names a precondition (wrong environment, wrong
-   order, expired state) that explains it. Don't just report a number.
-   Also check each executed folder/endpoint's case set for thinness — happy-path
-   only, no validation/auth/business-logic cases — and flag any gap found in the
-   report's Notes (step 7). Flag only; don't generate cases here, that's ticket
-   mode's job (ticket-driven-testing.md, Step 3).
-
-7. **Write the report** using [report-template.md](./references/report-template.md),
-   filled with this run's real numbers, current commit (`git rev-parse --short HEAD`,
-   run in the repo root) and branch, the environment used, which client/tool ran the
-   suite, and a Notes section that includes any caveats found in step 6 or flagged by
-   the adapter/`api.knownCaveats` for cases that ran. Present it in a fenced code
-   block so it's a clean paste into Jira, and save the same text as
-   `<run folder>/report.md`.
+Steps 1-7 (load the adapter, parse the request, export, check the
+environment, run, investigate failures, write the report) are in
+[run.md](./references/run.md).
 
 8. **If the product's config names a publish target** (in the main
    conversation; a subagent stops before this step), offer to publish there,

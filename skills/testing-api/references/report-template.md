@@ -29,7 +29,7 @@ Coverage per endpoint:
 - <auth/business-logic cases>
 
 Notes:
-- <any caveat surfaced in step 6/7 of SKILL.md — failing case detail, a case that
+- <any caveat surfaced in step 6/7 of run.md — failing case detail, a case that
   passed without truly testing what its name claims (e.g. expiry), an environment
   prerequisite that was or wasn't met, or a product-specific caveat from
   `api.knownCaveats`>
@@ -104,6 +104,16 @@ Tested with <resolved api.client> on commit <short sha> (branch: <branch>); <req
 
 ## Rules for filling it in
 
+- **Commit line when the run used the published collection** (ticket mode, or a
+  product without `repo`, where the collection is
+  `<run folder>/published-collection/` and has no git history): replace the
+  Commit line with `Collection: published in <target>, version <version>`, taken
+  from `<run folder>/published-base.json` (or `local copy, version <version>`
+  when the run fell back to `api.localCopy`). Say what the run added on top of
+  it (e.g. "+ 12 cases generated for ABC-123"). In the full report's closing
+  line, write where the collection is published instead of "committed under
+  <collectionPath>".
+
 - **Result line must match the CLI summary table exactly.** Don't round or
   editorialize — "34/35" stays "34/35", with the failing case named in Notes.
 - **Coverage bullets come from the actual case/request names and their docs/
@@ -116,6 +126,6 @@ Tested with <resolved api.client> on commit <short sha> (branch: <branch>); <req
   `insomnia.md`) and the product's `api.knownCaveats` for known ones.
 - **A "N/N PASS" line next to happy-path-only coverage is exactly this kind of
   wrong assumption.** In generic mode, call out thin coverage as its own Note per
-  SKILL.md step 6 — don't let the pass count stand unqualified.
+  run.md step 6 — don't let the pass count stand unqualified.
 - Always present the final report and the ticket comment inside a fenced code block on its own, so it can be
   copy-pasted into a Jira comment without picking up chat formatting.

@@ -15,6 +15,7 @@ From `api.publish.onePassword`:
 | `vault` | The vault that holds the items, chosen per product at setup |
 | `collectionItem` | Title of the item holding the collection, by convention `<Product> <Client> Collection` (e.g. `Emtethal Postman Collection`) |
 | `environmentsItem` | Title of the item holding the environments, by convention `<Product> <Client> Environments` |
+| `testsItem` | With `publish.tests: "1password"`: title of the item holding the tests collection, by convention `<Product> <Client> Tests` |
 
 Each part is one item, so 1Password keeps its own version history and `version`
 number per part. The item's History in the 1Password app shows every upload.
@@ -38,9 +39,12 @@ as a zip.
 
 | Client | Collection item holds | Environments item holds |
 | --- | --- | --- |
-| `postman` | `<name>.postman_collection.json` | one file per environment: `stage.postman_environment.json`, ... |
+| `postman` | each main `<name>.postman_collection.json` (usually one) | one file per environment: `stage.postman_environment.json`, ... |
 | `bruno` | `<product>-bruno-collection.zip` (export part `collection`) | one file per environment: `stage.yml`, ... from `<collectionPath>/environments/` |
 | `insomnia` | the export file itself | nothing separate: an Insomnia export holds its environments, so with `environments: "1password"` say so and skip that part |
+
+The tests item (Postman with `testsCollection`) holds just
+`<testsCollection>.postman_collection.json`; notes and tags as below.
 
 Any `secondaryAttachments` file (a live-populated environment) goes into the
 environments item under its fixed `name`. Upload copies from the run folder, never
@@ -127,13 +131,16 @@ In one shell command, for each part going to 1Password:
 
 ## Download (ticket mode, publishing.md "Downloading the published collection")
 
-1. `op item get` for `collectionItem`: note `id`, `version` and the file name.
-2. `op read` the collection file. Postman/Insomnia: into
+1. `op item get` for `collectionItem`: note `id`, `version` and the file names.
+2. `op read` each collection file. Postman/Insomnia: into
    `<run folder>/published-collection/<collectionPath>/<file name>`. Bruno: into
    `<run folder>/published-base.zip`, then extract as publishing.md says.
-3. When environments go to 1Password, `op read` each of the environments item's
+3. With `publish.tests: "1password"`, the same for `testsItem`, into the same
+   folder (a missing item: publishing.md, "Downloading the published
+   collection", says how to start it).
+4. When environments go to 1Password, `op read` each of the environments item's
    `files[].name` into `<run folder>/published-environments/environments/`.
-4. Record `target: "1password"`, `vault`, `item`, `id` and `version` for each part
+5. Record `target: "1password"`, `vault`, `item`, `id` and `version` for each part
    in `published-base.json`.
 
 ## Report

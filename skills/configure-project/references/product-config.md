@@ -160,6 +160,19 @@ entirely — a product needs at least one of the two, per `validate_environments
      keys included, are plain (`default`-type) variables with their value in
      Shared Value, because values in the Value column or the Postman Vault never
      leave their app.
+   - **For a Postman collection: a separate tests collection?** Explain:
+     test cases that `testing-api` generates for tickets can go into a
+     collection of their own, which every run executes, so the main collection
+     keeps one request per endpoint and stays readable in the app (see
+     `testing-api`'s `references/config-fields.md`, "The tests collection").
+     Ask "Keep test cases in a separate tests collection?" with **yes**
+     suggested. On yes, ask its name (suggest the main collection's name
+     with `_TESTS`, e.g. `ACME_TESTS` next to `ACME`, so the two are easy to tell
+     apart after an import) and write it as `api.testsCollection`; when the
+     collection goes to 1Password, also write `api.publish.tests: "1password"`
+     and `onePassword.testsItem` (`<Product> <Client> Tests`), otherwise
+     `api.publish.tests: "none"`. On no, write nothing: cases go into the main
+     collection.
    - **For a Bruno collection with any target:** values in the collection's
      `.env` file are never published (it stays on each person's machine). Tell
      the user that anything the team needs must be in the environment files

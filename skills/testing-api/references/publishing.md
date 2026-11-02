@@ -25,7 +25,8 @@ The product config's `api.publish` block names a target per part:
   "onePassword": {
     "vault": "<vault name>",
     "collectionItem": "<Product> <Client> Collection",
-    "environmentsItem": "<Product> <Client> Environments"
+    "environmentsItem": "<Product> <Client> Environments",
+    "testsItem": "<Product> <Client> Tests"
   }
 }
 ```
@@ -40,6 +41,10 @@ The product config's `api.publish` block names a target per part:
   `envRefreshProcedure` fills): separate attachments on Confluence, added into the
   environments zip under their `name` for 1Password (`zip -j`, after copying them
   to that name in the run folder). These can hold tokens and logins.
+- **tests** (only with `api.testsCollection`, see
+  [config-fields.md](./config-fields.md), "The tests collection"): the tests
+  collection file, `1password` or `none`. It isn't part of `collection`: the
+  collection item holds only the main collection files.
 - Each is `1password`, `confluence` or `none`. `onePassword` is required when
   either part is `1password`; `api.confluence` when either is `confluence`. The
   `lastUpdate` panel exists only on Confluence.
@@ -106,8 +111,9 @@ client too. So:
    These names stay the same on every run, so each upload becomes a new version
    of the same file. **Exception, 1Password:** files go up as they are (see
    [onepassword-publish.md](./onepassword-publish.md), "What goes into each
-   item"): copy the collection file (Postman, Insomnia) or the collection zip
-   (Bruno), and each environment file, into `<run folder>/publish/`; the
+   item"): copy the collection file or files (Postman, Insomnia) or the
+   collection zip (Bruno), each environment file, and the tests collection file
+   when part `tests` has a target, into `<run folder>/publish/`; the
    environments zip isn't needed there. Confluence always gets zips.
    If an `envRefreshProcedure` is configured and the environments have a target,
    follow it before exporting (see [confluence-publish.md](./confluence-publish.md),
@@ -153,6 +159,9 @@ client too. So:
      replaces version <N> | first upload
    - Environments → <target and name, as above>
      <local path>, <size>, <files inside>; secret scan: <clean | n/a (1Password)>
+     replaces version <N> | first upload
+   - Tests → <1Password: <vault> / <testsItem> | nowhere>   (only with a tests collection)
+     <local path>, <size>, <requests added or changed>
      replaces version <N> | first upload
    - lastUpdate (Confluence only): <date>, commit <commit> on <branch>
    - Check: unchanged since the download (version <N>) | NEWER: version <M> | differs from this export: <summary>
@@ -202,7 +211,12 @@ from the repo checkout. A product without `repo` downloads this way on every run
 generic ones too, and then brings `api.localCopy` up to date ("The local
 copy" below). A collection published before environments were split out
 already holds `environments/`: keep those unless the published environments are
-newer, and say which ones the run uses. With `collection: "none"`, or when the download isn't
+newer, and say which ones the run uses. With a tests collection
+(`publish.tests: "1password"`), download it the same way into
+`published-collection/<collectionPath>/`. When its item doesn't exist yet, start
+it there: a new collection named `testsCollection` with the main collection's
+collection-level `auth`, `variable` and `event` (so requests authorize and
+check the same way) and no requests; the first publish creates the item. With `collection: "none"`, or when the download isn't
 possible, say so and use the repo checkout, as ticket-driven-testing.md Step 2
 describes.
 
@@ -233,7 +247,7 @@ relative to the local copy). Only those files are ever written; anything else in
 the folder stays as it is. Create the folder when it's missing.
 
 - **After publishing** (step 7): copy each published file into it (Postman and
-  Insomnia: the collection file and each environment file from
+  Insomnia: the collection file or files, the tests collection file, and each environment file from
   `<run folder>/publish/` or the folder you exported from; Bruno: the extracted
   collection from `published-collection/<collectionPath>/` and the environment
   files), then rewrite `.published.json` with the new versions and checksums.

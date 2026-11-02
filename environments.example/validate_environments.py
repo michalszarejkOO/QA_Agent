@@ -107,6 +107,21 @@ def check_product_config(data, connectors):
                             f"'api.publish.{part}' must be \"1password\" or \"confluence\" "
                             "when 'api.repo' is absent (the published copy is the source)"
                         )
+            tests_name = api.get("testsCollection")
+            if tests_name is not None:
+                if not isinstance(tests_name, str) or not tests_name.strip():
+                    errors.append("'api.testsCollection' must be a non-empty string (the tests collection's name)")
+                elif client != "postman":
+                    errors.append("'api.testsCollection' is only supported with api.client \"postman\"")
+                elif tests_name.endswith(".json"):
+                    errors.append("'api.testsCollection' is the collection's name, without .postman_collection.json")
+                if "repo" not in api:
+                    pub_block = api.get("publish") if isinstance(api.get("publish"), dict) else {}
+                    if pub_block.get("tests") != "1password":
+                        errors.append(
+                            "'api.publish.tests' must be \"1password\" when 'api.testsCollection' is set "
+                            "and 'api.repo' is absent (the published copy is the source)"
+                        )
             if "localCopy" in api and (not isinstance(api["localCopy"], str) or not api["localCopy"].strip()):
                 errors.append("'api.localCopy' must be a non-empty string (a folder path)")
             for f in ("defaultEnvironment", "ticketEnvironment"):
@@ -123,13 +138,21 @@ def check_product_config(data, connectors):
                         if t not in VALID_PUBLISH_TARGETS:
                             errors.append(f"'api.publish.{part}' must be one of {sorted(VALID_PUBLISH_TARGETS)}, got {t!r}")
                         targets.append(t)
+                    if "tests" in pub:
+                        t = pub["tests"]
+                        if t not in ("1password", "none"):
+                            errors.append(f"'api.publish.tests' must be \"1password\" or \"none\", got {t!r}")
+                        if "testsCollection" not in api:
+                            errors.append("'api.publish.tests' needs 'api.testsCollection'")
+                        targets.append(t)
                     if "1password" in targets:
                         op = pub.get("onePassword")
                         if not isinstance(op, dict):
                             errors.append("'api.publish.onePassword' is required when a part goes to 1password")
                         else:
-                            for f in ("vault", "collectionItem", "environmentsItem"):
-                                part = "collection" if f == "collectionItem" else "environments" if f == "environmentsItem" else None
+                            item_parts = {"collectionItem": "collection", "environmentsItem": "environments", "testsItem": "tests"}
+                            for f in ("vault", "collectionItem", "environmentsItem", "testsItem"):
+                                part = item_parts.get(f)
                                 if part and pub.get(part) != "1password":
                                     continue
                                 if not isinstance(op.get(f), str) or not op[f].strip():

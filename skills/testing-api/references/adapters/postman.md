@@ -11,9 +11,15 @@ procedure.
 ```
 <collectionPath>/
   <name>.postman_collection.json     # the collection: folders/requests, pm.test() assertions
+  <tests>.postman_collection.json    # optional tests collection (api.testsCollection)
   environments/
     <env>.postman_environment.json   # baseUrl and other variables per environment
 ```
+
+With `api.testsCollection` the cases live in the tests collection and the main
+one keeps one request per endpoint (see
+[config-fields.md](../config-fields.md), "The tests collection"). Both use the
+same `environments/`.
 
 A collection's `item[]` array nests folders and requests recursively. Each request
 item has a `request` (method/url/header/body) and, usually, an `event[]` entry with
@@ -100,7 +106,8 @@ go on with the files.
 3. **Collection: check, don't rewrite.** A collection is too large to pass through
    the conversation safely, and the Postman CLI (`postman collection get`) prints
    only the v3 format. Compare the cloud collection's `updatedAt` with when the
-   files were last changed: the last commit of the collection file
+   files were last changed, for each collection file (the main ones and the
+   tests collection), matched by `info.name`: the last commit of the file
    (`git log -1 --format=%cI -- <file>`), or, for a product without `repo`, the
    published version's `updatedAt` in `<run folder>/published-base.json`.
    Newer in Postman: ask the user to export it over the collection file (Export,
@@ -129,6 +136,9 @@ npx --yes newman run "<collection dir>/<name>.postman_collection.json" \
   -e "<collection dir>/environments/<env>.postman_environment.json" \
   --reporters cli,json --reporter-json-export "<run folder>/newman-run.json"
 ```
+
+`<name>` is the tests collection when the config has `testsCollection`;
+otherwise the main collection (one run per file when there are several).
 
 Newman resolves relative paths against the shell's current folder, so pass every
 path absolute: `<collection dir>` is `<run root>/<collectionPath>`, where `<run

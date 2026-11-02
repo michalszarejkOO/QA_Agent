@@ -11,6 +11,7 @@ below, or a field isn't clear. The product config is the file in
   "repo": "~/Projects/<repo>   (optional: omit when the collection lives only where it is published, see \"No `repo`\")",
   "localCopy": "<optional, with no repo: folder kept at the latest published version, e.g. <workDir>/postman>",
   "collectionPath": "bruno",
+  "testsCollection": "<optional, Postman only: name of the tests collection kept next to the main one, see \"The tests collection\">",
   "defaultEnvironment": "staging",
   "ticketEnvironment": "<optional: environment ticket mode proposes and asks to confirm; absent = ask every time>",
   "knownCaveats": ["<free text about stateful/order-dependent cases, if any>"],
@@ -18,10 +19,12 @@ below, or a field isn't clear. The product config is the file in
   "publish": {
     "collection": "1password | confluence | none",
     "environments": "1password | confluence | none",
+    "tests": "<with testsCollection: 1password | none>",
     "onePassword": {
       "vault": "<vault>",
       "collectionItem": "<Product> <Client> Collection",
-      "environmentsItem": "<Product> <Client> Environments"
+      "environmentsItem": "<Product> <Client> Environments",
+      "testsItem": "<Product> <Client> Tests   (when tests is 1password)"
     }
   },
   "confluence": {
@@ -58,7 +61,39 @@ read, the run starts from it. Other files in it (upload fixtures a request
 points at, say) are left alone. It holds environments with live values: keep it
 out of any git repo with a remote.
 
-`publish` says where the collection and its environments are published, see
+**The tests collection** (`testsCollection`, optional, Postman only). Test
+cases go into a collection of their own, so the main one stays readable for
+people working in the app. Both files sit in `<collectionPath>` and share
+`environments/`; the tests file is `<testsCollection>.postman_collection.json`
+and its `info.name` is `testsCollection`. Name it so nobody mixes the two up
+after an import: the main collection's name with `_TESTS` (`ACME_TESTS` next to
+`ACME`).
+
+- **Main collection:** one request per endpoint, in the folder of its domain
+  (`/v1/users/...` in `Users`), named without a ticket key (the key goes into
+  its description), with a working happy-path request and no saved examples.
+  Folders of whole flows (several endpoints in order) stay here.
+- **Tests collection:** the cases runs execute, with assertions. The same
+  domain folders as the main collection, inside them one folder per endpoint
+  (e.g. `PUT /v1/users/me/phone`), the cases inside that. Never a folder named
+  after a ticket; a case names its ticket in its description.
+- Every run executes the tests collection, generic ones too; the main
+  collection runs only when the user asks for it.
+- Publishing has a third part, `tests` (`publish.tests`, `1password` or `none`),
+  in its own item (`onePassword.testsItem`). Without `repo` it must be
+  `1password`, like the other two.
+
+Without `testsCollection` nothing changes: generated cases go into the main
+collection, as before.
+
+**Several main collection files.** `<collectionPath>` may hold more than one
+`*.postman_collection.json` (one product with two collections). All of them
+except the tests collection make up part `collection`: published together in
+`collectionItem`, downloaded together, compared per file. Without
+`testsCollection`, a run executes the file the user or the project skill names,
+otherwise each one in turn, and the report has a row per file.
+
+`publish` says where the collection, its environments and the tests collection are published, see
 [publishing.md](./publishing.md); `confluence` is needed only when a
 part goes there. `knownCaveatsFile`, `secondaryAttachments`, and
 `envRefreshProcedure` are all optional — most products need none of them. See
