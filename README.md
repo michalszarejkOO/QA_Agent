@@ -199,8 +199,8 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   its own — draft only. Calls `find-duplicates` itself before drafting.
 - `skills/find-duplicates/` — checks in Jira whether a similar bug/task already
   exists before a new one is filed; only searches and reports, never files/links
-  anything itself. An automatic first step of `reporting-bugs`, hence bound to
-  `qa-tester` as its transitive dependency, not invoked by `qa-tester` directly.
+  anything itself. An automatic first step of `reporting-bugs`; `qa-tester`
+  reads it through `reporting-bugs` only when a run finds a bug.
 - `skills/testing-apps/` — executes scenarios against a live app: one skill, one
   adapter choice based on the shape of the target (URL → web/Playwright, bundle
   id/device name → mobile/`agent-device`), instead of two separate places carrying
@@ -214,10 +214,12 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   alarm), the shared daemon that holds onto stale environment variables, and a
   separate reference file for one-time signing setup on a physical iPhone. Rules
   shared by both platforms (the real-account/real-payment boundary, "don't judge
-  without examining the screenshot") live once, in the main `SKILL.md`, not
-  duplicated per adapter. Deliberately scoped to web + mobile (iOS/Android) —
+  without examining the screenshot") live once, in `references/execution.md`,
+  not duplicated per adapter. `SKILL.md` itself only picks the adapter and
+  decides where a standalone run happens, so a conversation that hands the run
+  to a subagent doesn't load the execution rules. Deliberately scoped to web + mobile (iOS/Android) —
   `agent-device` also supports macOS/TV, but this skill doesn't reach into that.
-  Bound to `qa-tester` (its "Execute" step), and also callable directly for
+  Used by `qa-tester` in its "Execute" step, and also callable directly for
   exploration, dogfooding or a quick retest without a full ticket/PR context.
   Such a direct run goes to a subagent, so its screenshots and snapshots don't
   stay in the main conversation and get sent again with every later turn.
@@ -319,19 +321,15 @@ later followed for Bruno/Postman/Insomnia.
 ```yaml
 skills:
   - writing-test-cases
-  - reporting-bugs
-  - find-duplicates
-  - testing-apps
 ```
 
-These four skills load in full on every run of the agent (not via descriptive
-routing) and are used inside its own procedure — `testing-apps` in the "Execute"
-step, itself picking the web/mobile adapter by the shape of the target;
-`find-duplicates` isn't invoked by `qa-tester` directly — it's bound because a
-subagent only receives the full content of the skills listed in its frontmatter at
-startup, rather than loading them on demand the way a normal session does, so
-`find-duplicates` has to be listed here separately even though in practice
-`reporting-bugs` calls it, not `qa-tester` directly.
+Only `writing-test-cases` loads in full on every run of the agent ("Derive
+scenarios"). The rest is read from `~/.claude/skills/` when a run needs it:
+`testing-apps/references/execution.md` in "Execute" (it picks the web/mobile
+adapter by the shape of the target; the skill's `SKILL.md` is only for
+standalone runs, so it isn't preloaded), and `reporting-bugs` with
+`find-duplicates` only when a run finds a bug, so a clean run doesn't pay for
+them.
 `preparing-refinement-questions` is invoked directly, independent of `qa-tester` —
 e.g. "prepare refinement questions for ACME-1234".
 

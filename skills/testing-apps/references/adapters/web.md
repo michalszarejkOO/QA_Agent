@@ -100,8 +100,8 @@ Claude was opened in. They belong with the run's evidence, so:
    link). Inspect what's actually on the page before typing credentials into a
    guessed field.
 3. Before driving the UI toward any particular state, read `browser_network_requests`
-   and the underlying API responses first — see "Shared discipline" in the parent
-   skill (`../../SKILL.md`).
+   and the underlying API responses first — see "Shared discipline" in
+   [../execution.md](../execution.md).
 4. Walk each scenario with `browser_click` / `browser_type` / `browser_select_option`
    / `browser_fill_form` / `browser_press_key`. Use `browser_wait_for` for async
    state instead of guessing timing.
@@ -117,9 +117,9 @@ Claude was opened in. They belong with the run's evidence, so:
 
 ## Recording
 
-What to record, and where it goes, is set in the parent skill's "Recorded
-evidence" section; with `evidence: screenshots only` nothing below is
-recorded, only the bug screenshot is saved. The web mechanics:
+What to record, and where it goes, is set in "Recorded evidence" in
+[../execution.md](../execution.md); with `evidence: screenshots only` nothing below
+is recorded, only the bug screenshot is saved. The web mechanics:
 
 - **Video:** call `browser_start_video` with a `filename` such as
   `qa-video/<scenario-id>-<slug>.webm`, then call `browser_stop_video` when the

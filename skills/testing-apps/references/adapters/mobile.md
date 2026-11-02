@@ -26,8 +26,8 @@ the web adapter if the target is actually a web page.
 | When building from source, reserve the Metro port with `scripts/metro-port.sh reserve`, pass it to the build as `--port`, and release it at the end. If a reopened dev client shows a native-module mismatch, check who owns the port and move to a new one (step 5). See "Building from source in parallel". | Parallel runs on two devices otherwise collide on one port and block each other's builds. |
 | Never accept a device passcode, Apple ID password, or macOS/sudo password typed into the chat. Tell the user to type it into the native prompt (Terminal, Xcode, the device) themselves. | Chat history is not a credential store; treat a pasted password as a signal to warn, not to use. |
 
-(The real-account/real-transaction boundary is in the parent skill's Shared
-discipline — a physical device signed into the tester's own real account just
+(The real-account/real-transaction boundary is in "Shared discipline" in
+[../execution.md](../execution.md) — a physical device signed into the tester's own real account just
 makes "real account" the default there rather than the exception.)
 
 ## Accessibility hit-frame checks (a deliberate technique, not just a gotcha)
@@ -68,8 +68,8 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
 5. Capture evidence as you go: checkpoint screenshots with
    `agent-device screenshot <run folder>/checkpoints/<n>-<slug>.png` (add
    `--overlay-refs` to show which element is which). Read every screenshot back
-   before judging pass/fail — see "Shared discipline" in the parent skill
-   (`../../SKILL.md`). Record a video of every scenario and save bug folders
+   before judging pass/fail — see "Shared discipline" in
+   [../execution.md](../execution.md). Record a video of every scenario and save bug folders
    per "Recording" below.
 6. `agent-device close --session <yours>` when the session ends, with the same
    `AGENT_DEVICE_STATE_DIR` you opened it with, also when the run fails or is
@@ -165,9 +165,9 @@ bug.
 
 ## Recording
 
-What to record, and where it goes, is set in the parent skill's "Recorded
-evidence" section; with `evidence: screenshots only` nothing below is
-recorded, only the bug screenshot is saved. The mobile mechanics:
+What to record, and where it goes, is set in "Recorded evidence" in
+[../execution.md](../execution.md); with `evidence: screenshots only` nothing below
+is recorded, only the bug screenshot is saved. The mobile mechanics:
 
 - **Video:** run `agent-device record start <run folder>/testing/<category>/<scenario-id>-<slug>.mp4`
   after `open`, then `agent-device record stop` when the scenario ends. Do this
