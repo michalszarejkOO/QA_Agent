@@ -4,7 +4,7 @@ Produces `~/.claude/environments/atlassian-connectors.json` (or
 `$CLAUDE_CONFIG_DIR/environments/atlassian-connectors.json`), the standing map every
 skill checks before guessing which Atlassian MCP connector reaches which Jira/
 Confluence site — see `agents/qa-tester.md`'s "Jira ticket" input and
-`skills/testing-api/references/ticket-driven-testing.md` step T0. There is
+`skills/testing-api/references/ticket-driven-testing.md` step T0 ("Order"). There is
 deliberately no example template for this file elsewhere in the repo; this is where
 it gets created.
 

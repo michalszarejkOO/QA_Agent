@@ -6,6 +6,71 @@ the API tests" request. It layers on top of the generic procedure in SKILL.md �
 everything not covered here (adapter mechanics, the report template, the
 publishing mechanics) is unchanged.
 
+## Rules
+
+These apply on top of SKILL.md's "Non-negotiable rules":
+
+| Severity | Rule |
+| --- | --- |
+| MUST | Test only on an environment the user named or confirmed for this run. If the message names one, use it. Otherwise, before running anything, ask: with `api.ticketEnvironment` set, propose it and ask to confirm (the change may be deployed somewhere else); without it, ask which environment to use. Offer the collection's environment names and, if known, where the ticket's PR was merged. Never assume `demo`, never fall back to `api.defaultEnvironment` silently, never pick a `local`-type one unless the user names it. See Step 4 below. |
+| MUST | Before doing anything else, read the ticket's acceptance criteria and its linked PR's diff (or the merged feature branch found by the repo's ticket-key naming convention, if no PR is linked) so the scenarios generated actually target what changed. |
+| MUST | Treat the published collection (1Password or Confluence, per `api.publish.collection`) as the latest version, not whatever's in the local repo checkout — diff the two and flag any divergence to the user rather than silently picking one. Download it into `<run folder>/published-collection/` and work only from there: new cases, the run and the export all use that folder. |
+| MUST | Generate full scenario coverage for the ticket's endpoint(s) before executing anything, if the resolved collection doesn't already have it: happy path(s), validation/boundary cases, auth cases (missing/invalid/wrong-role token), and business-logic edge cases — not just the happy path. Follow the resolved adapter's existing naming/`docs:`/assertion conventions. |
+| MUST | After the report, always prepare a Jira-comment-ready block and explicitly ask the user whether to post it to the ticket now or just keep it as copy-pasteable text — never post it automatically. |
+| MUST | If any bug, scope mismatch, or discrepancy is found, draft a bug report (Title / Steps to reproduce / Expected / Actual) for each and explicitly ask the user whether to file it on the ticket or just keep it as a copy-pasteable draft — never file it automatically. |
+| MUST | Always finish by offering to publish the (possibly extended) collection and the refreshed environments to their targets, whenever the product has one — never skipped in ticket mode, not conditional on results. The upload itself still waits for the version check and the user's yes (rules above). |
+
+## Order
+
+Follow this instead of (really: layered onto) SKILL.md's generic procedure.
+Full detail for each numbered step is in the Steps below; this is the
+ordering.
+
+T0. **Gather ticket context first.** Fetch the ticket (verify the right Jira
+    connector reaches its site with `getAccessibleAtlassianResources` before
+    trusting any cached mapping — it drifts) and read its acceptance criteria and
+    comments (Step 1 below). Find
+    its linked PR and diff it; if none is linked, find the merged feature branch by
+    this repo's ticket-key branch convention and diff that instead.
+
+T1. **Resolve the product/client/config** as SKILL.md step 0, then resolve the *latest*
+    collection specifically: download the published one (wherever
+    `api.publish.collection` points) into `<run folder>/published-collection/` and
+    diff it against the local repo checkout (download as
+    [publishing.md](./publishing.md), "Downloading the published
+    collection", describes). That folder is the
+    collection for everything below: new cases go there, the suite runs from it and
+    the export zips it. Tell the user about any divergence rather than silently
+    picking one. If
+    the download isn't possible this session, say so plainly and fall
+    back to the local repo checkout, flagging that as a limitation, not a silent
+    substitution.
+
+T2. **Check coverage for the ticket's endpoint(s)** against that resolved
+    collection. If it's missing entirely, or only has a thin/assertion-less
+    placeholder, generate a full set of cases before running anything — happy
+    path(s), validation/boundary cases, auth cases, and business-logic edge cases —
+    following the resolved adapter's existing naming/`docs:`/assertion conventions.
+
+T3. **Run SKILL.md steps 1 and 3–6** (load adapter, export, check
+    reachability, run the suite, investigate failures) — but the environment is
+    the one the user named or confirmed for this run (Step 4 below), never a `local`-type one unless the user names it.
+
+T4. **Write the report** (SKILL.md step 7), then **prepare the Jira comment** and
+    **ask the user** whether to post it to the ticket now or keep it as
+    copy-pasteable text.
+
+T5. **If any bug, scope mismatch, or discrepancy surfaced**, draft a bug report per
+    case (Title / Steps to reproduce / Expected / Actual) and ask the user whether
+    to file it on the ticket or keep it as a copy-pasteable draft.
+
+T6. **Always finish by offering to publish** (SKILL.md step 8) whenever the product
+    has a publish target — the (possibly extended) collection from
+    `<run folder>/published-collection/` and the refreshed environments. Never skip
+    offering it in ticket mode, whatever the results; publish only after the user's
+    yes, given after the version check in
+    [publishing.md](./publishing.md), step 4.
+
 ## Why this mode exists
 
 The generic procedure treats the collection as fixed and never invents scenarios.

@@ -55,21 +55,17 @@ and identical regardless of which tool a given repo happens to use.
 | NEVER | Commit, push, or otherwise persist results/exports into git without being asked. The zip export is a local artifact, not a repo change. |
 | NEVER | Claim a PASS the CLI did not report. If any request fails, show the failing assertion(s) and response detail, and reflect the real status in the report. |
 
-### Additional rules — ticket mode only
+### Ticket mode
 
-Load [ticket-driven-testing.md](./references/ticket-driven-testing.md) whenever the
-request names or links a specific backend ticket, and follow these on top of the
-rules above:
+When the request names or links a specific backend ticket, load
+[ticket-driven-testing.md](./references/ticket-driven-testing.md) and follow it:
+its rule table applies on top of the rules above, and its order replaces the
+generic procedure. Two of its rules, because nothing may slip past them:
 
 | Severity | Rule |
 | --- | --- |
-| MUST | Test only on an environment the user named or confirmed for this run. If the message names one, use it. Otherwise, before running anything, ask: with `api.ticketEnvironment` set, propose it and ask to confirm (the change may be deployed somewhere else); without it, ask which environment to use. Offer the collection's environment names and, if known, where the ticket's PR was merged. Never assume `demo`, never fall back to `api.defaultEnvironment` silently, never pick a `local`-type one unless the user names it. See [ticket-driven-testing.md](./references/ticket-driven-testing.md), Step 4. |
-| MUST | Before doing anything else, read the ticket's acceptance criteria and its linked PR's diff (or the merged feature branch found by the repo's ticket-key naming convention, if no PR is linked) so the scenarios generated actually target what changed. |
-| MUST | Treat the published collection (1Password or Confluence, per `api.publish.collection`) as the latest version, not whatever's in the local repo checkout — diff the two and flag any divergence to the user rather than silently picking one. Download it into `<run folder>/published-collection/` and work only from there: new cases, the run and the export all use that folder. |
-| MUST | Generate full scenario coverage for the ticket's endpoint(s) before executing anything, if the resolved collection doesn't already have it: happy path(s), validation/boundary cases, auth cases (missing/invalid/wrong-role token), and business-logic edge cases — not just the happy path. Follow the resolved adapter's existing naming/`docs:`/assertion conventions. |
-| MUST | After the report, always prepare a Jira-comment-ready block and explicitly ask the user whether to post it to the ticket now or just keep it as copy-pasteable text — never post it automatically. |
-| MUST | If any bug, scope mismatch, or discrepancy is found, draft a bug report (Title / Steps to reproduce / Expected / Actual) for each and explicitly ask the user whether to file it on the ticket or just keep it as a copy-pasteable draft — never file it automatically. |
-| MUST | Always finish by offering to publish the (possibly extended) collection and the refreshed environments to their targets, whenever the product has one — never skipped in ticket mode, not conditional on results. The upload itself still waits for the version check and the user's yes (rules above). |
+| MUST | Test only on an environment the user named or confirmed for this run. Never assume `demo`, never fall back to `api.defaultEnvironment` silently. |
+| MUST | Never post the Jira comment or file a bug without asking: prepare them as drafts and ask the user about each. |
 
 ## Keeping the user informed
 
@@ -99,12 +95,13 @@ End every run with a point-list summary, after the report and drafts:
 | [adapters/bruno.md](./references/adapters/bruno.md) | `api.client` is `"bruno"` | Collection layout, `docs:` block convention, export/run commands |
 | [adapters/postman.md](./references/adapters/postman.md) | `api.client` is `"postman"` | Collection/environment JSON shape, per-request description convention, Newman export/run commands, syncing the repo files with the Postman app (Postman MCP) before publishing, which variable values leave the app |
 | [adapters/insomnia.md](./references/adapters/insomnia.md) | `api.client` is `"insomnia"` | Export shape, `inso` CLI invocation — flag as less battle-tested, confirm syntax against `inso --help` before relying on it |
+| [config-fields.md](./references/config-fields.md) | Step 0, when the config has `knownCaveatsFile`, `secondaryAttachments` or `envRefreshProcedure`, or a field isn't clear | The full `api` block, the optional fields, where their files live |
 | [report-template.md](./references/report-template.md) | Generating the final report, every run | The exact report templates (header fields, results table, coverage bullets, Notes) and the ticket-mode Jira comment (business summary, what was tested, request and response) |
 | [publishing.md](./references/publishing.md) | Step 8 whenever the config names a publish target; downloading the published collection in ticket mode | What goes where (`api.publish`), the secret scan, comparing with the published version, the summary and question before any upload, `published-collection/` and `published-base.json` |
 | [onepassword-publish.md](./references/onepassword-publish.md) | A part's target is `1password` | Vault and item names from config, `op` sign-in (the user's, one approval per stage), Secure Note items with the files as they are (a zip only for a Bruno collection), notes and tags, reading the version, uploading, downloading |
 | [confluence-publish.md](./references/confluence-publish.md) | A part's target is `confluence` | Reading cloudId/space/folder/title/attachment name from config, reading attachment versions, the generate-body script, find-or-create/update procedure, attaching the files, downloading the attached collection |
 | [target-branch.md](../testing-apps/references/target-branch.md) | Generic mode, when the request names no environment | Picking the staging-like branch (user, config `targetBranch`, detection from merged MRs), mapping it to a collection environment, using recent MRs as context |
-| [ticket-driven-testing.md](./references/ticket-driven-testing.md) | The request names or links a specific backend ticket | Gathering ticket/PR context, resolving the published collection as the latest one, generating full scenario coverage, and the ask-before-posting comment/bug-report step |
+| [ticket-driven-testing.md](./references/ticket-driven-testing.md) | The request names or links a specific backend ticket | Ticket mode's rules and order (T0–T6), where the run stops to ask, gathering ticket/PR context, resolving the published collection as the latest one, generating full scenario coverage, and the ask-before-posting comment/bug-report step |
 
 ## Procedure
 
@@ -116,51 +113,13 @@ End every run with a point-list summary, after the report and drafts:
    path). Look for a matching file under `~/.claude/environments/*.json` (or
    `$CLAUDE_CONFIG_DIR/environments/` if that's set — the same global, per-product
    config `qa-tester` uses) with an `api` block:
-   ```json
-   "api": {
-     "client": "bruno",
-     "repo": "~/Projects/<repo>",
-     "collectionPath": "bruno",
-     "defaultEnvironment": "staging",
-     "ticketEnvironment": "<optional: environment ticket mode proposes and asks to confirm; absent = ask every time>",
-     "knownCaveats": ["<free text about stateful/order-dependent cases, if any>"],
-     "knownCaveatsFile": "<filename of a fuller markdown doc kept next to this config in <workDir>/config/ — use this instead of/alongside knownCaveats when the caveat list is long enough that keeping it as JSON strings risks drifting out of sync with a richer doc>",
-     "publish": {
-       "collection": "1password | confluence | none",
-       "environments": "1password | confluence | none",
-       "onePassword": {
-         "vault": "<vault>",
-         "collectionItem": "<Product> <Client> Collection",
-         "environmentsItem": "<Product> <Client> Environments"
-       }
-     },
-     "confluence": {
-       "cloudId": "<site>",
-       "spaceKey": "<space>",
-       "parentId": "<folder page id>",
-       "pageTitle": "<fixed page title>",
-       "attachmentName": "<fixed zip filename>",
-       "secondaryAttachments": [
-         { "name": "<fixed filename>", "sourcePath": "<path relative to repo root>" }
-       ],
-       "envRefreshProcedure": "<optional filename of a doc kept next to this config in <workDir>/config/, describing how to mint live values into a secondaryAttachments file before export>"
-     }
-   }
-   ```
-   `publish` says where the collection and its environments are published, see
-   [publishing.md](./references/publishing.md); `confluence` is needed only when a
-   part goes there. `knownCaveatsFile`, `secondaryAttachments`, and
-   `envRefreshProcedure` are all optional — most products need none of them. See
-   [confluence-publish.md](./references/confluence-publish.md) for how the last two
-   are used, and [adapters/bruno.md](./references/adapters/bruno.md) for
-   `knownCaveatsFile`.
-   **Finding `knownCaveatsFile` and `envRefreshProcedure`:** they belong next to
-   the product's real config file, in `<workDir>/config/` (the file in
-   `~/.claude/environments/` is a link to it). Look there first. If the file is
-   only in `~/.claude/environments/` (older installs kept it there), use it, and
-   tell the user it belongs in `<workDir>/config/` and that "update QA_Agent"
-   moves it. If it's in neither place, say so before going on: without the env
-   refresh doc the published environment file keeps expired values.
+   with an `api` block. A run needs `client`, `repo`, `collectionPath` and
+   `defaultEnvironment`; `ticketEnvironment`, `knownCaveats`, `publish` and
+   `confluence` are used where the steps below name them. The full shape, the
+   optional `knownCaveatsFile`, `secondaryAttachments` and
+   `envRefreshProcedure`, and where to find those files are in
+   [config-fields.md](./references/config-fields.md): read it when the config
+   has one of the optional fields, or a field isn't clear.
    `client` is one of `"bruno"`, `"postman"`, `"insomnia"` and selects which adapter
    the rest of this procedure loads — everything below is identical in shape across
    clients, only the exact commands and file conventions differ, and those live in
@@ -199,7 +158,7 @@ End every run with a point-list summary, after the report and drafts:
    `origin/<branch>`, under `<workDir>/worktrees/`), not the local checkout's branch. Carry over uncommitted
    collection changes only if the user says to. Use the recent MRs the script
    lists as the run's context. Ticket mode skips this; it uses the ticket
-   environment (see "Additional rules — ticket mode only") and the ticket's own
+   environment (see "Ticket mode" above) and the ticket's own
    branch.
 
 3. **Export the collection**, per the adapter's export instructions, so the user has
@@ -231,7 +190,7 @@ End every run with a point-list summary, after the report and drafts:
    Also check each executed folder/endpoint's case set for thinness — happy-path
    only, no validation/auth/business-logic cases — and flag any gap found in the
    report's Notes (step 7). Flag only; don't generate cases here, that's ticket
-   mode's job (step T2).
+   mode's job (ticket-driven-testing.md, Step 3).
 
 7. **Write the report** using [report-template.md](./references/report-template.md),
    filled with this run's real numbers, current commit (`git rev-parse --short HEAD`,
@@ -254,54 +213,5 @@ End every run with a point-list summary, after the report and drafts:
 
 ## Procedure — ticket mode
 
-Follow this instead of (really: layered onto) the generic procedure whenever the
-request names or links a specific backend ticket (e.g. "test MWA-510", a Jira URL
-for a `[BE]`/backend-only ticket). Full detail for each numbered step lives in
-[ticket-driven-testing.md](./references/ticket-driven-testing.md); this is the
-ordering.
-
-T0. **Gather ticket context first.** Fetch the ticket (verify the right Jira
-    connector reaches its site with `getAccessibleAtlassianResources` before
-    trusting any cached mapping — it drifts) and read its acceptance criteria and
-    comments (see `references/ticket-driven-testing.md` Step 1). Find
-    its linked PR and diff it; if none is linked, find the merged feature branch by
-    this repo's ticket-key branch convention and diff that instead.
-
-T1. **Resolve the product/client/config** as step 0 above, then resolve the *latest*
-    collection specifically: download the published one (wherever
-    `api.publish.collection` points) into `<run folder>/published-collection/` and
-    diff it against the local repo checkout (download as
-    [publishing.md](./references/publishing.md), "Downloading the published
-    collection", describes). That folder is the
-    collection for everything below: new cases go there, the suite runs from it and
-    the export zips it. Tell the user about any divergence rather than silently
-    picking one. If
-    the download isn't possible this session, say so plainly and fall
-    back to the local repo checkout, flagging that as a limitation, not a silent
-    substitution.
-
-T2. **Check coverage for the ticket's endpoint(s)** against that resolved
-    collection. If it's missing entirely, or only has a thin/assertion-less
-    placeholder, generate a full set of cases before running anything — happy
-    path(s), validation/boundary cases, auth cases, and business-logic edge cases —
-    following the resolved adapter's existing naming/`docs:`/assertion conventions.
-
-T3. **Run steps 1 and 3–6 of the generic procedure** (load adapter, export, check
-    reachability, run the suite, investigate failures) — but the environment is
-    the one the user named or confirmed for this run (ticket-driven-testing.md,
-    Step 4), never a `local`-type one unless the user names it.
-
-T4. **Write the report** (generic step 7), then **prepare the Jira comment** and
-    **ask the user** whether to post it to the ticket now or keep it as
-    copy-pasteable text.
-
-T5. **If any bug, scope mismatch, or discrepancy surfaced**, draft a bug report per
-    case (Title / Steps to reproduce / Expected / Actual) and ask the user whether
-    to file it on the ticket or keep it as a copy-pasteable draft.
-
-T6. **Always finish by offering to publish** (generic step 8) whenever the product
-    has a publish target — the (possibly extended) collection from
-    `<run folder>/published-collection/` and the refreshed environments. Never skip
-    offering it in ticket mode, whatever the results; publish only after the user's
-    yes, given after the version check in
-    [publishing.md](./references/publishing.md), step 4.
+The order (T0–T6) and every step's detail are in
+[ticket-driven-testing.md](./references/ticket-driven-testing.md).
