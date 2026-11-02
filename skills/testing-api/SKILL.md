@@ -38,6 +38,51 @@ and identical regardless of which tool a given repo happens to use.
   reach this step and ask (see rule table) — never silently skip it there. It
   publishes only after the user says yes.
 
+## Where a run happens
+
+A run reads and prints a lot (the CLI's results, response bodies, the PR diff,
+collection files), and all of it stays in the context of the conversation that
+read it, sent again with every later turn. So the run itself happens in a
+subagent. The main conversation keeps the decisions and everything that goes
+to other people: the Jira comment, bugs and publishing.
+
+1. **Main conversation: the brief.** Run the setup check (step 0, first
+   sentence) and resolve the product config (step 0). Decide the mode: ticket
+   mode when the request names or links a specific backend ticket. Collect
+   what the user already said: environment, folder or endpoint, anything to
+   watch. In ticket mode with no environment in the message, don't ask yet:
+   the subagent stops after reading the ticket with the question and where
+   the PR was merged (ticket-driven-testing.md, "In a subagent: where the run
+   stops to ask"). Say in one line what the run will do (product, mode,
+   environment or "asks after reading the ticket", model), and, when the run
+   downloads from 1Password (ticket mode with `api.publish.collection:
+   "1password"`), that 1Password will ask for approval during it.
+2. **Start a subagent** (`general-purpose`): model `sonnet` for a generic run,
+   `opus` for ticket mode (understanding the ticket and the diff, writing the
+   missing cases and telling a bug from a caveat need the stronger model).
+   Give it the brief and this instruction: "Load the testing-api skill and
+   follow it as the run inside a subagent. You can't ask the user: wherever
+   the skill says to ask, stop and report the question with its options and
+   the default. Don't post, file or publish anything."
+3. **When it stops with a question**, ask the user and continue the same
+   subagent with the answer, rather than starting a new one.
+4. **When it returns**, show its report, the Jira comment draft and any bug
+   drafts, then ask about each (post the comment? file this bug?) and act on
+   the answers here. If the product has a publish target, do step 8 here, in
+   the main conversation, from the files the subagent left in the run folder.
+   Relay its summary and add proposed project-skill lines only on a yes.
+
+**If you are that subagent:** the brief and the setup check are done. Start at
+step 0 with the brief (skip its setup check), ask nothing, and stop after step 7 (generic) or after the drafts (ticket mode,
+T4–T5 without the questions). Return, in this order: the report, the Jira
+comment draft, bug drafts, what's ready to publish (the files in the run
+folder and the version they're based on, `published-base.json`), the summary
+("Keeping the user informed") and the run log.
+
+Stays in the main conversation, with no subagent: an export only ("wyeksportuj
+kolekcję"), publishing an export that already exists, or a run whose results
+are already in the conversation (only the report and the questions are left).
+
 ## Non-negotiable rules
 
 | Severity | Rule |
@@ -72,6 +117,8 @@ generic procedure. Two of its rules, because nothing may slip past them:
 Before each notable step, write one short line saying what you're about to do:
 resolving the config, fetching the ticket or PR, downloading the published
 collection, generating new cases, exporting, running the suite, publishing. Say which environment and folder a run targets before starting it.
+In a subagent nothing reaches the user before you return, so keep the same
+lines as a run log and return it with the summary.
 
 End every run with a point-list summary, after the report and drafts:
 
@@ -200,7 +247,8 @@ End every run with a point-list summary, after the report and drafts:
    block so it's a clean paste into Jira, and save the same text as
    `<run folder>/report.md`.
 
-8. **If the product's config names a publish target**, offer to publish there,
+8. **If the product's config names a publish target** (in the main
+   conversation; a subagent stops before this step), offer to publish there,
    following [publishing.md](./references/publishing.md) exactly (identifiers come
    from config, not from this file). It scans whatever goes to Confluence for
    secrets, compares the export with what is published now, and asks the user;

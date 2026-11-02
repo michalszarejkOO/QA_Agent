@@ -233,7 +233,11 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   config says (1Password, as plain files in Secure Notes with an "Updated /
   Changes" note; or a Confluence tracker page for a secret-free collection; after
   a check for a newer version and your yes), and produces a
-  pass/fail report ready to paste into a Jira comment. **Standalone, deliberately
+  pass/fail report ready to paste into a Jira comment. The run itself goes to a
+  subagent (Sonnet for a plain run, Opus for a ticket), so CLI output and
+  response bodies stay out of the main conversation; the main conversation
+  gathers the brief, asks the questions, and posts, files or publishes only after
+  your yes. **Standalone, deliberately
   unbound** from `qa-tester` — this is collection-level API testing, not manual QA
   against a live app. Product- and tool-agnostic: which repo/collection/client and
   (if applicable) where it's published comes from

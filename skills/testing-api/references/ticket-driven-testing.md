@@ -71,6 +71,27 @@ T6. **Always finish by offering to publish** (SKILL.md step 8) whenever the prod
     yes, given after the version check in
     [publishing.md](./publishing.md), step 4.
 
+## In a subagent: where the run stops to ask
+
+Ticket mode runs in a subagent (SKILL.md, "Where a run happens"), which can't
+ask the user. Stop and return the questions, then continue when the main
+conversation passes the answers back:
+
+1. **After Steps 1 and 2** (ticket, PR, published collection downloaded and
+   compared), stop once with everything that needs the user:
+   - the environment (Step 4), unless the brief names one: propose
+     `api.ticketEnvironment` if set, list the collection's environment names,
+     and say where the PR or branch was merged;
+   - uncommitted local collection changes (Step 2, item 5): copy them into
+     `published-collection/` or not;
+   - any divergence between the published and the local collection (Step 2,
+     item 2), as information.
+   Nothing to ask (environment in the brief, no local changes)? Don't stop.
+2. **After the report and drafts** (T4–T5), return them without asking: the
+   main conversation asks about the comment, each bug and publishing (T6).
+3. **Anything else the steps say to ask** (an unreachable environment, two
+   items with the same name): stop and return the question with its options.
+
 ## Why this mode exists
 
 The generic procedure treats the collection as fixed and never invents scenarios.
