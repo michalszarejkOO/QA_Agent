@@ -73,7 +73,8 @@ time.
    Remove the git history?"
    - **Zip `.git` into `<workDir>/archive/<folder>-git-<YYYY-MM-DD>.zip`, then
      remove it** (recommended); check the zip opens (`unzip -l`) before
-     removing. The collection files stay;
+     removing, and remove `.gitignore` with it (it's in the zip's history). The
+     collection files stay;
    - keep it (harmless; the skills don't commit there).
    Uncommitted changes in it: show them first, and say they stay in the files.
 6. **The project skill (asks).** Search `<projectSkill>` for the folder's path
