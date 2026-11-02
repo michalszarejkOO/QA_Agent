@@ -173,6 +173,11 @@ client too. So:
    stop and ask again.
 6. **Verify and report**, per the target's file: the new version is there, and
    where to find it (link or vault/item).
+7. **Update the local copy** (`api.localCopy`, products without `repo`), once
+   step 6 confirms the new version: write what was just published into it, as
+   "The local copy" below says, and name it in the report ("local copy updated:
+   <path>, version <N>"). A part that wasn't published (no yes, upload failed)
+   leaves the local copy as it was.
 
 ## Downloading the published collection (ticket mode)
 
@@ -194,7 +199,8 @@ collection's `environments/` folder into `published-collection/<collectionPath>/
 from the published environments when `publish.environments` has a target (download
 them the same way into `<run folder>/published-environments/` first), otherwise
 from the repo checkout. A product without `repo` downloads this way on every run,
-generic ones too. A collection published before environments were split out
+generic ones too, and then brings `api.localCopy` up to date ("The local
+copy" below). A collection published before environments were split out
 already holds `environments/`: keep those unless the published environments are
 newer, and say which ones the run uses. With `collection: "none"`, or when the download isn't
 possible, say so and use the repo checkout, as ticket-driven-testing.md Step 2
@@ -202,14 +208,43 @@ describes.
 
 ### When the download isn't possible
 
-With `repo`, use the repo checkout (above). **Without `repo`**, use the newest
-copy an earlier run left: among `<workDir>/api-runs/*/published-base.json`, take
-the one with the highest collection `version` (ties: the latest `downloadedAt`),
-and copy its run's `publish/` folder (what that run published or was ready to
-publish), or its `published-collection/` when it has no `publish/`, into this
-run's new, empty `published-collection/`. Write `published-base.json` with that
-version and `"source": "earlier run <folder>"`. Say in the run's first lines and
-in the report's Notes which run and version it is, that it may be stale, and that
-publishing this run has to wait until the target can be read again (step 3
-can't check it). No earlier run either: stop and say the collection can't be
-reached.
+With `repo`, use the repo checkout (above). **Without `repo`**, use
+`api.localCopy`: copy `<localCopy>/<collectionPath>/` (the collection files and
+`environments/`, not `.published.json`) into this run's new, empty
+`published-collection/<collectionPath>/`, and write `published-base.json` from
+`<localCopy>/.published.json` with `"source": "local copy"`. Say in the run's
+first lines and in the report's Notes that the run starts from the local copy
+(version <N>, from <date>), that someone may have published since, and that
+publishing this run waits until the target can be read again (step 3 can't
+check it). No `localCopy`, or it doesn't hold the collection: stop and say the
+collection can't be reached.
+
+**Nothing published yet** (the item or attachment doesn't exist, but the target
+can be read) is not a failed download: start from the local copy the same way,
+with no version in `published-base.json`, and this run's publish is the first
+upload.
+
+### The local copy
+
+`api.localCopy` holds the latest published version, laid out like
+`published-collection/`, plus `.published.json`: per part the target, ids,
+`version` and `updatedAt`, and `files`, a SHA-256 per file it wrote (paths
+relative to the local copy). Only those files are ever written; anything else in
+the folder stays as it is. Create the folder when it's missing.
+
+- **After publishing** (step 7): copy each published file into it (Postman and
+  Insomnia: the collection file and each environment file from
+  `<run folder>/publish/` or the folder you exported from; Bruno: the extracted
+  collection from `published-collection/<collectionPath>/` and the environment
+  files), then rewrite `.published.json` with the new versions and checksums.
+- **After a download** (start of a run): if the downloaded version is higher than
+  `.published.json` says, or `.published.json` is missing, refresh the local
+  copy from `published-collection/` the same way. Before overwriting, check each
+  file against its checksum in `.published.json`: one that changed there since
+  (someone edited the local copy by hand) is not overwritten. Name it and ask
+  whether to use the local edit as this run's base or drop it; in a subagent,
+  report it with the question. Without `.published.json`, compare the files
+  with the download instead: identical ones only get their checksums recorded,
+  different ones go to the same question.
+- Never print values from its environment files, and never put it inside a git
+  repo with a remote.

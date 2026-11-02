@@ -173,9 +173,11 @@ End every run with a point-list summary, after the report and drafts:
    the adapter, never in this file.
    - **Found** → use `repo` as the repo root, `client` to pick the adapter, and
      `collectionPath` (`.` when absent) for every step below. **No `repo`**: the
-     published copy is the only copy of the collection (config-fields.md, "No
+     published copy is the source of the collection (config-fields.md, "No
      `repo`"), so every run, generic ones too, downloads it into the run folder
-     first and uses `<run folder>/published-collection/` as the repo root. `publish` is optional; without a target
+     first and uses `<run folder>/published-collection/` as the repo root;
+     `localCopy`, when set, is kept at the latest published version and is
+     the fallback when the download isn't possible. `publish` is optional; without a target
      step 8 is skipped. Create this run's **run folder**,
      `<workDir>/api-runs/<ticket key, or YYYY-MM-DD-<env>>/` (top-level
      `workDir` from the same file; add `-2`, `-3`, ... if it exists). Every file

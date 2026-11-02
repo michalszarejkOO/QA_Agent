@@ -9,6 +9,7 @@ below, or a field isn't clear. The product config is the file in
 "api": {
   "client": "bruno",
   "repo": "~/Projects/<repo>   (optional: omit when the collection lives only where it is published, see \"No `repo`\")",
+  "localCopy": "<optional, with no repo: folder kept at the latest published version, e.g. <workDir>/postman>",
   "collectionPath": "bruno",
   "defaultEnvironment": "staging",
   "ticketEnvironment": "<optional: environment ticket mode proposes and asks to confirm; absent = ask every time>",
@@ -38,16 +39,24 @@ below, or a field isn't clear. The product config is the file in
 ```
 
 **No `repo`.** `repo` is optional when the collection lives only where it is
-published: nobody keeps it in a shared git repo, so a local folder would only
-duplicate it. Then `publish.collection` and `publish.environments` must both be
-`1password` or `confluence`, and `collectionPath` is the collection's path inside
-the published copy (`.` when absent). Every run, generic ones too, downloads the
-published copy into its run folder and works there; new cases reach the team
-when the run publishes. If the target can't be read, the run uses the newest
-copy an earlier run left ([publishing.md](./publishing.md), "When the download
-isn't possible"). Keep `repo` when the collection lives in a git repo the team
-shares (a Bruno collection inside the backend repo, say): the repo is then where
-changes are reviewed, and publishing only hands out a copy.
+published: nobody keeps it in a shared git repo. Then `publish.collection` and
+`publish.environments` must both be `1password` or `confluence`, and
+`collectionPath` is the collection's path inside the published copy (`.` when
+absent). Every run, generic ones too, downloads the published copy into its run
+folder and works there; new cases reach the team when the run publishes. Keep
+`repo` when the collection lives in a git repo the team shares (a Bruno
+collection inside the backend repo, say): the repo is then where changes are
+reviewed, and publishing only hands out a copy.
+
+**`localCopy`** (with no `repo`, recommended): a folder, usually
+`<workDir>/postman/` or `<workDir>/<client>/`, that always holds the latest
+published version, laid out like the published copy (`<collectionPath>/` with
+`environments/`). It needn't be a git repo. Runs keep it current: after every
+publish, and when a run downloads a newer version than it holds
+([publishing.md](./publishing.md), "The local copy"). When the target can't be
+read, the run starts from it. Other files in it (upload fixtures a request
+points at, say) are left alone. It holds environments with live values: keep it
+out of any git repo with a remote.
 
 `publish` says where the collection and its environments are published, see
 [publishing.md](./publishing.md); `confluence` is needed only when a

@@ -90,7 +90,10 @@ on demand:
 
 A product with no collection repo the team shares keeps no local copy at all:
 it leaves out `api.repo`, and every `testing-api` run downloads the collection
-from where it is published (1Password or Confluence) into its run folder. Code
+from where it is published (1Password or Confluence) into its run folder.
+`api.localCopy` (e.g. `<workDir>/postman/`) then holds the latest published
+version as a backup: runs update it after each publish and start from it when
+the target can't be read. Code
 repos may live inside `workDir` or anywhere else; `repo` fields keep pointing at
 them either way.
 

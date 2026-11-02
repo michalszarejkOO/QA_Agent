@@ -307,7 +307,8 @@ def check_product(r, path, servers):
     for label, p in [("workDir", data.get("workDir"))] + [
         (f"surfaces.{n}.repo", s.get("repo")) for n, s in (data.get("surfaces") or {}).items() if isinstance(s, dict)
     ] + [(f"repos.{n}", v if isinstance(v, str) else (v or {}).get("repoLocalPath")) for n, v in (data.get("repos") or {}).items()] + [
-        ("api.repo", (data.get("api") or {}).get("repo"))
+        ("api.repo", (data.get("api") or {}).get("repo")),
+        ("api.localCopy", (data.get("api") or {}).get("localCopy")),
     ]:
         if p and not Path(p).expanduser().exists():
             missing.append(f"{label} ({p})")

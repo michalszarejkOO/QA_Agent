@@ -87,13 +87,17 @@ entirely — a product needs at least one of the two, per `validate_environments
        `.postman_collection.json` and an `environments/` folder of
        `.postman_environment.json` files).
      - **No, it's published to 1Password or Confluence** (or loose exported
-       files that will be) → no `repo`: the published copy is the only copy,
+       files that will be) → no `repo`: the published copy is the source,
        and every run downloads it (`testing-api`'s config-fields.md, "No
        `repo`"). Leave `api.repo` out and set `api.collectionPath` to the
        collection's path inside the published copy (`.` for files at its top).
        Both publish targets in the next question must then be `1password` or
-       `confluence`. Loose files that aren't published yet go up with the first
-       run's publish; don't copy them into `workDir` as a second copy.
+       `confluence`. Then ask for the **local copy** (`api.localCopy`,
+       default `<workDir>/postman/` for Postman, `<workDir>/<client>/`
+       otherwise): a folder runs keep at the latest published version and fall
+       back to when the target can't be read. It needn't be a git repo. Loose
+       files that aren't published yet go there, and the first run's publish
+       uploads them.
    - Which environment a plain "run the API tests" should use when no
      staging-like branch can be resolved (`api.defaultEnvironment`). Offer the
      names of the collection's environment files as choices; never assume one is

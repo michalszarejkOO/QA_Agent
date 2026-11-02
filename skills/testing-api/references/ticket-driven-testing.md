@@ -163,7 +163,7 @@ while the repo checkout lagged behind.
    the local repo checkout as the base — call this out as a real limitation of
    the current session's tool access, not a design choice, so the user
    knows the run may be working from a stale collection. No `repo` in the
-   config: fall back to the copy from an earlier run instead, as
+   config: fall back to `api.localCopy` instead, as
    [publishing.md](./publishing.md), "When the download isn't possible",
    describes.
 5. Also check for **uncommitted local changes** to the collection (`git status` in
