@@ -16,7 +16,8 @@ checks it covers the agent link, dangling skill links, git hooks, the config
 validator, every product's paths, the docs it points at (knownCaveatsFile,
 envRefreshProcedure), project skill and REPLACE_ME values,
 playwright-video and maestro, and the tools runs need (git, python, node, ffmpeg,
-agent-device, Xcode/adb, the agent-device iOS signing vars, the 1Password CLI when a product publishes to 1Password), and the
+agent-device, Xcode/adb, the agent-device iOS signing vars, the 1Password CLI when a product publishes to 1Password), the Postman API key
+reference for postman-sync when a product uses Postman, and the
 auto-compact window against the recommended 200k. Whether each Jira site is reachable through an
 Atlassian MCP server can only be checked from inside Claude; the
 checking-qa-agent skill does that part.
@@ -32,7 +33,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 CLAUDE_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude"))
 ENV_DIR = CLAUDE_DIR / "environments"
-META = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
+META = {"atlassian-connectors.json", "evidence.json", "postman.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
 SCRIPTS = REPO / "skills" / "updating-qa-agent" / "scripts"
 WRAPPER = CLAUDE_DIR / "skills" / "testing-apps" / "scripts" / "playwright-mcp.sh"
 
@@ -235,11 +236,12 @@ def check_links(r):
     if other_repo:
         r.add("WARN", f"skills linked to another QA_Agent clone: {'; '.join(other_repo)}",
               f"run {REPO / 'setup.sh'} from the clone you want to use")
-    agent = CLAUDE_DIR / "agents" / "qa-tester.md"
-    if not agent.exists():
-        r.add("FAIL", "qa-tester agent not linked", f"{REPO / 'setup.sh'}")
-    if not unlinked and not dangling and not other_repo and agent.exists():
-        r.add("OK", f"skills and qa-tester agent linked to {REPO}")
+    agents = sorted(a.stem for a in (REPO / "agents").glob("*.md"))
+    unlinked_agents = [a for a in agents if not (CLAUDE_DIR / "agents" / f"{a}.md").exists()]
+    if unlinked_agents:
+        r.add("FAIL", f"agents not linked: {', '.join(unlinked_agents)}", f"{REPO / 'setup.sh'}")
+    if not unlinked and not dangling and not other_repo and not unlinked_agents:
+        r.add("OK", f"skills and agents ({', '.join(agents)}) linked to {REPO}")
 
 
 def check_repo(r):
@@ -468,6 +470,39 @@ def check_onepassword(r, users):
               "in the 1Password app: Settings > Developer > Integrate with 1Password CLI, then run `op vault list` and approve the dialog")
 
 
+def postman_products(products):
+    """Products whose API collection is a Postman one (publishing syncs it through postman-sync)."""
+    return [p.name for p in products if ((load(p) or {}).get("api") or {}).get("client") == "postman"]
+
+
+def postman_plugin_enabled():
+    settings = load(CLAUDE_DIR / "settings.json") or {}
+    plugins = settings.get("enabledPlugins") or {}
+    return [k for k, on in plugins.items() if on and k.split("@")[0].lower() == "postman"]
+
+
+def check_postman(r, users):
+    """postman-sync connects with the API key that environments/postman.json points at."""
+    plugin = postman_plugin_enabled()
+    if plugin:
+        r.add("WARN", f"Postman plugin still enabled ({', '.join(plugin)}): its tools load into every session, "
+              "and QA_Agent uses the postman-sync agent instead",
+              f"claude plugin disable {plugin[0]}")
+    if not users:
+        return
+    config = ENV_DIR / "postman.json"
+    data = load(config)
+    ref = (data or {}).get("apiKeyRef") if isinstance(data, dict) else None
+    if not config.exists():
+        r.add("WARN", f"no environments/postman.json, but {', '.join(users)} use(s) Postman: publishing "
+              "can't sync with the Postman app", "in Claude: \"update QA_Agent\" (migration 010)")
+    elif not (isinstance(ref, str) and ref.startswith("op://")):
+        r.add("FAIL", "environments/postman.json has no apiKeyRef op://<vault>/<item>/<field>",
+              "in Claude: \"update QA_Agent\", or fix the file by hand (environments.example/README.md)")
+    else:
+        r.add("OK", "Postman API key reference set (postman-sync agent); the key itself is read only when it connects")
+
+
 def check_stray_files(r, products):
     """Product files left outside their workDir (find_project_files.py, read-only)."""
     script = Path(__file__).with_name("find_project_files.py")
@@ -543,6 +578,7 @@ def full():
     check_mcp(r, servers, any_mobile, any_web)
     check_tools(r, any_mobile, any_web)
     check_onepassword(r, uses_onepassword(products))
+    check_postman(r, postman_products(products))
     check_stray_files(r, products)
     check_compact_window(r)
     days = update_settings()["checkDays"]

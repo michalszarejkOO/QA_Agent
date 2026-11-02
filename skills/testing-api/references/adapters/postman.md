@@ -60,10 +60,14 @@ through an export or the API. A value kept only in the **Value** column, or in t
 needs, keys included, are plain (`default`-type) variables with their value in
 Shared Value; secret type and the Vault are for one person's own values.
 
-**How.** Through the Postman MCP server (the `postman` plugin). It needs the user
-to sign in once (its `authenticate` tool gives them a link; they approve in the
-browser, never in the chat). Without it, say so, ask the user whether they changed
-anything in the app since the last commit, and go on with the files.
+**How.** The `postman-sync` agent does the steps below (publishing.md step 1
+starts it). It is the only place the Postman MCP server connects, with the
+user's Postman API key from 1Password (`~/.claude/environments/postman.json`,
+read by `scripts/postman-mcp-headers.sh` when the agent starts), so its 41 tools
+never load into the main conversation. Without it (no key set up, 1Password
+locked, the agent reports "Postman not connected"), say so with the agent's fix,
+ask the user whether they changed anything in the app since the last commit, and
+go on with the files.
 
 1. **Find the cloud copies.** Everything here is on the account of whoever is
    signed in to the MCP: teammates may each have their own Postman account and
@@ -85,6 +89,8 @@ anything in the app since the last commit, and go on with the files.
    - a variable that is empty in Postman but has a value in the file keeps the
      file's value (it's in someone's Value column or Vault), and the summary says
      so, with the fix: put it in Shared Value as a `default`-type variable;
+   - a `secret`-type variable comes back from the API with no value at all,
+     even when one is set: treat it as empty in Postman, as above;
    - drop the stray `"secret": true` field the API returns next to a `type`; a
      file with it imports without that value;
    - keep the file's own header fields (`id`, `name`, `_postman_*`).
@@ -108,8 +114,8 @@ anything in the app since the last commit, and go on with the files.
 **The other way round.** Someone who takes the collection from 1Password or
 Confluence and imports the environment with **Replace** loses their local
 values (Value column) for it. Suggest importing it as a new environment, or, on
-their yes, updating their cloud environment through the MCP
-(`putEnvironment`/`patchEnvironment`, Shared Values only).
+their yes, updating their cloud environment through the `postman-sync` agent
+(`putEnvironment`, Shared Values only; the brief says so explicitly).
 
 ## Run
 

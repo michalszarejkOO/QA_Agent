@@ -13,8 +13,8 @@ into `~/.claude/skills/`. So everything about a product (config, project skill,
 evidence, run output) lives in its own folder and goes away with it. Deleting
 a project folder leaves a dangling link: the validator reports it and
 `./setup.sh` removes it. Only the shared files, `atlassian-connectors.json`,
-`evidence.json`, `qa-agent-updates.json` and `qa-agent-migrations.json`, are real
-files in `~/.claude/environments/`.
+`evidence.json`, `qa-agent-updates.json`, `postman.json` and
+`qa-agent-migrations.json`, are real files in `~/.claude/environments/`.
 
 Run `./setup.sh` first, then add products with the `configure-project` skill (or by
 hand: write `<workDir>/config/<product>-<env>.json` and symlink it into
@@ -60,6 +60,15 @@ a product that has both a UI and an API collection).
   resumed, or after `/clear`), or the next one if there was none that day; when there are new changes, Claude
   says so and asks whether to see what's new and update. Nothing is ever pulled
   without a yes.
+
+- [`postman.example.json`](./postman.example.json) — one file for this machine,
+  saved as `environments/postman.json`, needed once a product has
+  `"client": "postman"`. `apiKeyRef` is a 1Password secret reference,
+  `op://<vault>/<item>/<field>`, to the field holding your Postman API key (the
+  key alone, or a note with the key in it). The `postman-sync` agent reads it
+  through `skills/testing-api/scripts/postman-mcp-headers.sh` each time it
+  connects to the Postman MCP server, so the key never sits on disk and the
+  server's tools never load into the main conversation. Migration 010 writes it.
 
 ## Working directory (`workDir`)
 

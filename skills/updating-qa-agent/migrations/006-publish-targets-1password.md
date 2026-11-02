@@ -54,11 +54,10 @@ doesn't need it.
    works, so don't use it as the check). Never ask for or type their password. If they want to finish later, stop here and leave the
    migration pending.
 3. **Postman products (asks).** For a product with `client: "postman"` and a
-   target, check the Postman MCP server is signed in (`getAuthenticatedUser`); if
-   not, start its `authenticate` and let the user approve in the browser. Explain
+   target, Postman access is set up by migration 010 (the Postman API key for
+   the `postman-sync` agent); don't sign in to a Postman MCP server here. Explain
    the team rule from `testing-api`'s `adapters/postman.md`: shared variables,
-   keys included, as plain variables with a Shared Value. Signing in can wait;
-   publishing then asks the user about app changes instead of checking.
+   keys included, as plain variables with a Shared Value.
 4. **Vault (asks).** For each `1password` product, look for items with the chosen
    titles (`op item list --format json`) and take their vault
    if a teammate already created them; otherwise list `op vault list --format

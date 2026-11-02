@@ -74,11 +74,23 @@ client too. So:
 
 ## Procedure
 
-1. **Postman: sync with the app first.** For `client: "postman"`, follow
+1. **Postman: sync with the app first.** For `client: "postman"`, the files
+   must hold what the team has in Postman (see
    [adapters/postman.md](./adapters/postman.md), "Syncing with the Postman app
-   before publishing", so the files hold what the team has in Postman. Before the
-   summary in step 4, also show which environment variables have a value and which
-   don't (names only).
+   before publishing"). The `postman-sync` agent does it:
+   1. Run `op vault list >/dev/null` once and tell the user to approve the
+      1Password request if one opens. The agent's connection reads the key from
+      1Password and gets only 10 seconds, too short to wait for an approval.
+   2. Start the `postman-sync` agent (Agent tool, `subagent_type:
+      "postman-sync"`) with the product, its config file, the collection folder
+      (`<run root>/<collectionPath>`) and the workspace the project skill names.
+   3. Its questions go to the user; continue the same agent with the answers.
+   4. Show the user its report: the warning first if there is one, then its
+      Shared Value check with the reminder **word for word, every time**, even
+      when every variable has its value. Nothing in step 4 is asked before the
+      user has seen it.
+   5. "Postman not connected": show its fix, then follow postman.md's
+      "without it".
    **Export the parts that have a target.** Run `export-collection.sh` from the
    folder the run used as the repo root (the worktree in generic mode,
    `<run folder>/published-collection/` in ticket mode), into the run folder:

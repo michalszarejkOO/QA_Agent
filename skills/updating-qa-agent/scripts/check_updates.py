@@ -46,7 +46,7 @@ SETTINGS = CLAUDE_DIR / "environments" / "qa-agent-updates.json"
 CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "qa-agent" / "update-check.json"
 MIGRATIONS = "skills/updating-qa-agent/migrations"
 MIGRATIONS_SCRIPT = Path(__file__).with_name("migrations.py")
-SHARED_FILES = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
+SHARED_FILES = {"atlassian-connectors.json", "evidence.json", "postman.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
 
 DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 DEFAULT_DAYS = ["mon"]

@@ -140,10 +140,10 @@ entirely — a product needs at least one of the two, per `validate_environments
      `environmentsItem`. Don't create the items now: the first upload does, after
      the user's yes.
    - **For a Postman collection with any target:** publishing first syncs the
-     repo files with the Postman app through the Postman MCP server (see
-     `testing-api`'s `adapters/postman.md`). Check it's signed in
-     (`getAuthenticatedUser`); if not, start its `authenticate` and let the user
-     approve in the browser. Tell the user the team rule: variables everyone needs,
+     repo files with the Postman app through the `postman-sync` agent (see
+     `testing-api`'s `adapters/postman.md`). It connects with the user's Postman
+     API key from 1Password; migration 010 (run with the other `ask` migrations
+     in the first setup) asks where that key is. Tell the user the team rule: variables everyone needs,
      keys included, are plain (`default`-type) variables with their value in
      Shared Value, because values in the Value column or the Postman Vault never
      leave their app.

@@ -13,7 +13,7 @@ git clone <this-remote> && cd QA_Agent
 ./setup.sh
 ```
 
-This links `agents/qa-tester.md` and every folder under `skills/` into `~/.claude/`
+This links every agent under `agents/` and every folder under `skills/` into `~/.claude/`
 (or `$CLAUDE_CONFIG_DIR`, if set). If something else already lives at those paths,
 `setup.sh` backs it up to `.bak` before swapping in the symlink — safe to re-run.
 
@@ -252,6 +252,15 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   runner, before Postman and Insomnia were added as further adapters once it became
   clear different projects use different API clients and separate skills would have
   duplicated the same reporting logic.
+- `agents/postman-sync.md` — started by `testing-api` before it publishes a
+  Postman collection: brings the repo's collection and environment files up to
+  date with the user's Postman app. The Postman MCP server connects only inside
+  this agent (inline `mcpServers`, the `minimal` tier), signed in with the user's
+  Postman API key that `skills/testing-api/scripts/postman-mcp-headers.sh` reads
+  from 1Password at connect time (`environments/postman.json` says where), so
+  none of its tools load into the main conversation. Its report always lists the
+  variables without a Shared Value, with the reminder that only Shared Value
+  reaches 1Password. Never commits, publishes or prints a value.
 
 - `skills/routing-qa-tickets/` — a standalone skill invoked right at the start when
   a request only carries a bare Jira ticket and/or PR link, without saying whether

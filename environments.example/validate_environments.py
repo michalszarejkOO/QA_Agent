@@ -27,7 +27,7 @@ VALID_PUBLISH_TARGETS = {"1password", "confluence", "none"}
 VALID_EVIDENCE_MODES = {"auto", "ask"}
 VALID_INSTALL_MODES = {"clean", "update", "installed"}
 VALID_CHECK_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-META_FILES = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
+META_FILES = {"atlassian-connectors.json", "evidence.json", "postman.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
 
 
 def resolve_environments_dir():
@@ -240,6 +240,14 @@ def check_updates_file(data):
     return errors
 
 
+def check_postman_file(data):
+    ref = data.get("apiKeyRef") if isinstance(data, dict) else None
+    parts = ref[len("op://"):].split("/") if isinstance(ref, str) and ref.startswith("op://") else []
+    if len(parts) < 3 or not all(parts):
+        return [f"'apiKeyRef' must be a 1Password reference op://<vault>/<item>/<field>, got {ref!r}"]
+    return []
+
+
 def main():
     env_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else resolve_environments_dir()
     if not env_dir.is_dir():
@@ -265,7 +273,8 @@ def main():
             print(f"{connectors_path.name}: invalid JSON — {e}")
 
     any_errors = False
-    for name, check in (("evidence.json", check_evidence_file), ("qa-agent-updates.json", check_updates_file)):
+    for name, check in (("evidence.json", check_evidence_file), ("qa-agent-updates.json", check_updates_file),
+                        ("postman.json", check_postman_file)):
         shared_path = env_dir / name
         if not shared_path.exists():
             continue
