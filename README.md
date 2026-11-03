@@ -213,6 +213,12 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   checks around the fix through the API or the app, and returns Fixed, Not
   fixed, Fixed with a regression or Can't verify per ticket with comment
   drafts. Runs in a subagent; never posts or transitions.
+- `skills/analyzing-recordings/` — looks at a screen recording or screenshot
+  the user gives as a file path, in the context of its product and ticket,
+  inside a subagent: extracts only the frames where the screen changes
+  (`scripts/extract_frames.py`), returns a timeline, a verdict against the
+  ticket and two or three key frames, so no image stays in the main
+  conversation. Hands a defect on to `reporting-bugs`.
 - `skills/reporting-bugs/` — drafts a bug report (Title / Steps to reproduce /
   Expected / Actual). `qa-tester` reads it only when a run finds a bug (its
   "Bug report draft" step), so it isn't loaded on every run. Never publishes on
