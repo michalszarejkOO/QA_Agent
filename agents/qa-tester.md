@@ -66,8 +66,9 @@ Other QA_Agent skills are at `~/.claude/skills/<name>/SKILL.md`.
   anywhere → skip visual comparison and say so.
 
 - **Evidence recording**: read `mode` from `~/.claude/environments/evidence.json`.
-  Recording is on by default (`auto`). Under `mode: ask`, record only if the
-  brief says the user agreed (you can't ask them; the delegating conversation
+  Recording is on by default (`auto`). Under `mode: ask`, do what the brief's
+  evidence line says: record and save, or screenshots only (no videos); with no
+  line, screenshots only (you can't ask them; the delegating conversation
   does). Evidence goes to the matched product's `<workDir>/qa-evidence/` unless
   the brief names a folder. Missing settings are never a blocker; "Recorded
   evidence" in `~/.claude/skills/testing-apps/references/execution.md` covers
@@ -210,8 +211,10 @@ Return a structured report, in this order:
    naming the format used. It doesn't repeat item 4. Always, even for a clean
    pass.
 10. **Bug report draft(s)** — one per bug, with the `reporting-bugs` skill, each
-   followed by its bug folder's path, screenshot and video (to attach when it is
-   filed) and any possible duplicate `find-duplicates` found.
+   followed by the absolute paths of its bug folder's screenshot and video;
+   `creating-jira-tickets` attaches them from there when it is filed, never
+   from a copy anywhere else. Mention any possible duplicate `find-duplicates`
+   found.
 11. **Proposed additions to the project skill** — what this run taught you about
    the product that the project skill doesn't say yet (an environment quirk, a
    test-data limit, a login detail, a misleading status code): one bullet each,
@@ -226,4 +229,7 @@ State a clean pass plainly. Never invent findings to seem thorough.
 
 Draft only. Never call `addOrEditJiraIssueComment`, `createJiraIssue` or any
 other Jira write tool, even when the brief says "report" or "file": you can't
-ask the user, and the main conversation posts after their yes.
+ask the user, and the main conversation posts after their yes. It attaches
+screenshots and videos as
+`~/.claude/skills/creating-jira-tickets/references/jira-attachments.md` says,
+so give each file's absolute path in the run folder.

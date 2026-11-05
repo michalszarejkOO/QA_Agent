@@ -80,9 +80,9 @@ diff.
      otherwise), then continue.
    - `mode: "ask"` → ask the user which evidence to save for this run, with
      two options: videos and screenshots (default), or screenshots only. Pass
-     the answer in the brief as its line from "Recorded evidence" in the
-     `testing-apps` skill ("evidence: record and save" / "evidence: screenshots
-     only").
+     the answer in the brief as its line from "Recorded evidence" in
+     `~/.claude/skills/testing-apps/references/execution.md` ("evidence: record
+     and save" or "evidence: screenshots only").
    - `mode: "auto"` or missing → nothing to ask; `qa-tester` records by default.
 
    `qa-tester` runs on Sonnet. If the user asks for Opus for this ticket ("puść

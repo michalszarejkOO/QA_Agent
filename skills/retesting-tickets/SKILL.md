@@ -25,7 +25,8 @@ conversation keeps the decisions and everything that goes to other people.
    ticket prefix; several keys from one product go into one run. Collect what
    the user already said: the keys, the environment, the account, anything to
    watch, and for a UI retest whether to record evidence (`mode: ask` in
-   `evidence.json`, as `testing-apps` asks it). Don't read the tickets here.
+   `evidence.json`, as `testing-apps` asks it: videos and screenshots, or
+   screenshots only). Don't read the tickets here.
    When the collection comes from 1Password, say that 1Password will ask for
    approval during the run. No environment named: don't ask yet,
    the run stops after reading the tickets with the question and where each
@@ -111,7 +112,8 @@ at "The run", ask nothing, and return in the order of step 8 below.
      The run folder is `<workDir>/api-runs/<KEY>-retest/` (several keys: the
      first key plus `-and-more`).
    - **UI:** read [execution.md](../testing-apps/references/execution.md) and
-     follow it, with its evidence layout; the original steps get a video. The
+     follow it, with its evidence layout; the original steps get a video
+     (screenshots instead when the brief says "evidence: screenshots only"). The
      target URL or device comes from the product config for the chosen
      environment ([target-branch.md](../testing-apps/references/target-branch.md),
      "From branch to environment"; mobile builds from the branch with the fix).

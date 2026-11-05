@@ -45,8 +45,10 @@ execution itself.
 
 1. **In the main conversation, gather the brief** (ask only what's missing): the
    target (URL, or device and app), environment and branch, which account to
-   sign in with, what to check and what counts as working, whether to
-   record evidence (`mode: ask` in evidence.json), and the product's working
+   sign in with, what to check and what counts as working, which evidence to
+   save (`mode: ask` in evidence.json; two options, videos and screenshots or
+   screenshots only, as "Recorded evidence" in
+   [execution.md](./references/execution.md) lists them), and the product's working
    directory and project skill if the target matches a product config. Resolve
    the branch and environment per "Standalone runs: which branch and
    environment" below. Run the setup check:

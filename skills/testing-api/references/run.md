@@ -48,7 +48,7 @@ End every run with a point-list summary, after the report and drafts:
 | [adapters/bruno.md](./adapters/bruno.md) | `api.client` is `"bruno"` | Collection layout, `docs:` block convention, export/run commands |
 | [adapters/postman.md](./adapters/postman.md) | `api.client` is `"postman"` | Collection/environment JSON shape, per-request description convention, Newman export/run commands, syncing the repo files with the Postman app before publishing (the `postman-sync` agent), which variable values leave the app |
 | [adapters/insomnia.md](./adapters/insomnia.md) | `api.client` is `"insomnia"` | Export shape, `inso` CLI invocation — flag as less battle-tested, confirm syntax against `inso --help` before relying on it |
-| [report-template.md](./report-template.md) | Generating the final report, every run | The exact report templates (header fields, results table, coverage bullets, Notes) and the ticket-mode Jira comment (business summary, what was tested, request and response) |
+| [report-template.md](./report-template.md) | Generating the final report, every run | The exact Jira-comment template (header fields, results table, coverage bullets, Notes) |
 | [target-branch.md](../../testing-apps/references/target-branch.md) | Generic mode, when the request names no environment | Picking the staging-like branch (user, config `targetBranch`, detection from merged MRs), mapping it to a collection environment, using recent MRs as context |
 
 ## Steps 1-7

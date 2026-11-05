@@ -54,8 +54,11 @@ bug's evidence folder and goes with the bug when it is filed.
   [screenshot: bugs/ABC-125/screenshot.png]
 ```
 
-When the screenshot can't be put into the comment through the Jira tool,
-the draft says which file to attach by hand and gives its full path.
+The screenshot goes into the comment through Atlassian's own server, as
+`~/.claude/skills/creating-jira-tickets/references/jira-attachments.md`, "A
+screenshot inside a comment", says. The draft gives each file's full path in
+the run folder; when the upload doesn't work, that path is what the user
+attaches by hand.
 
 ## With per-case detail (tickets with real scenarios)
 
@@ -119,5 +122,5 @@ Build the body as ADF (`addOrEditJiraIssueComment`, `contentFormat: "adf"`):
 - Each case title: a level 3 `heading`.
 - Steps / Expected / Result / Data: a `paragraph` each, label in `strong`.
 - Response bodies: `codeBlock` with `language: "json"`; log lines: `codeBlock` without a language.
-- Screenshots: a `mediaSingle` with the uploaded image, when the Jira tool can upload one; otherwise a line naming the file to attach.
+- Screenshots: a `mediaSingle` with the image uploaded per `jira-attachments.md` (`inlineFileId`); when the upload doesn't work, a line naming the file's full path to attach by hand.
 - Ticket links: `{"type":"inlineCard","attrs":{"url":"https://<site>/browse/ABC-124"}}`.

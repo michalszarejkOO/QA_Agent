@@ -54,3 +54,8 @@ Say in one line which one you used ("Format: Emtethal project skill" or
   with the body in ADF, built as the template's "ADF" section shows. Before
   editing an existing comment, fetch its current ADF so the user's own edits
   are kept.
+- Screenshots and videos go up as
+  `~/.claude/skills/creating-jira-tickets/references/jira-attachments.md`
+  says: Atlassian's own server (`uploadAttachmentToJiraIssue`, `inlineFileId`
+  for an image in the comment), straight from the run folder. Never through
+  `mcp-atlassian`, never via a copy in another folder.
