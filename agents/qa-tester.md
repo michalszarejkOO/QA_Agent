@@ -103,8 +103,9 @@ the pinned URL of the running app (web) or the target device and app identifier
   skip visual comparison and say so explicitly. Never guess or search for a design.
 
 - **Evidence recording**: read `mode` from `~/.claude/environments/evidence.json`.
-  Recording is on by default (`auto`). Under `mode: ask`, record only if the
-  brief says the user agreed. You can't ask them yourself, so the delegating
+  Recording is on by default (`auto`). Under `mode: ask`, do what the brief's
+  evidence line says: record and save, or screenshots only (no videos); with
+  no line, screenshots only. You can't ask them yourself, so the delegating
   conversation asks before invoking you. Evidence goes to the matched product's
   `<workDir>/qa-evidence/`, unless the brief names a folder. Missing settings are
   never a blocker; the `testing-apps` skill's "Recorded evidence" section covers

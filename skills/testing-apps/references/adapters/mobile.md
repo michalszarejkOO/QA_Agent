@@ -166,7 +166,8 @@ bug.
 ## Recording
 
 What to record, and where it goes, is set in the parent skill's "Recorded
-evidence" section. The mobile mechanics:
+evidence" section; with `evidence: screenshots only` nothing below is
+recorded, only the bug screenshot is saved. The mobile mechanics:
 
 - **Video:** run `agent-device record start <run folder>/testing/<category>/<scenario-id>-<slug>.mp4`
   after `open`, then `agent-device record stop` when the scenario ends. Do this

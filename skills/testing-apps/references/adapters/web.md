@@ -85,8 +85,8 @@ Claude was opened in. They belong with the run's evidence, so:
   through `playwright-mcp.sh`, and its files went to `.playwright-mcp/` in the
   folder Claude was opened in. Say so in the report, and don't move or delete
   that folder yourself.
-- Run the collect step even when the run records no videos (`mode: ask`
-  without consent in the brief): checkpoint screenshots are always kept. The
+- Run the collect step even when the run records no videos (`mode: ask` with
+  "screenshots only" or no answer in the brief): checkpoint screenshots are always kept. The
   cache evicts old files past its size limit, and `--prune` clears folders of
   closed windows.
 
@@ -118,7 +118,8 @@ Claude was opened in. They belong with the run's evidence, so:
 ## Recording
 
 What to record, and where it goes, is set in the parent skill's "Recorded
-evidence" section. The web mechanics:
+evidence" section; with `evidence: screenshots only` nothing below is
+recorded, only the bug screenshot is saved. The web mechanics:
 
 - **Video:** call `browser_start_video` with a `filename` such as
   `qa-video/<scenario-id>-<slug>.webm`, then call `browser_stop_video` when the

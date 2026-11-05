@@ -73,9 +73,11 @@ diff.
    - No file, or no `dir` → ask the user which folder to save run videos and bug
      screenshots to, write it to `evidence.json` (`mode: "auto"` unless they say
      otherwise), then continue.
-   - `mode: "ask"` → ask the user whether to record and save evidence for this
-     run, and pass the answer in the brief ("evidence: record and save" / "evidence:
-     don't record").
+   - `mode: "ask"` → ask the user which evidence to save for this run, with
+     two options: videos and screenshots (default), or screenshots only. Pass
+     the answer in the brief as its line from "Recorded evidence" in the
+     `testing-apps` skill ("evidence: record and save" / "evidence: screenshots
+     only").
    - `mode: "auto"` or missing → nothing to ask; `qa-tester` records by default.
 
    Stop here once `qa-tester` is invoked.

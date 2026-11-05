@@ -71,10 +71,20 @@ you take either way.
 **Settings.** Read `mode` from `~/.claude/environments/evidence.json` (or
 `$CLAUDE_CONFIG_DIR/environments/evidence.json`) at the start of the run:
 `auto` (the default, also when the field or the file is missing) records and
-saves without asking; `ask` records and saves only if the user said yes for this
-run. The delegating conversation asks the user before the run and passes the
-answer in the brief. A subagent can't ask, so with no answer in the brief, don't
-record or save, and say so in the report.
+saves without asking; `ask` means the user chooses for this run. The delegating
+conversation asks before the run, with these two options, and passes the
+answer in the brief as the quoted line:
+
+| Option | Brief line | What the run saves |
+| --- | --- | --- |
+| Videos and screenshots (default) | `evidence: record and save` | Everything below: scenario videos, bug folders with screenshot and video, checkpoints |
+| Screenshots only | `evidence: screenshots only` | No videos: no `testing/` folder, bug folders hold only their screenshots, checkpoints as always |
+
+There is no "save nothing" option: checkpoint screenshots are how pass/fail was
+judged, so they are kept either way. A subagent can't ask, so with no answer in
+the brief, work as with "screenshots only" and say in the report that the
+evidence choice was missing. With "screenshots only", don't start any
+recording, and report the videos as switched off by the user, not as missing.
 
 **Evidence root.** Use the first of these that applies, expanding `~` yourself:
 
@@ -126,7 +136,8 @@ standalone):
 
 If a scenario fits more than one, pick the one its expected result is about.
 
-**What to record.**
+**What to record.** With `evidence: screenshots only`, skip step 1 and the
+videos in step 2; everything else stays the same.
 
 1. **Every scenario:** start recording at the scenario's first step and stop
    after its expected result is visible. Save the video under `testing/` in
