@@ -143,7 +143,9 @@ After the report is written:
    discovered along the way, e.g. "this endpoint's success path can't currently be
    reached"), draft a bug report (Title / Steps to reproduce / Expected / Actual).
    Ask the user explicitly: file it on the ticket, or keep it as a copy-pasteable
-   draft? Do not file without that answer.
+   draft? Do not file without that answer. Files that go with a comment or a
+   bug go up as `~/.claude/skills/creating-jira-tickets/references/jira-attachments.md`
+   says, from where the run saved them.
 
 ## Step 6: Always offer to publish the collection and environments
 

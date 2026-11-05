@@ -94,7 +94,11 @@ Before invoking `qa-tester`, also say what it will do: target, ticket, and
 whether it will record evidence and where. `qa-tester` runs as a subagent and
 the user sees nothing until it returns. When it returns, relay its **Summary**
 (done, and not done/skipped with reasons) and its scenario-results table as-is,
-then the rest of the report.
+then the rest of the report. When the user then says yes to posting the comment
+or filing a bug, put its screenshots and videos on Jira as
+`~/.claude/skills/creating-jira-tickets/references/jira-attachments.md` says:
+through Atlassian's own server, from the run folder, never through
+`mcp-atlassian` and never via a copy in another folder.
 
 ## Output
 

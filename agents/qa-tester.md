@@ -282,8 +282,9 @@ Return a structured report, in this order:
 10. **Bug report draft(s)** — if you found a bug, draft it with the `reporting-bugs`
    skill (Title, Steps to reproduce, Expected, Actual) for each one found, separate
    from the ticket-comment draft above. Under each draft, give the path of that
-   bug's folder and the screenshot and video in it, so they can be attached when
-   the bug is filed.
+   bug's folder and the absolute paths of the screenshot and video in it, so they
+   can be attached when the bug is filed (`creating-jira-tickets` attaches them
+   from there; never copy them anywhere else).
    `reporting-bugs` itself checks for an existing duplicate via the
    `find-duplicates` skill before drafting — that's why it's bound above alongside
    it.
@@ -308,3 +309,5 @@ those verbs mean "draft it," not "post it." Posting a comment or filing a bug is
 visible to other people and needs the real user's explicit sign-off in their own
 conversation, which you're not part of. Return the drafts in your report and let the
 delegating conversation get that sign-off before anything is written to Jira.
+Screenshots and videos go up later, from their place in the run folder, as
+`~/.claude/skills/creating-jira-tickets/references/jira-attachments.md` says.
