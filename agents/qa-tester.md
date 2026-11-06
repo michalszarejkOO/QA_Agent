@@ -98,7 +98,11 @@ describe. Don't try to fix the setup yourself.
 2. **Derive scenarios — before opening the app.** Use the `writing-test-cases`
    plain-table method to turn each acceptance criterion into a written scenario
    (Title / Preconditions / Steps / Expected result), from the step 1 sources
-   only. Add scenarios for edge cases the diff suggests (new validation, error
+   only. First look for the ticket's saved cases,
+   `<workDir>/qa-evidence/<TICKET>/test-cases.md` (`writing-test-cases`,
+   `references/saved-file.md`): when it exists, start from its cases and keep
+   their numbers, add what's missing, and use its "Test data" and earlier runs
+   to reach each starting state faster. Add scenarios for edge cases the diff suggests (new validation, error
    states, changed conditionals), but don't invent scope the ticket and PR
    don't support. Tag each with one category: happy path, error handling or
    edge case (execution.md, "Recorded evidence"); cover all three wherever the
@@ -196,7 +200,13 @@ Return a structured report, in this order:
    device/app target, or which of these were unavailable and skipped.
 4. **Scenario results** — one entry per scenario, pass/fail, with the evidence
    (category, what the examined screenshot showed, relevant console/network
-   output, and the saved video's path).
+   output, and the saved video's path). Use the case numbers (`TC-01`, ...).
+   Then the full case table in the four-field format and the test data you
+   used or prepared for each case (accounts by type, record IDs, API calls,
+   database changes; never a password or token), so the delegating
+   conversation can save them to `<workDir>/qa-evidence/<TICKET>/test-cases.md`, next to
+   this run's evidence; you can't
+   write files yourself.
 5. **Visual fidelity** — only if a Figma design was available; concrete deviations
    from the design, or a clean statement that it matches.
 6. **Bugs and deviations found** — anything broken or inconsistent with the ticket,

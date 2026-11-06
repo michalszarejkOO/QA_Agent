@@ -46,7 +46,10 @@ conversation keeps the decisions and everything that goes to other people.
    (fetch its available transitions first and name the one you'd use), file
    the bug (`creating-jira-tickets`). Collection changes are published as
    `testing-api` step 8 says, after a yes. Add proposed project-skill lines
-   only on a yes.
+   only on a yes. Save each retest as a new run in the saved test-case file
+   (`~/.claude/skills/writing-test-cases/references/saved-file.md`) of the
+   ticket, or of the story the bug was found in when only that one has a
+   file, and give its path.
 
 **If you are that subagent:** the brief and the setup check are done. Start
 at "The run", ask nothing, and return in the order of step 8 below.
@@ -72,6 +75,11 @@ at "The run", ask nothing, and return in the order of step 8 below.
      left them; for a bug or a sub-task, the parent or the story it was found
      in, whose acceptance criteria decide the expected result when the bug is
      vague.
+   - **What was tested before.** The saved test cases of the ticket and of
+     its parent or story, `<workDir>/qa-evidence/<KEY>/test-cases.md`
+     (`writing-test-cases`, `references/saved-file.md`): the failed cases,
+     their test data and the earlier runs. Use them for the original steps
+     and the checks around the fix.
    - **What else is involved.** Duplicates and clones (they are fixed or not
      together; name them), blockers still open (Can't verify if they block the
      steps), and other bugs on the same story already fixed, which make good
@@ -131,7 +139,7 @@ at "The run", ask nothing, and return in the order of step 8 below.
    1. One line per ticket: key, bug or task, API or UI, verdict, the reason in
       a few words.
    2. Per ticket: what was run (original steps and checks around, each with
-      its result), evidence paths, the comment draft (`writing-jira-comments`;
+      its result and the saved case number when it has one), evidence paths, the comment draft (`writing-jira-comments`;
       Fixed → PASSED, Not fixed or Fixed with a regression → FAILED, Can't
       verify → BLOCKED) and the suggested move (back to the developer, or on
       to the next status).

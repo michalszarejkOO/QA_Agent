@@ -81,7 +81,9 @@ on demand:
 
 ```
 <workDir>/
-  qa-evidence/<ticket or session>/<YYYY-MM-DD>-<web|ios|android>/   testing-apps videos and bug screenshots
+  qa-evidence/<ticket or session>/                                  everything about one ticket
+    test-cases.md                                                   writing-test-cases table, test data, results of every run and retest
+    <YYYY-MM-DD>-<web|ios|android>/                                 testing-apps videos and bug screenshots
   api-runs/<ticket or YYYY-MM-DD-<env>>/                            testing-api CLI results, report, exported collection and environments zips
     published-collection/                                           the published collection (1Password or Confluence); ticket runs work from here
   worktrees/<ticket or branch>/                                     fresh checkouts for mobile builds and branch API runs

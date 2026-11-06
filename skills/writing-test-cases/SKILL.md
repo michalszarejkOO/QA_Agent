@@ -18,7 +18,9 @@ deliberately, don't blend them:
 
 - **Plain table** (default) — a lightweight, four-field review document. No Jira/Figma
   fetching is required (though it's used when already provided), nothing gets
-  published anywhere, and the output is just a Markdown table returned inline. This is
+  published anywhere, and the output is a Markdown table returned inline and saved
+  to the ticket's folder in the product's working directory
+  (`<workDir>/qa-evidence/<TICKET>/test-cases.md`). This is
   what a bare "write test cases for X" means, and what `qa-tester` itself calls
   internally to turn gathered context into scenarios before touching Playwright.
 - **Confluence page** — only when the request explicitly asks to create, publish, or
@@ -79,6 +81,9 @@ case:
 ### Procedure
 
 1. Pull acceptance criteria (or the feature description) and the PR diff if given.
+   Check whether the ticket already has a saved file (`<workDir>/qa-evidence/<TICKET>/test-cases.md`,
+   see [references/saved-file.md](./references/saved-file.md)); if it does, read it
+   and build on its cases instead of starting over.
 2. Turn each acceptance criterion into one test case. Add test cases for edge cases
    the diff or design surfaces (new validation, error states, empty/loading states)
    even if the ticket doesn't spell them out — but don't invent scope neither the
@@ -90,12 +95,18 @@ case:
    within each row.
 5. Return the table. If a source (ticket, diff, or design) was unavailable, say so
    explicitly rather than silently working from less context.
+6. Save it as [references/saved-file.md](./references/saved-file.md) says
+   (`<workDir>/qa-evidence/<TICKET>/test-cases.md`, update the file when it exists, keep
+   case numbers and earlier runs) and give its full path. When `qa-tester`
+   uses this method inside its run it can't write files; it returns the
+   cases and the conversation that started it saves them.
 
 ### Output
 
 A single Markdown table, ready to paste into Jira, Confluence, or a test-management
 tool — nothing else added (no priority column, no "covers" column, no test-case
-cross-references) unless the request explicitly asks for those too.
+cross-references) unless the request explicitly asks for those too. After it, one
+line with the saved file's full path.
 
 ---
 

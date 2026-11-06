@@ -105,7 +105,12 @@ Before invoking `qa-tester`, also say what it will do: target, ticket, and
 whether it will record evidence and where. `qa-tester` runs as a subagent and
 the user sees nothing until it returns. When it returns, relay its **Summary**
 (done, and not done/skipped with reasons) and its scenario-results table as-is,
-then the rest of the report. When the user then says yes to posting the comment
+then the rest of the report. Save its cases, test data and results to
+`<workDir>/qa-evidence/<TICKET>/test-cases.md` as
+`~/.claude/skills/writing-test-cases/references/saved-file.md` says (update the
+file if it exists, the run goes on top under "Runs") and give the file's path.
+Do the same when you send `qa-tester` back to finish cases: the file then
+holds every case with its latest result. When the user then says yes to posting the comment
 or filing a bug, put its screenshots and videos on Jira as
 `~/.claude/skills/creating-jira-tickets/references/jira-attachments.md` says:
 through Atlassian's own server, from the run folder, never through
