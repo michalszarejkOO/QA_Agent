@@ -50,8 +50,8 @@ If the file exists, read it first and build on it:
 ## Test data
 
 How to get to each case's starting state when it needs prepared data: which
-account type, which API calls or database change, which record was used last
-time. Leave the section out when no case needs prepared data.
+account type, which API calls or database change (its SQL file in the ticket's
+`notes/` folder), which record was used last time. Leave the section out when no case needs prepared data.
 
 ## Runs
 

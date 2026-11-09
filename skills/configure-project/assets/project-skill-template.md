@@ -16,9 +16,13 @@ It lives in the project's working directory, so it goes away with the project.
 
 **Every file you create for {{PRODUCT_TITLE}} goes into its working directory,
 `{{WORK_DIR}}`, wherever Claude was opened**: test output goes where the testing
-skills put it (`qa-evidence/`, `api-runs/`, `worktrees/`, `reports/`), and anything
-else (notes, plans, scripts, SQL, exports, data dumps) goes into `notes/` or
-`scripts/` there, created as needed. Never into the current folder, the Desktop,
+skills put it (`qa-evidence/`, `api-runs/`, `worktrees/`, `reports/`). Anything
+else made for one ticket (notes, plans, SQL, scripts, exports, data dumps) goes
+into that ticket's folder, `qa-evidence/<TICKET>/notes/`, next to its test cases
+and evidence. That includes API requests and responses made only to prepare data
+for a test; `api-runs/` is for `testing-api` runs. The top-level `notes/` and `scripts/` hold only what applies to the
+whole project (a shared account setup, a tool, a reusable script), created as
+needed. Never into the current folder, the Desktop,
 `/tmp` or `~/Downloads`. Give the full path of anything you save.
 
 ## Where things are

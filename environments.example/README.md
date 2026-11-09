@@ -84,10 +84,12 @@ on demand:
   qa-evidence/<ticket or session>/                                  everything about one ticket
     test-cases.md                                                   writing-test-cases table, test data, results of every run and retest
     <YYYY-MM-DD>-<web|ios|android>/                                 testing-apps videos and bug screenshots
+    notes/                                                          SQL, notes, scripts, data and API calls made to prepare this ticket's tests
   api-runs/<ticket or YYYY-MM-DD-<env>>/                            testing-api CLI results, report, exported collection and environments zips
     published-collection/                                           the published collection (1Password or Confluence); ticket runs work from here
   worktrees/<ticket or branch>/                                     fresh checkouts for mobile builds and branch API runs
   reports/                                                          create-quality-metrics HTML dashboards
+  notes/, scripts/                                                  only what applies to the whole product, not to one ticket
 ```
 
 A product with no collection repo the team shares keeps no local copy at all:
