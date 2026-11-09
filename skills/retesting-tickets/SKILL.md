@@ -40,7 +40,11 @@ conversation keeps the decisions and everything that goes to other people.
    publish anything."
 3. **When it stops with a question,** ask the user and continue the same
    subagent with the answer.
-4. **When it returns,** show the summary and, per ticket, the comment draft
+4. **When it returns,** read each comment draft before showing it and put it
+   together as one whole for that ticket alone: drop any line about another
+   ticket or about how the run went (step 8.2 of the run), even when the
+   subagent left it in, and mention such things only in the chat. Then show
+   the summary and, per ticket, the comment draft
    and the suggested transition; then the bug drafts. Ask about each: post the
    comment (`writing-jira-comments`, "Showing and posting"), move the ticket
    (fetch its available transitions first and name the one you'd use), file
@@ -83,7 +87,8 @@ at "The run", ask nothing, and return in the order of step 8 below.
    - **What else is involved.** Duplicates and clones (they are fixed or not
      together; name them), blockers still open (Can't verify if they block the
      steps), and other bugs on the same story already fixed, which make good
-     checks around the fix.
+     checks around the fix. Checking another ticket on the way is fine, but
+     its result belongs to that ticket, not to this ticket's comment (step 8.2).
 2. **What the fix changed:** the PR or branch and its diff (`reading-jira-tickets`,
    "The PR or branch"), and where it was merged. No fix found and no comment
    saying what changed: say so and retest anyway when the ticket is back in QA.
@@ -142,7 +147,14 @@ at "The run", ask nothing, and return in the order of step 8 below.
       its result and the saved case number when it has one), evidence paths, the comment draft (`writing-jira-comments`;
       Fixed → PASSED, Not fixed or Fixed with a regression → FAILED, Can't
       verify → BLOCKED) and the suggested move (back to the developer, or on
-      to the next status).
+      to the next status). The comment covers only this ticket: its original
+      steps and the checks around its own fix, as one whole a developer reads
+      without the run's context. Leave out what happened on the way: checks
+      of other tickets (a related or linked issue tried because it shares the
+      code), data preparation, workarounds, tool trouble such as a video that
+      didn't save. Those go in "Notes outside the comment" below the draft.
+      A check of another ticket that fails is a finding for that ticket: name
+      it there, never in this ticket's comment.
    3. Bug drafts for regressions, with possible duplicates.
    4. Collection changes ready to publish: the run folder and the version they
       are based on (`published-base.json`).
