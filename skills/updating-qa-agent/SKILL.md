@@ -21,6 +21,7 @@ skipped.
 | MUST | Apply migrations in number order, one at a time, and record each as applied (`scripts/migrations.py mark <id>`) only after its "Verify" section passes. |
 | MUST | Run each migration's "Is it needed" check first. If the machine already matches, mark it applied without changing anything and say so. |
 | MUST | Show the user what you're about to move, delete or re-register before doing it, and ask for anything only they can decide (a project's working directory, whether to delete old files). Suggest a default whenever there is one. |
+| MUST | Say where every suggested default comes from, inside the question itself: the file (its path), the command, the tool call or the user's earlier answer, or that it's your own guess. Show URLs and paths in full, never shortened with `…`. A suggestion with no source looks like knowledge the agent shouldn't have. |
 | NEVER | Delete user data (evidence, notes, configs) without an explicit yes for that specific folder. Moving is preferred over deleting. |
 | NEVER | Commit or stage anything under a product's `config/` or `~/.claude/environments/` — they hold credentials. |
 
