@@ -33,19 +33,25 @@ One file per call; repeat for each file. Report each attached file by name.
 Screenshots go into the comment body, not only as attachments; videos are
 attached to the issue as above.
 
-1. For each image, in the order it should appear: phase 1 and its
-   `uploadCommand` only. Note the `fileId`, the collection and the file name
-   the result gives.
-2. Post the comment with `addOrEditJiraIssueComment`, the body as
-   `writing-jira-comments` builds it (ADF), and per image, in display order:
-   `inlineFileId`, `inlineFileCollection` and `inlineFileName`. If the tool
-   rejects inline files with an ADF body, send the same content with
-   `contentFormat: "html"`.
-3. The images land at the end of the comment, so number their captions in
-   the body ("Screenshot 1: ...", "Screenshot 2: ...") and refer to them by
-   number.
+1. For each image: phase 1 and its `uploadCommand` only. Note the `fileId`
+   and the collection the result gives.
+2. In the comment's HTML body (`writing-jira-comments`, `contentFormat:
+   "html"`), put each image right where it belongs, with a caption:
 
-Don't also run phase 2 for the same file, or it shows up twice.
+   ```html
+   <figure data-type="media-single" data-layout="center" data-width="60" data-width-type="percentage"><div data-type="media" data-media-type="file" data-id="FILE_ID" data-collection="COLLECTION" data-alt="screenshot.png"></div><figcaption>What the screenshot shows</figcaption></figure>
+   ```
+
+   `FILE_ID` and `COLLECTION` come only from the upload result, never made
+   up. Keep `data-width-type="percentage"`, or Jira shows the image tiny.
+3. Post it with `addOrEditJiraIssueComment`.
+
+Fallback when a `<figure>` is rejected: post the same body without it and
+pass `inlineFileId` / `inlineFileCollection` (in display order) instead; the
+images then land at the end of the comment, so number their captions in the
+body. Don't also run phase 2 for the same file, or it shows up twice. When
+editing a comment that has images, fetch it as HTML and write it back with
+every `<figure>` it had.
 
 ## When it doesn't work
 

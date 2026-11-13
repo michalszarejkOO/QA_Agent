@@ -52,17 +52,18 @@ Tested with <resolved api.client> on <commit <short sha> (branch: <branch>) | th
 | Failed | at least one problem the ticket's change caused or didn't fix | red |
 | Blocked | the main scenarios couldn't run (environment down, no test data) | yellow |
 
-## ADF
+## HTML
 
-Build the body as ADF (`addOrEditJiraIssueComment`, `contentFormat: "adf"`):
+Post the body as HTML (`addOrEditJiraIssueComment` with `contentFormat:
+"html"`); Atlassian's server turns it into Jira's own format. The tool takes
+only markdown or HTML, and markdown drops status lozenges and images.
 
-- First line: a `paragraph` with `strong` "QA result: ", a `status` lozenge
-  (`{"type":"status","attrs":{"text":"PASSED","color":"green"}}`) and the
-  environment as plain text.
+- First line: `<p><strong>QA result: </strong><span data-type="status"
+  data-color="green">PASSED</span> stage</p>`.
 - "What was tested", "Endpoint, request and response", "Issues found",
-  "Notes": a `paragraph` with the label in `strong`; lists as `bulletList` of
-  `listItem` > `paragraph`.
-- `<METHOD /path> — <case name>` and `Response: <status>`: a `paragraph`, the
-  method and path in `code` marks.
-- Request and response bodies: `codeBlock` with `language: "json"`.
-- Ticket links: `{"type":"inlineCard","attrs":{"url":"https://<site>/browse/ABC-124"}}`.
+  "Notes": `<p><strong>label</strong></p>`; lists as `<ul><li><p>...</p></li></ul>`.
+- `<METHOD /path> — <case name>` and `Response: <status>`: a `<p>`, the method
+  and path in `<code>`.
+- Request and response bodies: `<pre><code class="language-json">...</code></pre>`,
+  with `<`, `>` and `&` in the JSON escaped.
+- Ticket links: `<a href="https://<site>/browse/ABC-124" data-card-appearance="inline"></a>`.
