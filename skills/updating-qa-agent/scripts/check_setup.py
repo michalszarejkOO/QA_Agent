@@ -65,7 +65,7 @@ def pending_migrations():
     return run(sys.executable, "-I", SCRIPTS / "migrations.py", "pending").stdout.split()
 
 
-COMPANION_FIELDS = ("knownCaveatsFile", "confluence.envRefreshProcedure")
+COMPANION_FIELDS = ("knownCaveatsFile", "publish.envRefreshProcedure", "confluence.envRefreshProcedure")
 
 
 def collection_environments(api):
@@ -409,11 +409,12 @@ def check_tools(r, any_mobile, any_web):
 
 
 def uses_onepassword(products):
-    """Products whose API collection or environments are published to 1Password."""
+    """Products whose API collection is published to 1Password (api.publish.target, or the
+    old per-part shape before migration 010)."""
     names = []
     for p in products:
         pub = ((load(p) or {}).get("api") or {}).get("publish") or {}
-        if isinstance(pub, dict) and "1password" in (pub.get("collection"), pub.get("environments")):
+        if isinstance(pub, dict) and ("1password" in str(pub.get("target", "")) or "1password" in (pub.get("collection"), pub.get("environments"))):
             names.append(p.name)
     return names
 

@@ -98,43 +98,38 @@ entirely — a product needs at least one of the two, per `validate_environments
      asks when the field is absent), because a change may be deployed elsewhere.
    - Any known stateful/order-dependent test cases worth flagging up front
      (`api.knownCaveats`) — optional, skip if none come to mind yet.
-   - **Where updated collections and environments go** (`api.publish`, see
-     `testing-api`'s `references/publishing.md`). Ask first, as one question:
-     1. **1Password** (suggested): collection and environments shared with the
-        team in a vault → `collection` and `environments`: `1password`.
-     2. **Local**: only a copy of the latest export on this machine, nothing
-        shared → both `none`, plus `localFolder`.
-     3. **1Password + local**: both of the above → both `1password`, plus
-        `localFolder`.
-     4. **Confluence**: the collection on a Confluence page → `collection:
-        "confluence"`; then ask where the environments go (below), since a
-        Confluence page is readable by everyone with access to the space.
-     For local (2, 3), ask for the folder, suggesting `<workDir>/collection`. It
-     must be outside the QA_Agent repo and any git repo (the copy holds live
-     values); write it as `localFolder` with `~` for the home folder. Say that
-     every run overwrites it with the latest export (Bruno: one import zip with
-     collection and environments; Postman: the collection and environment
-     files), keeping the previous version as `.prev`, without asking.
-     When the user wants a mix the four don't cover, ask about the two parts
-     separately, because environments hold tokens and logins:
-     - The collection: `1password` (suggested), `confluence`, or `none` (it only
-       stays as a zip in the run folder).
-     - The environments: `1password` (suggested), `confluence`, or `none`. If the
-       user picks Confluence, say that everyone with access to the page can read
-       it, often the client too, and that `testing-api` will stop on anything its
-       secret scan flags. **Insomnia:** skip this question and write
-       `environments: "none"`; an Insomnia export holds its environments, so they
-       travel with the collection.
-     Tell the user that `testing-api` always shows what goes where and waits for
-     their yes before any upload, and checks first that nobody published a newer
-     version.
-   - **For 1Password:** item names follow `<Product> <Client> Collection` and
-     `<Product> <Client> Environments`, with the tool name capitalized as
-     `Postman`, `Bruno` or `Insomnia` (e.g. `Emtethal Postman Collection`,
-     `Mowaamah Bruno Environments`); offer them and let the user change them. Say
-     what will go in, per the tool chosen above: Postman, the collection file and
-     one file per environment; Bruno, the collection as a zip and one `.yml` per
-     environment; Insomnia, the export file. Then find the vault:
+   - **Where updated collections go** (`api.publish.target`, see
+     `testing-api`'s `references/publishing.md`, "The four targets"). The
+     **package** is the collection with its environments in one import (Bruno: one
+     zip; Postman: the collection and environment files; Insomnia: the export).
+     Ask as one question, with exactly these four options:
+     1. **1Password** (suggested): the package in one vault item, shared with the
+        team → `target: "1password"`.
+     2. **Local**: the package in a folder on this machine, nothing shared →
+        `target: "local"`.
+     3. **1Password + local**: the package in both places →
+        `target: "1password+local"`.
+     4. **Confluence**: the collection **without environments** on a Confluence
+        page, the package in a local folder (environments hold tokens and never
+        go to Confluence) → `target: "confluence"`, plus the `api.confluence`
+        block. Not offered for Insomnia: its export holds the environments and
+        can't be split.
+     For 2, 3 and 4 ask for the folder (`localFolder`), suggesting
+     `<workDir>/collection`. It must be outside the QA_Agent repo and any git repo
+     (the package holds live values); write it with `~` for the home folder. Say
+     that every run replaces the package there with the latest one, keeping the
+     previous version as `.prev`, without asking, and that no other copy is kept
+     (not in the run folders either).
+     Tell the user that `testing-api` always shows what goes to 1Password or
+     Confluence and waits for their yes before any upload, and checks first that
+     nobody published a newer version.
+   - **For 1Password:** one item per product, named `<Product> <Client>
+     Collection` with the tool name capitalized as `Postman`, `Bruno` or
+     `Insomnia` (e.g. `Emtethal Postman Collection`); offer it and let the user
+     change it. Say what will go in, per the tool chosen above: Postman, the
+     collection file and one file per environment; Bruno, one zip with the
+     collection and its environments; Insomnia, the export file. Then find the
+     vault:
      1. If `op` isn't installed (`command -v op`), install it:
         `brew install --cask 1password-cli` (without Homebrew, give the user
         https://developer.1password.com/docs/cli/get-started/). It's required
@@ -143,18 +138,17 @@ entirely — a product needs at least one of the two, per `validate_environments
         `op vault list` and tell them to approve the 1Password dialog it opens
         (not `op whoami`: it reports "not signed in" even when this works).
         Never ask for their password.
-     2. Look for the items already: `op item list --format
-        json`, matching `title` exactly. If a teammate created them before, take
-        their vault without asking, and say so. If the vault holds this
+     2. Look for the item already: `op item list --format
+        json`, matching `title` exactly. If a teammate created it before, take
+        its vault without asking, and say so. If the vault holds this
         product's items for another tool (e.g. `<Product> Bruno Collection` while
         this setup is Postman), tell the user, as information only: teammates
         publish that collection separately, both are allowed, and changes don't
         pass between them. Take that item's vault as the suggestion.
      3. Otherwise list `op vault list --format json` and ask which vault this
         product uses; it must be one the whole team can open.
-     Write `api.publish.onePassword` with `vault`, `collectionItem` and
-     `environmentsItem`. Don't create the items now: the first upload does, after
-     the user's yes.
+     Write `api.publish.onePassword` with `vault` and `item`. Don't create the
+     item now: the first upload does, after the user's yes.
    - **For a Postman collection with any target:** publishing first syncs the
      repo files with the Postman app through the Postman MCP server (see
      `testing-api`'s `adapters/postman.md`). Check it's signed in
@@ -167,10 +161,10 @@ entirely — a product needs at least one of the two, per `validate_environments
      `.env` file are never published (it stays on each person's machine). Tell
      the user that anything the team needs must be in the environment files
      (`environments/<env>.yml`), or come from an `envRefreshProcedure`.
-   - **For Confluence** (either part): cloudId (the resolved site from step 3),
+   - **For Confluence** (`target: "confluence"`): cloudId (the resolved site from step 3),
      space key, parent page id, a fixed page title, and a fixed attachment
      filename for the exported collection zip, as the `api.confluence` block.
-     Without any Confluence part, leave that block out.
+     For any other target, leave that block out.
 
 6. **Staging-like branch.** For the main repo captured above, run
    `python3 -I skills/testing-apps/scripts/detect_env_branch.py <repo>` and show

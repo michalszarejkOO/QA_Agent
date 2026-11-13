@@ -93,8 +93,8 @@ fi
 echo
 python3 -I "$REPO_ROOT/skills/updating-qa-agent/scripts/register_update_hook.py" || true
 
-# The 1Password CLI is required once a product publishes its API collection or
-# environments (which hold tokens) to 1Password (api.publish in its config).
+# The 1Password CLI is required once a product publishes its API collection with
+# its environments (which hold tokens) to 1Password (api.publish.target).
 # configure-project and migration 006 install it when that's chosen; this keeps it
 # installed. Setups without such a product (e.g. UI testing only) don't need it.
 needs_op=$(python3 -I - "$ENV_DIR" <<'PY'
@@ -105,7 +105,7 @@ for f in Path(sys.argv[1]).glob("*.json"):
         pub = (json.loads(f.read_text()).get("api") or {}).get("publish") or {}
     except (ValueError, OSError, AttributeError):
         continue
-    if "1password" in (pub.get("collection"), pub.get("environments")):
+    if "1password" in str(pub.get("target", "")) or "1password" in (pub.get("collection"), pub.get("environments")):
         print("yes")
         break
 PY

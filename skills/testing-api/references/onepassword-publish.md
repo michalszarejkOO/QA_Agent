@@ -1,9 +1,9 @@
 # Publishing to 1Password
 
-Load this from [publishing.md](./publishing.md) when `api.publish.collection` or
-`api.publish.environments` is `1password`. That file decides what goes where,
-compares versions and asks the user; this one is how to read, download and upload
-with the 1Password CLI (`op`). **Nothing is uploaded before the user's yes in
+Load this from [publishing.md](./publishing.md) when `api.publish.target` is
+`1password` or `1password+local`. That file decides what goes in, compares
+versions and asks the user; this one is how to read, download and upload with the
+1Password CLI (`op`). **Nothing is uploaded before the user's yes in
 publishing.md, step 4.**
 
 ## Identifiers come from the product's config
@@ -12,46 +12,39 @@ From `api.publish.onePassword`:
 
 | Field | Meaning |
 | --- | --- |
-| `vault` | The vault that holds the items, chosen per product at setup |
-| `collectionItem` | Title of the item holding the collection, by convention `<Product> <Client> Collection` (e.g. `Emtethal Postman Collection`) |
-| `environmentsItem` | Title of the item holding the environments, by convention `<Product> <Client> Environments` |
+| `vault` | The vault that holds the item, chosen per product at setup |
+| `item` | Title of the item holding the package, by convention `<Product> <Client> Collection` (e.g. `Emtethal Postman Collection`) |
 
-Each part is one item, so 1Password keeps its own version history and `version`
-number per part. The item's History in the 1Password app shows every upload.
+One product has one item: the collection and its environments together, so a
+teammate gets everything in one place. 1Password keeps its version history and
+`version` number; the item's History in the 1Password app shows every upload.
 
-**One product, several tools.** The item titles carry the client, so a product
+**One product, several tools.** The item title carries the client, so a product
 tested with Bruno by one person and with Postman by another gets separate items
 (`Emtethal Bruno Collection`, `Emtethal Postman Collection`). That's allowed and
-never blocked: each person publishes only their own tool's items and never
+never blocked: each person publishes only their own tool's item and never
 touches the other's. They are separate collections, though; nothing carries
 changes between them. So when the vault also holds `<Product> <other client>
 Collection`, add one information line to the summary (publishing.md step 4):
 "Also in the vault: <title>, last changed <date>. It is a separate collection;
 changes don't pass between them." Nothing more: no question, no block.
 
-## What goes into each item
+## What goes into the item
 
-Both items are **Secure Notes** holding files under their own names, for every
-client, so they look and work the same. Files go up as they are, so people can
-use them straight away; only a Bruno collection, a folder of many files, travels
-as a zip.
+The item is a **Secure Note** holding the package's files under their own names,
+for every client. Files go up as they are, so people can use them straight away;
+only a Bruno collection, a folder of many files, travels as a zip.
 
-| Client | Collection item holds | Environments item holds |
-| --- | --- | --- |
-| `postman` | `<name>.postman_collection.json` | one file per environment: `stage.postman_environment.json`, ... |
-| `bruno` | `<product>-bruno-collection.zip`: the import zip (export part `full`), collection **and** `environments/` plus any `secondaryAttachments` file, so one file imports everything into Bruno | one file per environment: `stage.yml`, ... from `<collectionPath>/environments/` |
-| `insomnia` | the export file itself | nothing separate: an Insomnia export holds its environments, so with `environments: "1password"` say so and skip that part |
+| Client | The item holds |
+| --- | --- |
+| `bruno` | `<product>-bruno-collection.zip`: the collection **with** `environments/` and every `extraEnvironmentFiles` file, so one file imports everything into Bruno |
+| `postman` | `<name>.postman_collection.json` and one file per environment: `stage.postman_environment.json`, ..., plus every `extraEnvironmentFiles` file |
+| `insomnia` | the export file itself (it holds its environments) |
 
-Any `secondaryAttachments` file (a live-populated environment) goes into the
-environments item under its fixed `name` (and, for Bruno, into the collection's
-import zip, see publishing.md step 1). The Bruno environments are thus in both
-items; the environments item keeps one file per environment so changes per
-environment show up in its history and can be compared by variable name.
-A Bruno collection zip published before this (without `environments/`) is
-simply replaced by the import zip on the next upload; mention "environments now
-included" in its `Changes` line. Upload copies from the run folder, never
-the repo files themselves: put the files above into `<run folder>/publish/` first
-(from the folder the run used as the repo root).
+Upload the files from `<run folder>/.publish/` (publishing.md, "Staging"), never
+the repo files themselves. A Bruno zip published before environments were
+included is simply replaced; mention "environments now included" in its
+`Changes` line.
 
 **Notes and tags, every upload.** Replace the item's notes with just when it was
 updated and what this upload changed, nothing else:
@@ -137,7 +130,7 @@ single quotes. `op.sh read` and `files[].name` use the plain name.
 
 ## Upload (publishing.md step 5)
 
-In one shell command, for each part going to 1Password:
+In one shell command:
 
 1. Read the version again (`op.sh item get`); if it differs from the one shown in the
    summary, stop and ask again.
@@ -153,18 +146,17 @@ In one shell command, for each part going to 1Password:
 
 ## Download (ticket mode, publishing.md "Downloading the published collection")
 
-1. `op.sh item get` for `collectionItem`: note `id`, `version` and the file name.
-2. `op.sh read` the collection file. Postman/Insomnia: into
-   `<run folder>/published-collection/<collectionPath>/<file name>`. Bruno: into
-   `<run folder>/published-base.zip`, then extract as publishing.md says.
-3. When environments go to 1Password, `op.sh read` each of the environments item's
-   `files[].name` into `<run folder>/published-environments/environments/`.
-4. Record `target: "1password"`, `vault`, `item`, `id` and `version` for each part
-   in `published-base.json`.
+1. `op.sh item get` for `item`: note `id`, `version` and `files[].name`.
+2. `op.sh read` each file. Bruno: the zip into `<run folder>/published-base.zip`,
+   then extract as publishing.md says. Postman/Insomnia: the collection file into
+   `<run folder>/published-collection/<collectionPath>/`, each environment file
+   into `<run folder>/published-collection/<collectionPath>/environments/`.
+3. Record `target: "1password"`, `vault`, `item`, `id` and `version` in
+   `published-base.json`.
 
 ## Report
 
-Name the vault, each item and its new version (e.g. "Emtethal Postman Collection,
+Name the vault, the item and its new version (e.g. "Emtethal Postman Collection,
 vault Takamol-Compliance, version 4 → 5") and the files in it, and how to get
 them: the 1Password app (the item's History shows every version) or
 `op.sh read "op://<vault>/<item>/<file>"`.

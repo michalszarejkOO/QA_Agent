@@ -21,8 +21,8 @@ It also creates `~/.claude/environments/` (global, never committed to any repo),
 index of products, plus `environments/` in this repo as a convenience link to it,
 removes product links there whose project folder is gone, and installs the
 1Password CLI (`op`) with Homebrew if a product needs it and it's missing. `op` is
-required once you test an API and publish its collection or environments (which
-hold tokens) to 1Password, the default `configure-project` suggests; setups for
+required once you test an API and publish its collection with its environments
+(which hold tokens) to 1Password, the default `configure-project` suggests; setups for
 UI testing only don't need it. Turn on its sign-in once in the 1Password app (Settings > Developer >
 Integrate with 1Password CLI); you always approve access yourself, Claude never
 handles the password.
@@ -130,7 +130,7 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
 - `skills/configure-project/` — interactive setup wizard for a new clone: asks which
   Atlassian MCP connectors are authorized and for which sites, then asks about each
   product (ticket prefixes, working directory, repo path, web/mobile UI and/or API collection,
-  credentials, where collections and environments are published) and writes the resulting
+  credentials, where the collection goes: 1Password, local, both, or Confluence) and writes the resulting
   `environments/*.json` files. Never edits any other skill or agent file — config
   only.
 - `agents/qa-tester.md` — the subagent that performs QA on a live application based

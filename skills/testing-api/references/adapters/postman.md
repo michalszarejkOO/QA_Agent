@@ -29,29 +29,26 @@ one.
 
 ## Export
 
-Postman collections are already plain JSON, so "export" just means zipping them
-for re-import into the desktop app, the collection and its environments
-separately:
+Postman collections are already plain JSON, so the **package** is just the files
+themselves: the `*.postman_collection.json` and each environment file, which
+Postman imports as they are. They go to 1Password and/or the local folder flat,
+without a zip (see [publishing.md](../publishing.md), "The four targets"). Only
+`target: "confluence"` needs a zip, of the collection without environments:
 
 ```
-./scripts/export-collection.sh <repo_root> <dest_zip_path> <collectionPath> postman [collection|environments]
+./scripts/export-collection.sh <repo_root> <dest_zip_path> <collectionPath> postman collection
 ```
 
 Point `collectionPath` at the directory containing both the `*.postman_collection.json`
-file and the `environments/` folder. The default part, `collection`, leaves out
-`environments/`, `.env` files and a `.git` folder;
-`environments` zips `environments/` on its own, since environment files can hold
-live tokens (see [publishing.md](../publishing.md)). Publishing to 1Password skips
-the zips: the collection file and each environment file go up as they are, so
-people can import them straight into Postman (see
-[onepassword-publish.md](../onepassword-publish.md), "What goes into each item").
+file and the `environments/` folder. Part `collection` leaves out `environments/`,
+`.env` files and a `.git` folder, since environment files can hold live tokens.
 
 ## Syncing with the Postman app before publishing
 
 People work in the Postman app; the repo files only change when someone exports
 them. Importing a file copies it into Postman and nothing links the two after
 that. So before publishing (publishing.md step 1), bring the repo up to date with
-the app, or the zip carries a stale collection and environments.
+the app, or the package carries a stale collection and environments.
 
 **What Postman lets out.** Only a variable's **Shared Value** leaves the app,
 through an export or the API. A value kept only in the **Value** column, or in the

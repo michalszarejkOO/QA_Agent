@@ -43,26 +43,25 @@ exists to close that gap without weakening the generic rule for every other requ
 ## Step 2: Resolve the latest collection
 
 The committed-to-git collection is not necessarily the latest one. Prior sessions
-may have built out collection cases and published them (to 1Password or the
-product's Confluence tracker page) without committing to git — this has happened
+may have built out collection cases and published them (to 1Password, the local
+folder or the product's Confluence tracker page) without committing to git — this has happened
 before and left richer, more current coverage sitting only in the published copy
 while the repo checkout lagged behind.
 
-1. If the product's config names a target for the collection (`api.publish`, or an
-   `api.confluence` block in an older config), download it as
+1. If the product's config names a target (`api.publish.target`), download it as
    [publishing.md](./publishing.md), "Downloading the published collection",
    describes. It is extracted into `<run folder>/published-collection/`, and the
    version it came from is recorded in `<run folder>/published-base.json`. On
    Confluence the download runs through `discover`, so it won't show up as a tool
    of its own: don't take its absence from the tool list as "no download tool".
-   With `collection: "none"` and `api.publish.localFolder` holding a copy, that
-   copy is the latest version and is extracted the same way.
+   With `target: "local"`, the package in `api.publish.localFolder` is the latest
+   version and is extracted the same way.
 2. Diff `<run folder>/published-collection/<collectionPath>` against the local
    repo checkout's collection directory, and tell the user about any divergence
    (what's newer where) rather than picking one silently.
 3. From here on, `<run folder>/published-collection/` is the collection, used as
    the repo root: Step 3 adds cases there, Step 4 runs the suite from there, and
-   the export (SKILL.md step 3) zips it. The repo checkout is only for comparing;
+   the package (SKILL.md step 3) is built from it. The repo checkout is only for comparing;
    don't add the generated cases to it unless the user asks.
 4. If the download isn't possible (no Atlassian server for that site in this
    session, `op` not installed or not signed in, or the page, file or item is
@@ -153,19 +152,19 @@ After the report is written:
    default) asks with "always"/"never" options that are saved, `never` leaves the
    drafts. Nothing is posted or filed on any other basis.
 
-## Step 6: Always offer to publish the collection and environments
+## Step 6: Always publish the package
 
-Whenever the product has a publish target, finish by preparing an upload of:
+Whenever the product has a publish target, finish by building the package from
+`<run folder>/published-collection/`: the collection, including any cases
+generated in Step 3, with its environments, including a refreshed live-populated
+file if the product uses one (`publish.envRefreshProcedure`). For Confluence also the
+collection zip without environments and the `lastUpdate` panel with the current
+commit/branch.
 
-- The collection from `<run folder>/published-collection/`, including any cases
-  generated in Step 3.
-- The environments, including a refreshed live-populated file if the product uses
-  one (`envRefreshProcedure`).
-- On Confluence, the `lastUpdate` panel with the current commit/branch.
-
-Then follow [publishing.md](./publishing.md): scan what goes to Confluence, check
-whether the published version is still the one recorded in `published-base.json`,
-show the user what goes where, and publish only after their yes. If someone
+Then follow [publishing.md](./publishing.md): write the local folder (no
+question), scan what goes to Confluence, check whether the published version is
+still the one recorded in `published-base.json`, show the user what goes where,
+and upload only after their yes. If someone
 published a newer version during the run, say so and offer to take it as the base
 and run again.
 

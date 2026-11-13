@@ -1,21 +1,21 @@
 # Publishing to a Confluence tracker page
 
-Load this from [publishing.md](./publishing.md) when `api.publish.collection` or
-`api.publish.environments` is `confluence` (or, in a config without
-`api.publish`, when it has an `api.confluence` block). That file decides what goes
-where, runs the secret scan, compares versions and asks the user; this one is how
-to do it on Confluence. **Nothing is written to Confluence before the user's yes
+Load this from [publishing.md](./publishing.md) when `api.publish.target` is
+`confluence`. That file decides what goes where, runs the secret scan, compares
+versions and asks the user; this one is how to do it on Confluence. **Nothing is written to Confluence before the user's yes
 in publishing.md, step 4.**
 
 **Scope, precisely:** this page is a `lastUpdate` tracker plus file attachments,
 never inline collection content. Do not dump request files, YAML, or any
-collection content into the page *body*. The parts going to Confluence are attached
-as files: the collection zip (`attachmentName`) when the collection goes here, and
-the environments zip plus every `secondaryAttachments` file when the environments
-go here. The body only records *when* the collection was last touched, plus one
-file card per attachment. Every file goes up only after `scan_secrets.py` came back
-clean or the user said it's safe (publishing.md, "Secrets never go where others can
+collection content into the page *body*. One file is attached: the collection zip
+(`attachmentName`), **without environments** (they hold tokens and stay in the
+package in `localFolder`, publishing.md, "The four targets"). The body only
+records *when* the collection was last touched, plus the file card. The zip goes
+up only after `scan_secrets.py` came back clean or the user said it's safe (publishing.md, "Secrets never go where others can
 read them").
+An attachment from an older setup (e.g. a live-populated environment file) may
+still be on the page: leave it, don't add a card for it, and tell the user once
+that removing it is their call in Confluence.
 
 ## Identifiers come from the product's config
 
@@ -29,8 +29,6 @@ never hardcode a site/space/page for a specific product in this file:
 | `parentId` | Target folder's page id (the collection's landing folder) |
 | `pageTitle` | Fixed page title, so re-runs update instead of duplicating |
 | `attachmentName` | Fixed zip filename, so re-runs create a new version instead of duplicating |
-| `secondaryAttachments` | (Optional) array of `{ "name": "<fixed filename>", "sourcePath": "<path relative to repo root>" }` — environment files such as a live-populated one. They travel with the environments: attached here as their own file cards when `publish.environments` is `confluence`, added to the environments zip under their `name` when it is `1password`, left out when it is `none`. `sourcePath` is read from the folder this run used as the repo root: the worktree in generic mode, `<run folder>/published-collection/` in ticket mode. |
-| `envRefreshProcedure` | (Optional) filename of a product-specific markdown doc, kept next to the product's config in `<workDir>/config/` (found as SKILL.md step 0 says), describing how to mint/refresh live values into a `secondaryAttachments` file before export. Load and follow it verbatim, in full, before exporting (publishing.md step 1), whichever target the environments go to. Not every product needs this — most `secondaryAttachments` (if any) are static files with no live-minting step. |
 
 ## Which server to use
 
@@ -85,19 +83,13 @@ page first, then upload, then update the body.
    `<div data-type="panel-info"><p>lastUpdate: pending</p></div>` (no file cards
    yet: there is no file to point to). Note the returned page ID.
 
-4. **Upload the files** going to Confluence: the collection zip (`attachmentName`)
-   and/or the environments zip and every `secondaryAttachments` entry
-   (`sourcePath` under the run's repo root → fixed `name`). First list the page's
-   files once more: if a version changed since step 2, someone uploaded in
-   between, so stop and ask again. For each file:
+4. **Upload the collection zip** (`attachmentName`). First list the page's
+   files once more: if its version changed since step 2, someone uploaded in
+   between, so stop and ask again. Then:
    - Confluence names the attachment after the **local filename**, so the file
-     must already carry its fixed name. The exported zip does
-     (`<run folder>/<attachmentName>`); copy any other file into the run folder
-     under its fixed `name` first and delete the copy after the upload. Never
-     stage files inside the QA_Agent repo or the product repo: a file with live
-     tokens left there gets committed.
-   - A `secondaryAttachments` source with live values must not be one git would
-     commit: see publishing.md, "Secrets never go where others can read them".
+     must already carry its fixed name. The staged zip does
+     (`<run folder>/.publish/<attachmentName>`). Never stage files inside the
+     QA_Agent repo or the product repo.
    - `createConfluenceAttachment` with `contentId` (the page ID), `localFilePath`
      (absolute path), `fileSize` (bytes) and `comment` (current commit SHA and
      branch). It uploads nothing itself: it returns an `uploadCommand`, a `curl`
@@ -113,7 +105,7 @@ page first, then upload, then update the body.
      downloading it returns the new content. No need to delete the old one first
      (checked 2026-10-27 on a test page with three uploads of one filename).
 
-5. **Generate the page body**, listing every file uploaded in step 4:
+5. **Generate the page body**, with the file uploaded in step 4:
    ```
    python3 <path-to-this-skill>/scripts/build_confluence_body.py <repo_root> <page_id> <file name>=<fileId> [<file name>=<fileId> ...]
    ```
@@ -129,14 +121,14 @@ page first, then upload, then update the body.
 
 7. **Verify**, rather than trusting a success response:
    - `getConfluenceContent` (`detail: "full"`): the body has one
-     `data-type="media"` element per uploaded file. Confluence rewrites each card's
+     `data-type="media"` element for the zip. Confluence rewrites each card's
      `data-id` to the newest version's `fileId`, so match on count, not on the ids
      you sent.
-   - `listConfluenceAttachments` for the page: each fixed filename appears once,
+   - `listConfluenceAttachments` for the page: `attachmentName` appears once,
      with the version number the upload returned.
 
 8. **Report the page's URL** (`baseUrl` + `webUrl` from the update response) back to
-   the user so they can open it directly, and name every attached file and its new
+   the user so they can open it directly, and name the attached file and its new
    version — don't just say "published."
 
 ## Downloading the current collection

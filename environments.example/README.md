@@ -35,8 +35,9 @@ a product that has both a UI and an API collection).
   Insomnia), repo path, default environment, the environment ticket mode
   proposes for confirmation (`ticketEnvironment`, optional; without it, it asks),
   known stateful-case caveats, where updated collections and environments are
-  published (`publish`: 1Password, Confluence or nowhere, per part, plus an
-  optional `localFolder` that keeps a copy of the latest export), and
+  published (`publish.target`: `1password`, `local`, `1password+local` or
+  `confluence`; the collection always travels with its environments as one
+  package, except to Confluence, which gets the collection alone), and
   (optionally) a Confluence tracker page to publish results to.
 
 - [`evidence.example.json`](./evidence.example.json) — one file for all products,
@@ -87,7 +88,7 @@ on demand:
 <workDir>/
   qa-evidence/<ticket or session>/<YYYY-MM-DD>-<web|ios|android>/   testing-apps videos and bug screenshots
   api-runs/<ticket or YYYY-MM-DD-<env>>/                            testing-api CLI results, report, exported collection and environments zips
-    published-collection/                                           the published collection (1Password or Confluence); ticket runs work from here
+    published-collection/                                           the published collection (1Password, local folder or Confluence); ticket runs work from here
   worktrees/<ticket or branch>/                                     fresh checkouts for mobile builds and branch API runs
   reports/                                                          create-quality-metrics HTML dashboards
 ```

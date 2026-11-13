@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 VALID_CLIENTS = {"bruno", "postman", "insomnia"}
-VALID_PUBLISH_TARGETS = {"1password", "confluence", "none"}
+VALID_PUBLISH_TARGETS = {"1password", "local", "1password+local", "confluence"}
 VALID_EVIDENCE_MODES = {"auto", "ask"}
 VALID_INSTALL_MODES = {"clean", "update", "installed"}
 VALID_CHECK_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
@@ -107,25 +107,31 @@ def check_product_config(data, connectors):
                 if not isinstance(pub, dict):
                     errors.append("'api.publish' must be an object")
                 else:
-                    targets = []
-                    for part in ("collection", "environments"):
-                        t = pub.get(part, "none")
-                        if t not in VALID_PUBLISH_TARGETS:
-                            errors.append(f"'api.publish.{part}' must be one of {sorted(VALID_PUBLISH_TARGETS)}, got {t!r}")
-                        targets.append(t)
-                    if "1password" in targets:
-                        op = pub.get("onePassword")
-                        if not isinstance(op, dict):
-                            errors.append("'api.publish.onePassword' is required when a part goes to 1password")
-                        else:
-                            for f in ("vault", "collectionItem", "environmentsItem"):
-                                part = "collection" if f == "collectionItem" else "environments" if f == "environmentsItem" else None
-                                if part and pub.get(part) != "1password":
-                                    continue
-                                if not isinstance(op.get(f), str) or not op[f].strip():
-                                    errors.append(f"'api.publish.onePassword.{f}' is required when a part goes to 1password")
-                    if "confluence" in targets and "confluence" not in api:
-                        errors.append("'api.confluence' is required when api.publish sends a part to confluence")
+                    target = pub.get("target")
+                    if "target" not in pub and ("collection" in pub or "environments" in pub):
+                        errors.append("'api.publish' has the old shape (collection/environments per part); "
+                                      "run 'update QA_Agent' (migration 010) to move it to 'target'")
+                    elif target not in VALID_PUBLISH_TARGETS:
+                        errors.append(f"'api.publish.target' must be one of {sorted(VALID_PUBLISH_TARGETS)}, got {target!r}")
+                    else:
+                        if "1password" in target:
+                            op = pub.get("onePassword")
+                            if not isinstance(op, dict):
+                                errors.append(f"'api.publish.onePassword' is required for target {target!r}")
+                            else:
+                                for f in ("vault", "item"):
+                                    if not isinstance(op.get(f), str) or not op[f].strip():
+                                        errors.append(f"'api.publish.onePassword.{f}' is required for target {target!r}")
+                        if target in ("local", "1password+local", "confluence") and "localFolder" not in pub:
+                            errors.append(f"'api.publish.localFolder' is required for target {target!r}")
+                        if target == "confluence":
+                            if "confluence" not in api:
+                                errors.append("'api.confluence' is required for target 'confluence'")
+                            if client == "insomnia":
+                                errors.append("target 'confluence' isn't available for insomnia: its export holds the environments")
+                    for extra in pub.get("extraEnvironmentFiles", []):
+                        if not isinstance(extra, dict) or "name" not in extra or "sourcePath" not in extra:
+                            errors.append("each 'api.publish.extraEnvironmentFiles[]' entry needs 'name' and 'sourcePath'")
                     lf = pub.get("localFolder")
                     if lf is not None:
                         if not isinstance(lf, str) or not lf.strip():
@@ -145,11 +151,9 @@ def check_product_config(data, connectors):
                     for f in ("cloudId", "spaceKey", "parentId", "pageTitle", "attachmentName"):
                         if f not in conf:
                             errors.append(f"'api.confluence.{f}' is required when 'api.confluence' is present")
-                    for extra in conf.get("secondaryAttachments", []):
-                        if not isinstance(extra, dict) or "name" not in extra or "sourcePath" not in extra:
-                            errors.append(
-                                "each 'api.confluence.secondaryAttachments[]' entry needs 'name' and 'sourcePath'"
-                            )
+                    if "secondaryAttachments" in conf or "envRefreshProcedure" in conf:
+                        errors.append("'api.confluence.secondaryAttachments' / 'envRefreshProcedure' moved to "
+                                      "'api.publish.extraEnvironmentFiles' / 'envRefreshProcedure'; run 'update QA_Agent' (migration 010)")
 
     if has_surfaces:
         surfaces = data["surfaces"]

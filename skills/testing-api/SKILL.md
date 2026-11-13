@@ -1,6 +1,6 @@
 ---
 name: testing-api
-description: Runs a repo's API test collection — Bruno, Postman, or Insomnia — against a live environment via that tool's CLI, exports the collection to a zip the user can download and import into the matching desktop app, optionally, after the user approves, publishes the collection and its environments to the product's configured place (1Password, or a Confluence tracker page for a secret-free collection) after checking that nobody published a newer version, and produces a Jira-comment-ready pass/fail report. When the request is driven by a specific backend Jira ticket, switches to ticket mode: reads the ticket and its PR/branch for context, tests on the environment the user names or confirms (never a silently assumed one), generates full scenario coverage (not just happy path) for any endpoint the collection doesn't already cover, treats the published collection as the latest version, and closes by showing a Jira comment and any bug reports in the chat, then posting/filing them only as the user's saved preferences allow (ask by default, never silently). Use when asked to test the API, run the API test suite, verify endpoints are working, export/re-export an API collection, QA/test a backend Jira ticket, or produce a test summary/report for a Jira ticket, for any product with a Bruno, Postman, or Insomnia collection — not tied to one repo or one tool.
+description: Runs a repo's API test collection — Bruno, Postman, or Insomnia — against a live environment via that tool's CLI, exports the collection with its environments as one package the user imports into the matching desktop app and writes it where the product is configured (1Password, a local folder, both, or Confluence for the collection without environments plus the package locally), uploading only after the user approves and after checking that nobody published a newer version, and produces a Jira-comment-ready pass/fail report. When the request is driven by a specific backend Jira ticket, switches to ticket mode: reads the ticket and its PR/branch for context, tests on the environment the user names or confirms (never a silently assumed one), generates full scenario coverage (not just happy path) for any endpoint the collection doesn't already cover, treats the published collection as the latest version, and closes by showing a Jira comment and any bug reports in the chat, then posting/filing them only as the user's saved preferences allow (ask by default, never silently). Use when asked to test the API, run the API test suite, verify endpoints are working, export/re-export an API collection, QA/test a backend Jira ticket, or produce a test summary/report for a Jira ticket, for any product with a Bruno, Postman, or Insomnia collection — not tied to one repo or one tool.
 when_to_use: "Trigger on: 'przetestuj API', 'uruchom testy API/bruno/postman/insomnia', 'sprawdź czy endpointy działają', 'wygeneruj raport testów do jiry', 'wyeksportuj kolekcję', 'run the API tests', 'test this endpoint', 'export the collection', 'test/QA this backend ticket', a Jira ticket URL/ID for a [BE] or backend-only ticket, or any request to verify API behavior using a committed collection. Product-agnostic: resolve which repo/collection/tool via the environments config (see step 0) or ask if it can't be resolved."
 ---
 
@@ -30,13 +30,13 @@ and identical regardless of which tool a given repo happens to use.
 - Requires network access to the target environment and whatever runtime the
   resolved adapter needs (`npx`/Node for Bruno and Postman; Node for Insomnia's
   `inso`). If either is unavailable, say so — do not fabricate a result.
-- The publish step (step 8) only runs for a product whose config names a target
-  for the collection or its environments (`api.publish`, or in an older config
-  without it, an `api.confluence` block; see
-  [publishing.md](./references/publishing.md)). No target, no publish step —
-  just export, run, and report. In ticket mode, whenever a target exists, always
-  reach this step and ask (see rule table) — never silently skip it there. It
-  publishes only after the user says yes.
+- The publish step (step 8) writes the package to the product's
+  `api.publish.target` (`1password`, `local`, `1password+local` or `confluence`;
+  see [publishing.md](./references/publishing.md)). No target (or an old config
+  shape), no publish step: the package stays in the run folder as the file to
+  import. In ticket mode, whenever a target exists, always reach this step — never
+  silently skip it there. Uploads to 1Password or Confluence happen only after the
+  user says yes; the local folder is written without asking.
 
 ## Non-negotiable rules
 
@@ -48,9 +48,9 @@ and identical regardless of which tool a given repo happens to use.
 | MUST | Before writing the report, check the resolved adapter's per-case caveat convention for any test case that looks order- or state-dependent, including any product-specific caveats listed in that product's config (`api.knownCaveats`), and surface real caveats in the report's Notes — a clean pass/fail count that hides a non-representative test is misleading evidence. |
 | MUST | In generic (non-ticket) mode, when an executed folder/endpoint has only happy-path cases — no validation/boundary, auth, or business-logic cases — flag that gap in the report's Notes. This is an observation only: never generate cases to fill it in generic mode, that stays scoped to ticket mode's step T2. A clean "N/N PASS" next to thin coverage is misleading on its own. |
 | MUST | Use the report template in [report-template.md](./references/report-template.md) verbatim in structure — same headers, same table shape — so reports stay consistent across runs, products, and tools. Fill it from the actual CLI output, never from memory of a previous run. |
-| MUST | If (and only if) the product's config names a publish target, end the run by offering to publish the freshly exported collection and/or environments there, per [publishing.md](./references/publishing.md) — this is independent of test results, not conditional on them passing. When `api.publish.localFolder` is set, also copy the latest export there (publishing.md, "Local copy"); that copy stays on this machine, so it needs no question. |
+| MUST | If (and only if) the product's config names a publish target, end the run by writing the freshly built package there, per [publishing.md](./references/publishing.md) — independent of test results, not conditional on them passing. The local folder (`local`, `1password+local`, `confluence`) is written without a question; 1Password and Confluence wait for the user's yes. Make one file to import per product, in its target; leave no other copies (the run folder's `.publish/` is deleted after the upload). |
 | NEVER | Upload anything (to 1Password or Confluence: create an item or page, upload a file, update a body) before the user says yes to the summary in [publishing.md](./references/publishing.md), step 4: what goes where, from which folder, and which version each replaces. Before that summary, always read the published version and compare it with this run's base; a newer or different version is named there, never overwritten silently. No answer, or anything but a clear yes, means don't publish. |
-| NEVER | Put environments, `.env` files or anything with live tokens into the collection zip that goes to Confluence (the `full` import zip with environments is only for local import and 1Password; `.env` files stay out of every zip), or upload any file to Confluence that `scan_secrets.py` flags without the user's yes after seeing its list. Environments with secrets belong in 1Password. Never print a secret's value. |
+| NEVER | Put environments, `.env` files or anything with live tokens on Confluence: only the collection without environments goes there, and the package (collection + environments) goes to 1Password or the local folder; `.env` files stay out of every zip. Never upload a file to Confluence that `scan_secrets.py` flags without the user's yes after seeing its list. Never print a secret's value. |
 | NEVER | Put collection content (request bodies, raw exports, file dumps) inline in a Confluence page body. It stays a `lastUpdate` marker; the zip is attached as a file, not pasted as text. |
 | NEVER | Commit, push, or otherwise persist results/exports into git without being asked. The zip export is a local artifact, not a repo change. |
 | NEVER | Claim a PASS the CLI did not report. If any request fails, show the failing assertion(s) and response detail, and reflect the real status in the report. |
@@ -65,11 +65,11 @@ rules above:
 | --- | --- |
 | MUST | Test only on an environment the user named or confirmed for this run. If the message names one, use it. Otherwise, before running anything, ask: with `api.ticketEnvironment` set, propose it and ask to confirm (the change may be deployed somewhere else); without it, ask which environment to use. Offer the collection's environment names and, if known, where the ticket's PR was merged. Never assume `demo`, never fall back to `api.defaultEnvironment` silently, never pick a `local`-type one unless the user names it. See [ticket-driven-testing.md](./references/ticket-driven-testing.md), Step 4. |
 | MUST | Before doing anything else, read the ticket's acceptance criteria and its linked PR's diff (or the merged feature branch found by the repo's ticket-key naming convention, if no PR is linked) so the scenarios generated actually target what changed. |
-| MUST | Treat the published collection (1Password or Confluence, per `api.publish.collection`; with `collection: "none"`, the copy in `api.publish.localFolder` when there is one) as the latest version, not whatever's in the local repo checkout — diff the two and flag any divergence to the user rather than silently picking one. Download it into `<run folder>/published-collection/` and work only from there: new cases, the run and the export all use that folder. |
+| MUST | Treat the published collection (per `api.publish.target`: the 1Password item, the package in `localFolder`, or the Confluence zip with the environments from `localFolder`) as the latest version, not whatever's in the local repo checkout — diff the two and flag any divergence to the user rather than silently picking one. Download it into `<run folder>/published-collection/` and work only from there: new cases, the run and the export all use that folder. |
 | MUST | Generate full scenario coverage for the ticket's endpoint(s) before executing anything, if the resolved collection doesn't already have it: happy path(s), validation/boundary cases, auth cases (missing/invalid/wrong-role token), and business-logic edge cases — not just the happy path. Follow the resolved adapter's existing naming/`docs:`/assertion conventions. |
 | MUST | After the report, always prepare a Jira-comment-ready block and explicitly ask the user whether to post it to the ticket now or just keep it as copy-pasteable text — never post it automatically. |
 | MUST | If any bug, scope mismatch, or discrepancy is found, draft a bug report (Title / Steps to reproduce / Expected / Actual) for each and explicitly ask the user whether to file it on the ticket or just keep it as a copy-pasteable draft — never file it automatically. |
-| MUST | Always finish by offering to publish the (possibly extended) collection and the refreshed environments to their targets, whenever the product has one — never skipped in ticket mode, not conditional on results. The upload itself still waits for the version check and the user's yes (rules above). |
+| MUST | Always finish by writing the (possibly extended) collection with the refreshed environments to the product's target, whenever it has one — never skipped in ticket mode, not conditional on results. The upload itself still waits for the version check and the user's yes (rules above). |
 
 ## Keeping the user informed
 
@@ -80,7 +80,7 @@ collection, generating new cases, exporting, running the suite, publishing. Say 
 End every run with a point-list summary, after the report and drafts:
 
 - **Done:** each thing completed (cases generated, suite run with pass/fail
-  counts, export paths, what was published where, with its new version).
+  counts, the file to import and where it is, what was published where, with its new version).
 - **Not done / skipped:** each step that wasn't done, with its reason (no
   publish target, environment unreachable, user chose not to post or
   publish, and so on). If nothing was skipped, write "Nothing skipped."
@@ -100,9 +100,9 @@ End every run with a point-list summary, after the report and drafts:
 | [adapters/postman.md](./references/adapters/postman.md) | `api.client` is `"postman"` | Collection/environment JSON shape, per-request description convention, Newman export/run commands, syncing the repo files with the Postman app (Postman MCP) before publishing, which variable values leave the app |
 | [adapters/insomnia.md](./references/adapters/insomnia.md) | `api.client` is `"insomnia"` | Export shape, `inso` CLI invocation — flag as less battle-tested, confirm syntax against `inso --help` before relying on it |
 | [report-template.md](./references/report-template.md) | Generating the final report, every run | The exact Jira-comment template (header fields, results table, coverage bullets, Notes) |
-| [publishing.md](./references/publishing.md) | Step 8 whenever the config names a publish target; downloading the published collection in ticket mode | What goes where (`api.publish`), the secret scan, comparing with the published version, the summary and question before any upload, `published-collection/` and `published-base.json` |
-| [onepassword-publish.md](./references/onepassword-publish.md) | A part's target is `1password` | Vault and item names from config, `op` sign-in (the user's, one approval per stage), Secure Note items with the files as they are (a zip only for a Bruno collection), notes and tags, reading the version, uploading, downloading |
-| [confluence-publish.md](./references/confluence-publish.md) | A part's target is `confluence` | Reading cloudId/space/folder/title/attachment name from config, reading attachment versions, the generate-body script, find-or-create/update procedure, attaching the files, downloading the attached collection |
+| [publishing.md](./references/publishing.md) | Step 8 whenever the config names a publish target; downloading the published collection in ticket mode | The four targets (`api.publish.target`), the package, staging in `.publish/`, the local folder, the secret scan, comparing with the published version, the summary and question before any upload, `published-collection/` and `published-base.json` |
+| [onepassword-publish.md](./references/onepassword-publish.md) | `api.publish.target` is `1password` or `1password+local` | Vault and item name from config, `op` sign-in (the user's, one approval per stage), one Secure Note item per product with the package's files as they are (a zip only for a Bruno collection), notes and tags, reading the version, uploading, downloading |
+| [confluence-publish.md](./references/confluence-publish.md) | `api.publish.target` is `confluence` | Reading cloudId/space/folder/title/attachment name from config, reading attachment versions, the generate-body script, find-or-create/update procedure, attaching the files, downloading the attached collection |
 | [target-branch.md](../testing-apps/references/target-branch.md) | Generic mode, when the request names no environment | Picking the staging-like branch (user, config `targetBranch`, detection from merged MRs), mapping it to a collection environment, using recent MRs as context |
 | [ticket-driven-testing.md](./references/ticket-driven-testing.md) | The request names or links a specific backend ticket | Gathering ticket/PR context, resolving the published collection as the latest one, generating full scenario coverage, and the ask-before-posting comment/bug-report step |
 
@@ -126,35 +126,33 @@ End every run with a point-list summary, after the report and drafts:
      "knownCaveats": ["<free text about stateful/order-dependent cases, if any>"],
      "knownCaveatsFile": "<filename of a fuller markdown doc kept next to this config in <workDir>/config/ — use this instead of/alongside knownCaveats when the caveat list is long enough that keeping it as JSON strings risks drifting out of sync with a richer doc>",
      "publish": {
-       "collection": "1password | confluence | none",
-       "environments": "1password | confluence | none",
+       "target": "1password | local | 1password+local | confluence",
        "onePassword": {
          "vault": "<vault>",
-         "collectionItem": "<Product> <Client> Collection",
-         "environmentsItem": "<Product> <Client> Environments"
+         "item": "<Product> <Client> Collection"
        },
-       "localFolder": "<optional: folder on this machine for a copy of the latest export, e.g. <workDir>/collection>"
+       "localFolder": "<folder on this machine that holds the package, e.g. <workDir>/collection; required for local, 1password+local and confluence>",
+       "extraEnvironmentFiles": [
+         { "name": "<fixed filename>", "sourcePath": "<path relative to repo root>" }
+       ],
+       "envRefreshProcedure": "<optional filename of a doc kept next to this config in <workDir>/config/, describing how to mint live values into an extraEnvironmentFiles file before export>"
      },
      "confluence": {
        "cloudId": "<site>",
        "spaceKey": "<space>",
        "parentId": "<folder page id>",
        "pageTitle": "<fixed page title>",
-       "attachmentName": "<fixed zip filename>",
-       "secondaryAttachments": [
-         { "name": "<fixed filename>", "sourcePath": "<path relative to repo root>" }
-       ],
-       "envRefreshProcedure": "<optional filename of a doc kept next to this config in <workDir>/config/, describing how to mint live values into a secondaryAttachments file before export>"
+       "attachmentName": "<fixed zip filename>"
      }
    }
    ```
-   `publish` says where the collection and its environments are published, and
-   `publish.localFolder` where a copy of the latest export is kept on this
-   machine, see [publishing.md](./references/publishing.md); `confluence` is needed only when a
-   part goes there. `knownCaveatsFile`, `secondaryAttachments`, and
-   `envRefreshProcedure` are all optional — most products need none of them. See
-   [confluence-publish.md](./references/confluence-publish.md) for how the last two
-   are used, and [adapters/bruno.md](./references/adapters/bruno.md) for
+   `publish.target` says where the package (collection + environments) goes, see
+   [publishing.md](./references/publishing.md), "The four targets"; `confluence`
+   is needed only for `target: "confluence"`. `knownCaveatsFile`,
+   `publish.extraEnvironmentFiles` and `publish.envRefreshProcedure` are all
+   optional — most products need none of them. See
+   [publishing.md](./references/publishing.md), "The four targets", for how the last
+   two are used, and [adapters/bruno.md](./references/adapters/bruno.md) for
    `knownCaveatsFile`.
    **Finding `knownCaveatsFile` and `envRefreshProcedure`:** they belong next to
    the product's real config file, in `<workDir>/config/` (the file in
@@ -172,8 +170,8 @@ End every run with a point-list summary, after the report and drafts:
      step 8 is skipped. Create this run's **run folder**,
      `<workDir>/api-runs/<ticket key, or YYYY-MM-DD-<env>>/` (top-level
      `workDir` from the same file; add `-2`, `-3`, ... if it exists). Every file
-     this run writes goes there: the exported zip, the CLI's result file, and the
-     report. Nothing goes to `/tmp` or `~/Desktop`. If the file has
+     this run writes goes there: the CLI's result file, the staging folder
+     `.publish/` (deleted after publishing) and the report. Nothing goes to `/tmp` or `~/Desktop`. If the file has
      `projectSkill`, read `<projectSkill>/SKILL.md` now (unless this session
      already loaded it) and follow its rules for this product's collection and
      test data.
@@ -204,19 +202,15 @@ End every run with a point-list summary, after the report and drafts:
    environment (see "Additional rules — ticket mode only") and the ticket's own
    branch.
 
-3. **Export the collection**, per the adapter's export instructions, so the user has
-   a file they can re-import into the matching desktop app. Always pass a
-   destination inside the run folder, under the fixed name
-   [publishing.md](./references/publishing.md) step 1 gives, so repeat exports
-   keep the same predictable name. The collection zip never holds environments or
-   `.env` files; export the environments as their own zip (part `environments`)
-   too. For a Bruno collection with an `environments/` folder, also export the
-   **import zip** (part `full`, `<run folder>/<product>-<client>-import.zip`):
-   collection and environments in one file, which Bruno imports with everything.
-   Name it as the file to import in the run summary; it holds live values, so it
-   stays local or goes to 1Password, never to Confluence. Export from the folder
-   the run uses: the worktree from step 2 in generic mode, or `<run folder>/published-collection/` (as the repo root) in ticket
-   mode. Report the output paths and which folder they came from.
+3. **Build the package**, the collection with its environments, as
+   [publishing.md](./references/publishing.md), "Staging", describes: in
+   `<run folder>/.publish/`, from the folder the run uses (the worktree from step 2
+   in generic mode, or `<run folder>/published-collection/` as the repo root in
+   ticket mode), under its fixed name, with the adapter's export command. For
+   `target: "confluence"` also build the collection zip without environments.
+   Nothing else is exported. Step 8 moves the package to its target; without a
+   target it stays in the run folder (`.publish/` renamed away, publishing.md,
+   "Staging"). Name the file to import, and where it ends up, in the run summary.
 
 4. **Check the target environment.** For a local-style environment, verify the
    expected localhost URL is reachable (e.g. a short `curl -o /dev/null -w
@@ -249,17 +243,18 @@ End every run with a point-list summary, after the report and drafts:
    `results.saveReportFiles` is `true` in the preferences
    ([preferences.md](../configure-project/references/preferences.md)).
 
-8. **If the product's config names a publish target**, offer to publish there,
+8. **If the product's config names a publish target**, write the package there,
    following [publishing.md](./references/publishing.md) exactly (identifiers come
-   from config, not from this file). It scans whatever goes to Confluence for
-   secrets, compares the export with what is published now, and then follows the
+   from config, not from this file). The local folder is written without asking.
+   For 1Password and Confluence it scans what goes to Confluence for secrets,
+   compares the export with what is published now, and then follows the
    `publishCollection` preference: asks (`ask`), publishes when the check is
-   clean (`auto`), or keeps the zips local (`never`). Nothing is uploaded without
+   clean (`auto`), or uploads nothing (`never`). Nothing is uploaded without
    a yes or `auto`. A generic run exports `origin/<branch>`
    without uncommitted changes, so the published collection may be newer than this
    one: that check is what keeps it from being overwritten. Offer this regardless
-   of whether the tests passed. Give the user the link or the vault and item when
-   done. If there's no target, skip this step silently — don't ask the user to set
+   of whether the tests passed. Give the user the link, the vault and item, or the
+   local path when done. If there's no target, skip this step silently — don't ask the user to set
    one up unless they bring it up.
 
 ## Procedure — ticket mode
@@ -277,13 +272,13 @@ T0. **Gather ticket context first.** Fetch the ticket (verify the right Jira
     this repo's ticket-key branch convention and diff that instead.
 
 T1. **Resolve the product/client/config** as step 0 above, then resolve the *latest*
-    collection specifically: download the published one (wherever
-    `api.publish.collection` points) into `<run folder>/published-collection/` and
+    collection specifically: download the published one (from where
+    `api.publish.target` says) into `<run folder>/published-collection/` and
     diff it against the local repo checkout (download as
     [publishing.md](./references/publishing.md), "Downloading the published
     collection", describes). That folder is the
     collection for everything below: new cases go there, the suite runs from it and
-    the export zips it. Tell the user about any divergence rather than silently
+    the package is built from it. Tell the user about any divergence rather than silently
     picking one. If
     the download isn't possible this session, say so plainly and fall
     back to the local repo checkout, flagging that as a limitation, not a silent
@@ -314,9 +309,10 @@ T5. **If any bug, scope mismatch, or discrepancy surfaced**, draft a bug report 
     the chat.
 
 T6. **Always finish with the publish step** (generic step 8) whenever the product
-    has a publish target — the (possibly extended) collection from
-    `<run folder>/published-collection/` and the refreshed environments. Never skip
-    it in ticket mode, whatever the results; publish after the version check in
+    has a publish target — the package built from
+    `<run folder>/published-collection/` with the refreshed environments. Never skip
+    it in ticket mode, whatever the results; the local folder is written right
+    away, 1Password and Confluence after the version check in
     [publishing.md](./references/publishing.md), step 4, on the user's yes or
     with `publishCollection: auto`. Ask T4/T5's and this step's questions
     together, so the user answers once at the end.
