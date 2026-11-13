@@ -140,8 +140,10 @@ is for the same collection that gets exported and published.
 
 After the report is written:
 
-1. Prepare the Jira-comment-ready block (per `report-template.md`) and show it in
-   the chat in full.
+1. Prepare the Jira-comment-ready block per `report-template.md`, "Ticket comment
+   (ticket mode)": a short business summary, what was tested, the request and
+   response for each changed endpoint (always the happy path, never skipped), and
+   any issues. Show it in the chat in full.
 2. For each bug, scope mismatch, or discrepancy found (including a collection gap
    discovered along the way, e.g. "this endpoint's success path can't currently be
    reached"), draft a bug report (Title / Steps to reproduce / Expected / Actual)
@@ -150,7 +152,10 @@ After the report is written:
    [preferences.md](../../configure-project/references/preferences.md), "After a
    test run", describes: `auto` posts/files and gives the link, `ask` (the
    default) asks with "always"/"never" options that are saved, `never` leaves the
-   drafts. Nothing is posted or filed on any other basis.
+   drafts. Nothing is posted or filed on any other basis. Files that go with a
+   comment or a bug go up as
+   `~/.claude/skills/creating-jira-tickets/references/jira-attachments.md` says,
+   from where the run saved them.
 
 ## Step 6: Always publish the package
 

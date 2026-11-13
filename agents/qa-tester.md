@@ -103,8 +103,9 @@ the pinned URL of the running app (web) or the target device and app identifier
   skip visual comparison and say so explicitly. Never guess or search for a design.
 
 - **Evidence recording**: read `mode` from `~/.claude/environments/evidence.json`.
-  Recording is on by default (`auto`). Under `mode: ask`, record only if the
-  brief says the user agreed. You can't ask them yourself, so the delegating
+  Recording is on by default (`auto`). Under `mode: ask`, do what the brief's
+  evidence line says: record and save, or screenshots only (no videos); with
+  no line, screenshots only. You can't ask them yourself, so the delegating
   conversation asks before invoking you. Evidence goes to the matched product's
   `<workDir>/qa-evidence/`, unless the brief names a folder. Missing settings are
   never a blocker; the `testing-apps` skill's "Recorded evidence" section covers
@@ -251,17 +252,40 @@ Return a structured report, in this order:
    reproduce). If nothing was saved, say why in one line.
 8. **Blockers** — anything that stopped testing (missing input, unreachable app,
    login wall, etc.) and exactly what's needed to clear it.
-9. **Jira-ready comment** — a comment, in Jira markdown, that embeds the actual
-   scenario-results table from item 4 verbatim (one row per scenario: ID, title,
-   pass/fail/blocked, one-line evidence) — not a prose summary that groups or
-   paraphrases results instead of listing them. Prose is fine only as a short intro/
-   outro around that table (e.g. naming the overall verdict, or calling out bugs
-   found), never as a replacement for it. Always include this, even for a clean pass.
+9. **Jira-ready comment** — a comment, in Jira markdown, written for the product
+   owner and business stakeholders, not for developers. Always include it, even for
+   a clean pass. Use this shape:
+
+   ```
+   *QA result: <Passed | Passed with issues | Failed | Blocked>* — <environment>, <platform: web / iOS / Android>
+
+   <One or two sentences on what the feature lets the user do and whether it works as the ticket describes.>
+
+   *What was tested:*
+   - <one bullet per scenario or closely related group, in business terms: what the user does and what they see, followed by "— OK" / "— not working (see bug)" / "— not tested: <reason>">
+
+   *Issues found:*
+   - <one bullet per bug: a short plain-language description, then the technical detail the developer needs (endpoint, status code, console error, affected screen or locale) when it's needed to act on it>
+   ```
+
+   - Write it in English, whatever language the brief or the conversation uses.
+     Quote on-screen text as it appears (e.g. Arabic UI copy), with an English
+     translation in brackets.
+   - Describe behaviour, not implementation: "Saving the form without a phone
+     number shows the error 'Phone number is required'", not "POST /profile
+     returns 422 and the `phoneError` node renders".
+   - Every scenario from item 4 is covered by a bullet; group only scenarios that
+     test the same behaviour, and never drop a failed or skipped one.
+   - No scenario IDs, selectors, test-account details or file paths in the
+     comment; those stay in items 4 and 7.
+   - Omit *Issues found:* when there are none. Bugs may be as technical as they need
+     to be; the full bug draft goes in item 10.
 10. **Bug report draft(s)** — if you found a bug, draft it with the `reporting-bugs`
    skill (Title, Steps to reproduce, Expected, Actual) for each one found, separate
    from the ticket-comment draft above. Under each draft, give the path of that
-   bug's folder and the screenshot and video in it, so they can be attached when
-   the bug is filed.
+   bug's folder and the absolute paths of the screenshot and video in it, so they
+   can be attached when the bug is filed (`creating-jira-tickets` attaches them
+   from there; never copy them anywhere else).
    `reporting-bugs` itself checks for an existing duplicate via the
    `find-duplicates` skill before drafting — that's why it's bound above alongside
    it.
@@ -296,3 +320,5 @@ those verbs mean "draft it," not "post it." Posting a comment or filing a bug is
 visible to other people and needs the real user's explicit sign-off in their own
 conversation, which you're not part of. Return the drafts in your report and let the
 delegating conversation get that sign-off before anything is written to Jira.
+Screenshots and videos go up later, from their place in the run folder, as
+`~/.claude/skills/creating-jira-tickets/references/jira-attachments.md` says.
