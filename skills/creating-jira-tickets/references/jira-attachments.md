@@ -1,9 +1,9 @@
 # Attaching files to Jira (screenshots, videos)
 
 How to put a run's evidence (a bug folder's `screenshot.png` and `video.mp4`, a
-checkpoint screenshot) on a Jira issue or into a comment. It runs only after the
-user's yes to filing the bug or posting the comment, in the conversation that has
-that yes.
+checkpoint screenshot) on a Jira issue or into a comment. It runs only when the bug
+is filed or the comment posted, after the user's yes or because `fileBugs` /
+`postJiraComment` is `auto`, and `attachEvidence` allows it (ask, or `auto`).
 
 ## Rules
 
@@ -30,10 +30,28 @@ One file per call; repeat for each file. Report each attached file by name.
 
 ## A screenshot inside a comment
 
-Do phase 1 and the `uploadCommand` only, then pass the `fileId` (with the
-collection the result names) to `addOrEditJiraIssueComment` as its
-`inlineFileId`, which puts the image at the end of the comment. Don't also run
-phase 2 for the same file, or it shows up twice.
+Screenshots go into the comment body, not only as attachments; videos are
+attached to the issue as above.
+
+1. For each image: phase 1 and its `uploadCommand` only. Note the `fileId`
+   and the collection the result gives.
+2. In the comment's HTML body (`writing-jira-comments`, `contentFormat:
+   "html"`), put each image right where it belongs, with a caption:
+
+   ```html
+   <figure data-type="media-single" data-layout="center" data-width="60" data-width-type="percentage"><div data-type="media" data-media-type="file" data-id="FILE_ID" data-collection="COLLECTION" data-alt="screenshot.png"></div><figcaption>What the screenshot shows</figcaption></figure>
+   ```
+
+   `FILE_ID` and `COLLECTION` come only from the upload result, never made
+   up. Keep `data-width-type="percentage"`, or Jira shows the image tiny.
+3. Post it with `addOrEditJiraIssueComment`.
+
+Fallback when a `<figure>` is rejected: post the same body without it and
+pass `inlineFileId` / `inlineFileCollection` (in display order) instead; the
+images then land at the end of the comment, so number their captions in the
+body. Don't also run phase 2 for the same file, or it shows up twice. When
+editing a comment that has images, fetch it as HTML and write it back with
+every `<figure>` it had.
 
 ## When it doesn't work
 

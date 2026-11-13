@@ -8,6 +8,10 @@
 #          (a request may carry that word) but named on stderr, for the secret scan.
 #   part = environments: only <collection_subpath>/environments/, zipped on its
 #          own so it can go somewhere other than the collection (see publishing.md).
+#   part = full: the collection WITH its environments/ folder, one zip that the
+#          desktop app imports with everything (as exports were before the split).
+#          Still without .env files and .git. It holds live values, so it is for
+#          the user's own import and for 1Password only, never for Confluence.
 set -euo pipefail
 
 REPO_ROOT="${1:?repo_root is required}"
@@ -38,8 +42,12 @@ case "$PART" in
     fi
     (cd "$REPO_ROOT" && zip -rq "$DEST" "$COLLECTION_SUBPATH/environments" -x "*.DS_Store")
     ;;
+  full)
+    (cd "$REPO_ROOT" && zip -rq "$DEST" "$COLLECTION_SUBPATH" \
+      -x "*.DS_Store" ".git/*" "*/.git/*" "*/.env" "*/.env.*" ".env" ".env.*")
+    ;;
   *)
-    echo "part must be 'collection' or 'environments', got '$PART'" >&2
+    echo "part must be 'collection', 'environments' or 'full', got '$PART'" >&2
     exit 1
     ;;
 esac

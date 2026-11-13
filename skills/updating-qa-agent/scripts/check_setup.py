@@ -33,7 +33,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 CLAUDE_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude"))
 ENV_DIR = CLAUDE_DIR / "environments"
-META = {"atlassian-connectors.json", "evidence.json", "postman.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
+META = {"atlassian-connectors.json", "evidence.json", "postman.json", "qa-agent-migrations.json",
+        "qa-agent-updates.json", "qa-agent-preferences.json"}
 SCRIPTS = REPO / "skills" / "updating-qa-agent" / "scripts"
 WRAPPER = CLAUDE_DIR / "skills" / "testing-apps" / "scripts" / "playwright-mcp.sh"
 
@@ -66,7 +67,7 @@ def pending_migrations():
     return run(sys.executable, "-I", SCRIPTS / "migrations.py", "pending").stdout.split()
 
 
-COMPANION_FIELDS = ("knownCaveatsFile", "confluence.envRefreshProcedure")
+COMPANION_FIELDS = ("knownCaveatsFile", "publish.envRefreshProcedure", "confluence.envRefreshProcedure")
 
 
 def collection_environments(api):
@@ -308,7 +309,7 @@ def check_product(r, path, servers):
         (f"surfaces.{n}.repo", s.get("repo")) for n, s in (data.get("surfaces") or {}).items() if isinstance(s, dict)
     ] + [(f"repos.{n}", v if isinstance(v, str) else (v or {}).get("repoLocalPath")) for n, v in (data.get("repos") or {}).items()] + [
         ("api.repo", (data.get("api") or {}).get("repo")),
-        ("api.localCopy", (data.get("api") or {}).get("localCopy")),
+        ("api.publish.apiCollectionsFolder", ((data.get("api") or {}).get("publish") or {}).get("apiCollectionsFolder")),
     ]:
         if p and not Path(p).expanduser().exists():
             missing.append(f"{label} ({p})")
@@ -440,11 +441,12 @@ def check_tools(r, any_mobile, any_web):
 
 
 def uses_onepassword(products):
-    """Products whose API collection or environments are published to 1Password."""
+    """Products whose API collection is published to 1Password (api.publish.target, or the
+    old per-part shape before migration 016)."""
     names = []
     for p in products:
         pub = ((load(p) or {}).get("api") or {}).get("publish") or {}
-        if isinstance(pub, dict) and "1password" in (pub.get("collection"), pub.get("environments")):
+        if isinstance(pub, dict) and ("1password" in str(pub.get("target", "")) or "1password" in (pub.get("collection"), pub.get("environments"))):
             names.append(p.name)
     return names
 

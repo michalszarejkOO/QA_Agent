@@ -29,6 +29,13 @@ MIGRATIONS_DIR = Path(__file__).resolve().parent.parent / "migrations"
 NAME = re.compile(r"^(\d{3})-[a-z0-9-]+\.md$")
 REQUIRED_SECTIONS = ("## What changed", "## Is it needed", "## Fresh install", "## Steps", "## Verify")
 FRESH_INSTALL = re.compile(r"^## Fresh install\s*\n+\s*`(ask|skip)`", re.MULTILINE)
+FRESH_INSTALL_SECTION = re.compile(r"^## Fresh install\s*\n(.*?)(?=^## |\Z)", re.MULTILINE | re.DOTALL)
+# A `skip` is right in two cases only, and its line has to say which:
+# configure-project already asks the same question (name the step), or a new
+# machine is already in the new state, so nothing is asked at all.
+MENTIONS_A_QUESTION = re.compile(r"\b(asks?|asked|offers?)\b")
+NAMES_A_STEP = re.compile(r"\bstep \d+[a-z]?\b")
+SAYS_NOTHING_TO_ASK = re.compile(r"\b(has no|from the start|already)\b")
 
 
 def state_path():
@@ -59,6 +66,25 @@ def fresh_install_mode(migration_id):
     return match.group(1) if match else None
 
 
+def skip_reason_problem(section):
+    """Why a `skip` line doesn't explain itself, or None when it does.
+
+    `skip` means a new user never sees this migration. That is fine when
+    configure-project asks the same question (then the line names that step,
+    so a reader can check it) or when a fresh install has nothing to change.
+    Anything else would leave new users without the setting.
+    """
+    if MENTIONS_A_QUESTION.search(section):
+        if NAMES_A_STEP.search(section):
+            return None
+        return ("says configure-project asks the same thing but names no step; "
+                "add it, e.g. '(product-config.md step 5)'")
+    if SAYS_NOTHING_TO_ASK.search(section):
+        return None
+    return ("must name the configure-project step that asks the same question, "
+            "or say a fresh install has nothing to change; otherwise use `ask`")
+
+
 def lint():
     errors = []
     files = sorted(MIGRATIONS_DIR.glob("*.md"))
@@ -75,6 +101,10 @@ def lint():
                 errors.append(f"{p.name}: missing section '{section}'")
         if "## Fresh install" in text and not FRESH_INSTALL.search(text):
             errors.append(f"{p.name}: '## Fresh install' must start with `ask` or `skip`")
+        elif fresh_install_mode(p.stem) == "skip":
+            problem = skip_reason_problem(FRESH_INSTALL_SECTION.search(text).group(1))
+            if problem:
+                errors.append(f"{p.name}: '## Fresh install' `skip` {problem}")
     if numbers != list(range(1, len(numbers) + 1)):
         errors.append(f"numbers must run 001, 002, ... without gaps; found {numbers}")
     return errors

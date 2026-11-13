@@ -13,8 +13,9 @@ into `~/.claude/skills/`. So everything about a product (config, project skill,
 evidence, run output) lives in its own folder and goes away with it. Deleting
 a project folder leaves a dangling link: the validator reports it and
 `./setup.sh` removes it. Only the shared files, `atlassian-connectors.json`,
-`evidence.json`, `qa-agent-updates.json`, `postman.json` and
-`qa-agent-migrations.json`, are real files in `~/.claude/environments/`.
+`evidence.json`, `qa-agent-updates.json`, `postman.json`,
+`qa-agent-preferences.json` and `qa-agent-migrations.json`, are real files in
+`~/.claude/environments/`.
 
 Run `./setup.sh` first, then add products with the `configure-project` skill (or by
 hand: write `<workDir>/config/<product>-<env>.json` and symlink it into
@@ -35,7 +36,9 @@ a product that has both a UI and an API collection).
   published), default environment, the environment ticket mode
   proposes for confirmation (`ticketEnvironment`, optional; without it, it asks),
   known stateful-case caveats, where updated collections and environments are
-  published (`publish`: 1Password, Confluence or nowhere, per part), and
+  published (`publish.target`: `1password`, `local`, `1password+local` or
+  `confluence`; the collection always travels with its environments as one
+  package, except to Confluence, which gets the collection alone), and
   (optionally) a Confluence tracker page to publish results to.
 
 - [`evidence.example.json`](./evidence.example.json) — one file for all products,
@@ -70,6 +73,18 @@ a product that has both a UI and an API collection).
   through `skills/testing-api/scripts/postman-mcp-headers.sh` each time it
   connects to the Postman MCP server, so the key never sits on disk and the
   server's tools never load into the main conversation. Migration 010 writes it.
+- [`qa-agent-preferences.example.json`](./qa-agent-preferences.example.json) — one
+  file for this machine, saved as `environments/qa-agent-preferences.json`. Per
+  action (`confirmTicketEnvironment`, `publishCollection`, `postJiraComment`,
+  `fileBugs`, `attachEvidence`, `updateProjectSkill`): `ask` (the default),
+  `auto` or `never`, in `actions` for every product and in `products.<product>`
+  for one. `results.saveReportFiles` also saves reports as files (they're always
+  shown in the chat); test cases and notes for a ticket are always saved to its
+  folder. `claudePermissions` lists the Claude Code tool groups to allow.
+  Written by `configure-project`, and by
+  `skills/configure-project/scripts/preferences.py set` whenever the user
+  answers "always" or "never"; see
+  `skills/configure-project/references/preferences.md`.
 
 ## Working directory (`workDir`)
 
@@ -86,18 +101,18 @@ on demand:
     <YYYY-MM-DD>-<web|ios|android>/                                 testing-apps videos and bug screenshots
     notes/                                                          SQL, notes, scripts, data and API calls made to prepare this ticket's tests
   api-runs/<ticket or YYYY-MM-DD-<env>>/                            testing-api CLI results, report, exported collection and environments zips
-    published-collection/                                           the published collection (1Password or Confluence); ticket runs work from here
+    published-collection/                                           the published collection (1Password, local folder or Confluence); ticket runs work from here
   worktrees/<ticket or branch>/                                     fresh checkouts for mobile builds and branch API runs
   reports/                                                          create-quality-metrics HTML dashboards
   notes/, scripts/                                                  only what applies to the whole product, not to one ticket
 ```
 
-A product with no collection repo the team shares keeps no local copy at all:
-it leaves out `api.repo`, and every `testing-api` run downloads the collection
-from where it is published (1Password or Confluence) into its run folder.
-`api.localCopy` (e.g. `<workDir>/postman/`) then holds the latest published
-version as a backup: runs update it after each publish and start from it when
-the target can't be read. Code
+A product with no collection repo the team shares leaves out `api.repo`, and
+every `testing-api` run downloads the collection from where it is published
+into its run folder. `api.publish.apiCollectionsFolder` (e.g.
+`<workDir>/postman/`, required for the targets `local`, `1password+local` and
+`confluence`) holds the last published package: runs update it after each
+publish and start from it when the target can't be read. Code
 repos may live inside `workDir` or anywhere else; `repo` fields keep pointing at
 them either way.
 

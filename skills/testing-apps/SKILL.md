@@ -49,7 +49,9 @@ execution itself.
    save (`mode: ask` in evidence.json; two options, videos and screenshots or
    screenshots only, as "Recorded evidence" in
    [execution.md](./references/execution.md) lists them), and the product's working
-   directory and project skill if the target matches a product config. Resolve
+   directory and project skill if the target matches a product config. For a
+   physical phone with no connection order saved, ask Wi-Fi or cable first and
+   save it (mobile adapter, "Physical devices: cable or Wi-Fi"). Resolve
    the branch and environment per "Standalone runs: which branch and
    environment" below. Run the setup check:
    `python3 -I "$(dirname "$(dirname "$(readlink ~/.claude/agents/qa-tester.md)")")/skills/updating-qa-agent/scripts/check_setup.py"`.
@@ -61,17 +63,28 @@ execution itself.
    this run only when the user asks for Opus, e.g. "puść na Opusie") with that brief and
    the instruction: "Load the testing-apps skill and follow it as a standalone
    run inside a subagent. You can't ask the user: if something the brief
-   doesn't answer blocks the run, stop and report what's needed." For a
+   doesn't answer blocks the run, stop and report what's needed. Post, file
+   or attach only what the user's preferences set to `auto`; keep the rest as
+   drafts." For a
    ticket-driven check, start `qa-tester` instead. If you are that subagent,
    this section is already done: go straight to references/execution.md.
-3. **Relay its summary** (Done / Not done / Proposed additions) and the saved
-   files. If it stopped on a question, ask the user and continue the same
+3. **Relay its summary** (what it did by itself with links, Done / Not done,
+   Proposed additions) and the saved files. If it stopped on a question, ask the user and continue the same
    subagent with the answer rather than starting a new one.
 
 Stay in the main conversation only for a single look, about three browser or
 device actions at most (open one page, take one screenshot, read one value),
 or when the user explicitly asks to drive it here. Even then, read
 references/execution.md before the first action.
+
+Then, in a standalone run, show the scenario-results table, a Jira comment draft
+(when the run was for a ticket) and every bug draft (via `reporting-bugs`) in
+full in the chat, and finish as the `configure-project` skill's
+[references/preferences.md](../configure-project/references/preferences.md),
+"After a test run", describes. Don't put the results into a report file (`.md`,
+`.html`) instead of the chat; save a copy only when `results.saveReportFiles` is
+`true`. This holds for long and regression runs too: split a very long result
+into several messages rather than moving it to a file.
 
 ## Standalone runs: which branch and environment
 

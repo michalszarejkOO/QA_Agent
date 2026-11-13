@@ -229,17 +229,41 @@ Return a structured report, in this order:
    the product that the project skill doesn't say yet (an environment quirk, a
    test-data limit, a login detail, a misleading status code): one bullet each,
    worded as the line to add, with the section of `<projectSkill>/SKILL.md` it
-   belongs in. The main conversation adds them after the user's yes; never
-   suggest them for this agent or the generic skills. No project skill → list
+   belongs in. The main conversation handles them last, per the
+   `updateProjectSkill` preference; never suggest them for this agent or the generic skills. No project skill → list
    them anyway and say so. "None" if nothing new came up.
 
 State a clean pass plainly. Never invent findings to seem thorough.
 
+**Everything above goes in the report itself, as text.** Items 9 and 10 are
+always written out in full in the report, never replaced by "see results.md" or
+any other file: the conversation that started you shows them to the user and
+posts or files them from there. Don't write report, scenario or bug-draft files
+(`REPORT-*.md`, `results.md`, HTML) unless `results.saveReportFiles` is `true`
+in `~/.claude/environments/qa-agent-preferences.json`; evidence files
+(screenshots, videos, logs) are saved as usual. End the report with this line,
+for the conversation that started you: "Next: show what was done by itself
+and items 9-10 in the chat and finish per configure-project/references/preferences.md, 'After a test run'."
+
 ## Writing to Jira
 
-Draft only. Never call `addOrEditJiraIssueComment`, `createJiraIssue` or any
-other Jira write tool, even when the brief says "report" or "file": you can't
-ask the user, and the main conversation posts after their yes. It attaches
-screenshots and videos as
-`~/.claude/skills/creating-jira-tickets/references/jira-attachments.md` says,
-so give each file's absolute path in the run folder.
+You can't ask the user, so the user's preferences decide
+(`~/.claude/skills/configure-project/references/preferences.md`). Read each
+with `python3 -I ~/.claude/skills/configure-project/scripts/preferences.py get
+<action> --product <product>`:
+
+- `postJiraComment: auto` → post the item 9 comment on the tested ticket
+  (`writing-jira-comments`, "Showing and posting").
+- `fileBugs: auto` → file each item 10 bug with `creating-jira-tickets`, after
+  `find-duplicates`.
+- `attachEvidence: auto` → attach that comment's or bug's screenshots and
+  videos as `~/.claude/skills/creating-jira-tickets/references/jira-attachments.md`
+  says.
+
+Anything at `ask` or `never`, and any `auto` action a safety stop in
+preferences.md blocks (a likely duplicate, a required field with no value, a
+blocked or doubtful result, the brief saying to ask), stays a draft: the main
+conversation asks after you return. Never transition a ticket or edit its
+fields, whatever the brief says. Start the report with what you did by itself,
+with links (comment, bug keys), or "Nothing posted or filed". For every draft,
+give each evidence file's absolute path in the run folder.

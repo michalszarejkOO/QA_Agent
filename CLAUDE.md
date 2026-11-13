@@ -51,6 +51,19 @@ any wording ("set up QA_Agent", "zrób setup", "skonfiguruj", "update QA_Agent",
   - Not affected (skill text only) → no migration.
   - End the commit message with `Migration: NNN-<slug>` or
     `Migration: none (<why>)`.
+- **Ask whether a new behaviour should be configurable.** Before writing a new
+  feature or changing what a skill or agent does, ask the user whether it should
+  be a choice in the setup wizard (`configure-project`, and the migration for
+  existing installs), and propose the options it would offer, each with one
+  plain sentence on what it means (e.g. `ask` / `auto` / `never`, or where
+  output goes). Build it only after the user picks; if they say no, hard-code
+  the agreed behaviour.
+  Every setting reaches both kinds of users: existing installs through the
+  migration, new users through configure-project. A migration may use
+  "Fresh install: skip" only when configure-project already asks the same
+  question (name that step in the migration's "Fresh install" line) or when
+  it only fixes older installs (say a fresh install has nothing to change).
+  Otherwise use "ask". `migrations.py lint` checks this.
 - **Skill descriptions.** Claude Code lists every skill with its
   `description` and `when_to_use` and cuts the pair after 1536 characters, so
   keep the two together within 1536. Don't use `<` or `>` in them (the listing

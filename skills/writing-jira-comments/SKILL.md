@@ -1,14 +1,16 @@
 ---
 name: writing-jira-comments
-description: Drafts the QA comment for a Jira ticket after testing, in the product's own format when its project skill has a "Jira QA comment" section, otherwise in the default template (a "Checked with status" heading with one status, a list of what was checked, or only the problems when it failed, no tables). Only drafts; posting happens in the main conversation after the user's yes. Used by qa-tester and testing-api, and on request.
+description: Drafts the QA comment for a Jira ticket after testing, in the product's own format when its project skill has a "Jira QA comment" section, otherwise in a default template - for an API ticket "QA result" with the endpoint, request and response of the happy path, for a UI ticket "Checked with status" with a list of what was checked, or only the problems when it failed. Posting follows the user's postJiraComment preference (auto, ask or never). Used by qa-tester, testing-api and retesting-tickets, and on request.
 when_to_use: "Trigger on: 'napisz komentarz do jiry', 'draft the QA comment for IP-123', 'przygotuj komentarz z testów', the comment step of qa-tester or testing-api ticket mode. Do NOT trigger for bug reports (reporting-bugs) or for posting a ready comment."
 ---
 
 # Writing the Jira QA comment
 
 Turns the results of a test run into the comment that goes on the tested Jira
-ticket. It only drafts: whoever posts it (the main conversation, never a
-subagent) shows the draft and asks the user first.
+ticket. It only drafts. Whoever posts it follows the `postJiraComment`
+preference ([preferences.md](../configure-project/references/preferences.md),
+"After a test run"): `auto` posts it (a subagent too), `ask` (the default)
+shows the draft and asks in the main conversation, `never` leaves the draft.
 
 ## Which format
 
@@ -18,10 +20,19 @@ subagent) shows the draft and asks the user first.
 2. **The section describes a format, or points to a file that does:** use
    that format. Where it is silent on something, the rules below apply.
 3. **No section, no project skill, or the section says "Default template":**
-   use [references/default-template.md](references/default-template.md).
+   for a ticket tested through the API, use
+   [references/api-comment-default-template.md](references/api-comment-default-template.md);
+   for a ticket tested in the app (web or mobile), use
+   [references/ui-comment-default-template.md](references/ui-comment-default-template.md).
+   A ticket tested both ways gets the UI template with the API template's
+   "Endpoint, request and response" part added.
+4. **API ticket, project format:** when the section says API comments always
+   include the endpoint, request and response (the setup wizard's question),
+   add them as the API template's "Endpoint, request and response" part shows,
+   where the format places them or at the end. Otherwise follow the format.
 
-Say in one line which one you used ("Format: Emtethal project skill" or
-"Format: default template").
+Say in one line which one you used ("Format: Emtethal project skill",
+"Format: default API template" or "Format: default UI template").
 
 ## Rules for every comment
 
@@ -50,12 +61,14 @@ Say in one line which one you used ("Format: Emtethal project skill" or
 - In the chat, show the draft as plain text: no blockquote (`>`) or other line
   prefix, because the terminal draws a bar on each line and it gets copied
   with the text.
-- Posting (main conversation, after the user's yes): `addOrEditJiraIssueComment`
-  with the body in ADF, built as the template's "ADF" section shows. Before
-  editing an existing comment, fetch its current ADF so the user's own edits
-  are kept.
-- Screenshots and videos go up as
+- Posting (per `postJiraComment`): `addOrEditJiraIssueComment` with
+  `contentFormat: "html"` and the body built as the template's "HTML" section
+  shows (a project format is posted as HTML too). Before editing an existing
+  comment, fetch it with `listJiraIssueComments` and `responseContentFormat:
+  "html"` and keep everything in it, so the user's edits and images stay.
+- Screenshots go into the comment body, where they belong (a `<figure>`), not
+  only as attachments; videos are attached. Both go up as
   `~/.claude/skills/creating-jira-tickets/references/jira-attachments.md`
-  says: Atlassian's own server (`uploadAttachmentToJiraIssue`, `inlineFileId`
-  for an image in the comment), straight from the run folder. Never through
-  `mcp-atlassian`, never via a copy in another folder.
+  says: Atlassian's own server (`uploadAttachmentToJiraIssue`), straight from
+  the run folder. Never through `mcp-atlassian`, never via a copy in another
+  folder.

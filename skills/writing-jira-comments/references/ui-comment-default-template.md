@@ -1,7 +1,8 @@
-# Default QA comment template
+# Default QA comment template for a UI ticket
 
-Used when the product's project skill has no "Jira QA comment" section, or the
-section says "Default template".
+Used for a ticket tested in the app (web or mobile) when the product's project
+skill has no "Jira QA comment" section, or the section says "Default template".
+An API ticket uses [api-comment-default-template.md](api-comment-default-template.md).
 
 ## Short form (most tickets)
 
@@ -113,14 +114,16 @@ Checked with status: [PASSED]
 - Not checked: Arabic texts (translations not delivered yet)
 ```
 
-## ADF
+## HTML
 
-Build the body as ADF (`addOrEditJiraIssueComment`, `contentFormat: "adf"`):
+Post the body as HTML (`addOrEditJiraIssueComment` with `contentFormat:
+"html"`); Atlassian's server turns it into Jira's own format. The tool takes
+only markdown or HTML, and markdown drops status lozenges and images.
 
-- Heading: `{"type":"heading","attrs":{"level":3},"content":[{"type":"text","text":"Checked with status: "},{"type":"status","attrs":{"text":"PASSED","color":"green"}}]}`
-- Each list: `bulletList` of `listItem` > `paragraph`.
-- Each case title: a level 3 `heading`.
-- Steps / Expected / Result / Data: a `paragraph` each, label in `strong`.
-- Response bodies: `codeBlock` with `language: "json"`; log lines: `codeBlock` without a language.
-- Screenshots: a `mediaSingle` with the image uploaded per `jira-attachments.md` (`inlineFileId`); when the upload doesn't work, a line naming the file's full path to attach by hand.
-- Ticket links: `{"type":"inlineCard","attrs":{"url":"https://<site>/browse/ABC-124"}}`.
+- Heading: `<h3>Checked with status: <span data-type="status" data-color="green">PASSED</span></h3>`
+- Each list: `<ul><li><p>...</p></li></ul>`.
+- Each case title: `<h3>`.
+- Steps / Expected / Result / Data: a `<p>` each, label in `<strong>`.
+- Response bodies: `<pre><code class="language-json">...</code></pre>`; log lines: `<pre><code>...</code></pre>`.
+- Screenshots: a `<figure>` right where the image belongs, as `jira-attachments.md`, "A screenshot inside a comment", shows; when the upload doesn't work, a line naming the file's full path to attach by hand.
+- Ticket links: `<a href="https://<site>/browse/ABC-124" data-card-appearance="inline"></a>`.
