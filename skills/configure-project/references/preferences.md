@@ -69,6 +69,23 @@ lists everything.
 A subagent (`qa-tester`) can't ask. It never posts or files itself; the
 conversation that started it does, after it returns, following the next section.
 
+## Mobile devices: Wi-Fi or cable
+
+`mobile.connection` says how `testing-apps` reaches a physical iOS/Android
+device, in order of preference:
+
+| Value | Meaning |
+| --- | --- |
+| `["wifi", "usb"]` | Wi-Fi first; the cable only when no device is ready over Wi-Fi |
+| `["usb", "wifi"]` | Cable first; Wi-Fi only when no device is ready over the cable |
+| `["wifi"]` / `["usb"]` | Only that one |
+| not set | Any ready device, cable and Wi-Fi equal |
+
+Read or set it with `preferences.py connection [<order>]`. `testing-apps`
+applies it through `scripts/list_physical_devices.py --connect` (its `pick`
+line); see its `references/adapters/mobile.md`, "Physical devices: cable or
+Wi-Fi". Simulators and emulators don't use it.
+
 ## After a test run: drafts in the chat, then post or file
 
 This is the end of every ticket run, web, mobile or API (`qa-tester` via

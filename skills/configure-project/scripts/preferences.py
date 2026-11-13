@@ -12,6 +12,9 @@ Usage:
   preferences.py show                               every action, its value and where it comes from
   preferences.py permissions [--apply]              Claude Code allow rules for `claudePermissions`
   preferences.py actions                            the known actions and what each one does
+  preferences.py connection [wifi,usb|usb,wifi|wifi|usb]
+                                                    how physical mobile devices are reached: prints the
+                                                    order, or sets it (first choice, then the fallback)
 
 `set` without --product changes the default for every product; with --product
 it changes only that product. `permissions` without --apply only prints the
@@ -31,6 +34,7 @@ PREFS = ENV_DIR / "qa-agent-preferences.json"
 SETTINGS = CLAUDE_DIR / "settings.json"
 
 VALUES = ("ask", "auto", "never")
+TRANSPORTS = ("wifi", "usb")
 
 # action -> (default, what it does). Keep in step with references/preferences.md.
 ACTIONS = {
@@ -199,9 +203,24 @@ def main():
         res = prefs.get("results") or {}
         print(f"  results.saveReportFiles    {bool(res.get('saveReportFiles', False))}")
         print(f"  claudePermissions          {', '.join(prefs.get('claudePermissions') or []) or '(none)'}")
+        conn = (prefs.get("mobile") or {}).get("connection")
+        print(f"  mobile.connection          {' then '.join(conn) if conn else 'not set (any ready device)'}")
         return 0
     if cmd == "permissions":
         return cmd_permissions(prefs)
+    if cmd == "connection":
+        current = (prefs.get("mobile") or {}).get("connection")
+        if len(sys.argv) < 3:
+            print(",".join(current) if current else "not set (any ready device, cable and Wi-Fi equal)")
+            return 0
+        order = [x.strip() for x in sys.argv[2].split(",") if x.strip()]
+        if not order or any(x not in TRANSPORTS for x in order) or len(set(order)) != len(order):
+            sys.exit("usage: connection <wifi,usb | usb,wifi | wifi | usb>")
+        prefs.setdefault("mobile", {})["connection"] = order
+        save(PREFS, prefs)
+        print(f"mobile.connection: {','.join(current) if current else 'not set'} -> {','.join(order)} "
+              f"(saved in {PREFS})")
+        return 0
     print(__doc__)
     return 2
 

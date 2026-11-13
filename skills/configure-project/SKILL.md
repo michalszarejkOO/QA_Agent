@@ -118,6 +118,13 @@ repo's `skills/` or `agents/`.
    `scripts/preferences.py permissions --apply` if they picked any group, and
    say they can change any of it later by saying "zmień ustawienia QA_Agent" /
    "change my QA_Agent preferences".
+   If any product has a mobile surface (a `surfaces.*.platform`), also ask how
+   physical devices are reached (`mobile.connection`, see
+   [references/preferences.md](./references/preferences.md), "Mobile devices"):
+   Wi-Fi first with the cable as fallback (suggested), cable first with Wi-Fi as
+   fallback, Wi-Fi only, or cable only. Save it with
+   `scripts/preferences.py connection <order>`. Ask this even when the
+   preferences file already exists but has no `mobile.connection`.
 
 6. **Offer folder access from anywhere.** Ask whether Claude may read and write
    the working directories and repo path(s) just configured without asking, from

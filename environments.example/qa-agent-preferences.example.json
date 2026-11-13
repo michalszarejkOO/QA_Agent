@@ -1,5 +1,5 @@
 {
-  "notes": "QA_Agent preferences for this machine. ask: ask every time; auto: do it without asking; never: don't do it and don't ask (the draft is still shown). Docs: skills/configure-project/references/preferences.md.",
+  "notes": "QA_Agent preferences for this machine. ask: ask every time; auto: do it without asking; never: don't do it and don't ask (the draft is still shown). Docs: skills/configure-project/references/preferences.md. mobile.connection: how physical iOS/Android devices are reached, in order of preference (wifi, usb); the second is used only when no device is ready over the first; one entry means only that one.",
   "actions": {
     "confirmTicketEnvironment": "ask",
     "publishCollection": "ask",
@@ -12,6 +12,9 @@
     "<product>": {
       "postJiraComment": "auto"
     }
+  },
+  "mobile": {
+    "connection": ["wifi", "usb"]
   },
   "results": {
     "saveReportFiles": false

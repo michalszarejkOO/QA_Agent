@@ -287,6 +287,13 @@ def check_preferences_file(data):
     results = data.get("results", {})
     if not isinstance(results, dict) or not isinstance(results.get("saveReportFiles", False), bool):
         errors.append("'results.saveReportFiles' must be true or false")
+    mobile = data.get("mobile", {})
+    conn = mobile.get("connection") if isinstance(mobile, dict) else None
+    if not isinstance(mobile, dict):
+        errors.append("'mobile' must be an object")
+    elif conn is not None and (not isinstance(conn, list) or not conn
+                               or any(c not in ("wifi", "usb") for c in conn) or len(set(conn)) != len(conn)):
+        errors.append("'mobile.connection' must be [\"wifi\", \"usb\"], [\"usb\", \"wifi\"], [\"wifi\"] or [\"usb\"]")
     groups = data.get("claudePermissions", [])
     if not isinstance(groups, list) or any(g not in PERMISSION_GROUPS for g in groups):
         errors.append(f"'claudePermissions' must be a list of {sorted(PERMISSION_GROUPS)}")

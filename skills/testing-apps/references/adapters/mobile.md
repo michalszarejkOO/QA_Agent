@@ -46,9 +46,10 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
    back to the web adapter on a mobile target.
 2. Discover the target: `agent-device devices [--platform ios|android]` to pick a
    device/simulator, `agent-device apps --device "<name>"` to find the app's bundle id
-   if only its display name is known. For a **physical** device, connected by cable
-   or over Wi-Fi, also run `scripts/list_physical_devices.py` and pick only a row
-   with `state=ready`. See "Physical devices: cable or Wi-Fi" below.
+   if only its display name is known. For a **physical** device, run
+   `scripts/list_physical_devices.py --connect` and use the device its `pick` line
+   names, which follows the user's connection order (Wi-Fi or cable first). See
+   "Physical devices: cable or Wi-Fi" below.
    Then pick the install source per "Install source: distributed build by default"
    below (the installed TestFlight/Play/App Tester build unless the request asks
    for a local build), before opening the app.
@@ -75,15 +76,40 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
 ## Physical devices: cable or Wi-Fi
 
 A physical device can be attached by USB cable or over Wi-Fi (Android Wireless
-debugging, iOS "Connect via network"). Both count as connected. Don't ask the user
-to plug in a device that is already reachable over Wi-Fi.
+debugging, iOS "Connect via network").
+
+**Which one first: the user's connection order.** `mobile.connection` in
+`~/.claude/environments/qa-agent-preferences.json` lists them in order, e.g.
+`["wifi", "usb"]`: Wi-Fi first, the cable only when no device is ready over Wi-Fi.
+`["usb", "wifi"]` is the other way round; one entry means only that one. Read it
+with `python3 -I ~/.claude/skills/configure-project/scripts/preferences.py connection`.
+Not set: any ready device, cable and Wi-Fi equal (ask the user once, in the
+conversation that starts the run, and save the answer with `preferences.py
+connection <order>`; a subagent that can't ask uses any ready device and says the
+order isn't set).
+
+1. Run the discovery script with `--connect`. It first tries to bring Wi-Fi
+   devices back by itself (Android: `adb connect` for devices advertised over
+   mDNS; iOS: wakes the tunnel of each paired device), then lists every device and
+   prints one `pick <platform>: ...` line per platform, chosen by the order.
+2. Use the picked device. A pick marked `(fallback: ...)` means nothing was ready
+   over the first choice; log that in the run log and say it in the report.
+3. `none ready`: for Wi-Fi, ask the user to wake and unlock the device on the same
+   Wi-Fi as the Mac, then re-run the script; only when it still isn't ready over
+   Wi-Fi, and the order allows the cable, ask them to plug it in. With `usb`
+   first, ask for the cable first. A subagent that can't ask reports it as a
+   blocker with exactly that request.
+
+Never ask for the cable while the order puts Wi-Fi first and a device is ready
+over Wi-Fi, and never switch a device that is ready over the first choice to the
+second.
 
 `agent-device devices` alone can't tell you which devices are reachable. It lists
 every *paired* iPhone/iPad as `booted=true`, including ones that are asleep or off
 the network. Run the discovery script instead:
 
 ```
-python3 -I ../../scripts/list_physical_devices.py [--platform ios|android] [--connect]
+python3 -I ../../scripts/list_physical_devices.py [--platform ios|android] [--connect] [--prefer wifi,usb]
 ```
 
 It prints one row per physical device with its `id` (UDID or adb serial),
@@ -92,6 +118,7 @@ Android rows come from `adb devices -l` plus `adb mdns services`. Only a `ready`
 row can be tested. Every other state says what the user has to do. Pick by `id`:
 `--udid <udid>` on iOS, `--serial <serial>` on Android. Device names repeat (two
 "iPhone (Michał)"), an id doesn't. Log the transport in the run log.
+`--prefer` overrides the saved order for one call.
 
 **Android over Wi-Fi**
 
@@ -112,8 +139,10 @@ row can be tested. Every other state says what the user has to do. Pick by `id`:
 
 - Works for devices that `devicectl` lists (CoreDevice, iOS 17+). Install,
   uninstall, launch, logs and recording all go over the network.
-- `not-reachable` means the device is paired but has no live tunnel right now. Ask
-  the user to wake and unlock it and keep it on the same Wi-Fi as the Mac. Opening
+- `not-reachable` means the device is paired but has no live tunnel right now.
+  `--connect` already tried to wake it (`xcrun devicectl device info details
+  --device <devicectl id>`). If it is still not reachable, ask the user to wake
+  and unlock it and keep it on the same Wi-Fi as the Mac. Opening
   **Xcode > Window > Devices and Simulators** often brings the tunnel back. Then
   re-run the script.
 - A device that only `xctrace` sees (older iOS, XCTest backend) needs a cable.
