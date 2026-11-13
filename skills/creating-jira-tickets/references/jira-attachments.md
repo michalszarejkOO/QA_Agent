@@ -30,10 +30,22 @@ One file per call; repeat for each file. Report each attached file by name.
 
 ## A screenshot inside a comment
 
-Do phase 1 and the `uploadCommand` only, then pass the `fileId` (with the
-collection the result names) to `addOrEditJiraIssueComment` as its
-`inlineFileId`, which puts the image at the end of the comment. Don't also run
-phase 2 for the same file, or it shows up twice.
+Screenshots go into the comment body, not only as attachments; videos are
+attached to the issue as above.
+
+1. For each image, in the order it should appear: phase 1 and its
+   `uploadCommand` only. Note the `fileId`, the collection and the file name
+   the result gives.
+2. Post the comment with `addOrEditJiraIssueComment`, the body as
+   `writing-jira-comments` builds it (ADF), and per image, in display order:
+   `inlineFileId`, `inlineFileCollection` and `inlineFileName`. If the tool
+   rejects inline files with an ADF body, send the same content with
+   `contentFormat: "html"`.
+3. The images land at the end of the comment, so number their captions in
+   the body ("Screenshot 1: ...", "Screenshot 2: ...") and refer to them by
+   number.
+
+Don't also run phase 2 for the same file, or it shows up twice.
 
 ## When it doesn't work
 

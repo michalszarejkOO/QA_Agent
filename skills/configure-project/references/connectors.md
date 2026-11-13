@@ -155,11 +155,9 @@ Mistakes seen in real runs, and what to do instead:
   with a short-lived token. Run each one with Bash as is, right away, one per
   file; never take the token out and reuse it in your own loop. The file can be
   anywhere on disk, so upload straight from the run's evidence or run folder
-  under `workDir`; never copy it into the QA_Agent or product repo. Images under
-  a Jira comment: upload each, note the returned `id`, then post the comment
-  with `contentFormat: "html"` and `inlineFileId` (in display order),
-  `inlineFileCollection` and `inlineFileName`; images go at the end, so number
-  the captions in the body.
+  under `workDir`; never copy it into the QA_Agent or product repo. Jira
+  attachments and screenshots inside a comment:
+  `~/.claude/skills/creating-jira-tickets/references/jira-attachments.md`.
 - **Server missing from the session.** If `atlassian-connectors.json` names a
   server for the site and its tools aren't there (ToolSearch for
   `mcp__<server>__` finds nothing, even after waiting for it to connect), stop and
