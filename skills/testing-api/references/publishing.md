@@ -11,6 +11,7 @@ its own file:
 | `1password` | [onepassword-publish.md](./onepassword-publish.md) |
 | `confluence` | [confluence-publish.md](./confluence-publish.md) |
 | `none` | Nothing is uploaded; the zips stay in the run folder. |
+| `localFolder` (optional, with any of the above) | A copy of the latest export in a folder on this machine; see "Local copy" below |
 
 **In every mode, nothing is uploaded anywhere before the user says yes in step 4,
 or the `publishCollection` preference is `auto` and step 4 found nothing to warn
@@ -50,6 +51,16 @@ The product config's `api.publish` block names a target per part:
 - Each is `1password`, `confluence` or `none`. `onePassword` is required when
   either part is `1password`; `api.confluence` when either is `confluence`. The
   `lastUpdate` panel exists only on Confluence.
+- **`localFolder`** (optional): a folder on this machine that always holds the
+  latest export, environments included. It adds to the targets above, so the
+  four usual setups are:
+
+  | Setup | `collection` / `environments` | `localFolder` |
+  | --- | --- | --- |
+  | 1Password | `1password` / `1password` | — |
+  | Local | `none` / `none` | set |
+  | 1Password + local | `1password` / `1password` | set |
+  | Confluence | `confluence` / `1password` or `none` | optional |
 - **No `publish` block** (a config from before migration 006): the collection goes
   to Confluence if `api.confluence` exists, otherwise nowhere, and environments go
   nowhere. Mention in the run summary that "update QA_Agent" sets this up.
@@ -78,6 +89,34 @@ client too. So:
   ignored, or already tracked: `git -C <repo> ls-files --error-unmatch
   <sourcePath>`), stop and tell the user to gitignore it first. Don't edit the
   product repo's `.gitignore` yourself.
+
+## Local copy
+
+When `api.publish.localFolder` is set, every run that exports the collection
+(SKILL.md step 3) ends by copying the export there, whatever the test results.
+It never leaves the machine, so it needs no question and no version check, and
+the `publishCollection` preference doesn't apply; say in the run summary what
+was copied where.
+
+1. Expand `~`, create the folder if it's missing (`mkdir -p`). If it is inside a
+   git work tree (`git -C <folder> rev-parse --is-inside-work-tree` succeeds)
+   and `git -C <folder> check-ignore -q .` fails, don't copy: the files hold live
+   values. Say so and suggest a folder outside the repo, e.g.
+   `<workDir>/collection`.
+2. Copy, replacing what is there, under fixed names so the folder always holds
+   one current version:
+   - Bruno: the import zip (part `full`) as `<product>-<client>-import.zip`,
+     with any `secondaryAttachments` file added into it as
+     `<collectionPath>/environments/<name>` (as for 1Password);
+   - Postman: the `*.postman_collection.json` and each
+     `environments/*.postman_environment.json`, flat in the folder; remove an
+     environment file there that the export no longer has;
+   - Insomnia: the export file.
+3. Before replacing a file whose content differs, keep the old one as
+   `<name>.prev` (one level, the older `.prev` is replaced). Never delete
+   anything else in the folder.
+4. Ticket mode with `collection: "none"`: the copy in `localFolder` is the
+   latest version (see "Downloading the published collection" below).
 
 ## Procedure
 
@@ -203,6 +242,11 @@ from the published environments when `publish.environments` has a target (downlo
 them the same way into `<run folder>/published-environments/` first), otherwise
 from the repo checkout. A collection published before environments were split out
 already holds `environments/`: keep those unless the published environments are
-newer, and say which ones the run uses. With `collection: "none"`, or when the download isn't
-possible, say so and use the repo checkout, as ticket-driven-testing.md Step 2
-describes.
+newer, and say which ones the run uses. With `collection: "none"` and a copy in `localFolder`, use that copy as the
+published one: extract the Bruno import zip into `published-collection/` (copy
+Postman or Insomnia files into `published-collection/<collectionPath>/`), write
+`published-base.json` with `target: "local"`, the file's path and its
+modification time, and compare it with the repo checkout as for any published
+collection. With `collection: "none"` and no local copy, or when the download
+isn't possible, say so and use the repo checkout, as ticket-driven-testing.md
+Step 2 describes.

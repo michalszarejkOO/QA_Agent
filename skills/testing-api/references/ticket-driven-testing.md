@@ -55,6 +55,8 @@ while the repo checkout lagged behind.
    version it came from is recorded in `<run folder>/published-base.json`. On
    Confluence the download runs through `discover`, so it won't show up as a tool
    of its own: don't take its absence from the tool list as "no download tool".
+   With `collection: "none"` and `api.publish.localFolder` holding a copy, that
+   copy is the latest version and is extracted the same way.
 2. Diff `<run folder>/published-collection/<collectionPath>` against the local
    repo checkout's collection directory, and tell the user about any divergence
    (what's newer where) rather than picking one silently.

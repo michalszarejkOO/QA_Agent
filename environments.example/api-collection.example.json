@@ -21,7 +21,8 @@
         "collectionItem": "Acme Bruno Collection",
         "environmentsItem": "Acme Bruno Environments"
       },
-      "notes": "Where testing-api publishes updated collections and environments, after the user's yes: 1password, confluence or none, per part. Environments hold tokens, so keep them in 1Password; a confluence part needs the confluence block below and passes a secret scan first. Without this block nothing is published except, for older configs, the collection to Confluence."
+      "localFolder": "~/Projects/acme/collection",
+      "notes": "Where testing-api publishes updated collections and environments, after the user's yes: 1password, confluence or none, per part. 'localFolder' (optional, any target) keeps a copy of the latest export on this machine, environments included (for Bruno the import zip); it is overwritten after every run, without asking, and must not be inside a git repo. Environments hold tokens, so keep them in 1Password; a confluence part needs the confluence block below and passes a secret scan first. Without this block nothing is published except, for older configs, the collection to Confluence."
     },
     "confluence": {
       "cloudId": "your-site.atlassian.net",

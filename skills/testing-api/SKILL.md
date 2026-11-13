@@ -48,7 +48,7 @@ and identical regardless of which tool a given repo happens to use.
 | MUST | Before writing the report, check the resolved adapter's per-case caveat convention for any test case that looks order- or state-dependent, including any product-specific caveats listed in that product's config (`api.knownCaveats`), and surface real caveats in the report's Notes — a clean pass/fail count that hides a non-representative test is misleading evidence. |
 | MUST | In generic (non-ticket) mode, when an executed folder/endpoint has only happy-path cases — no validation/boundary, auth, or business-logic cases — flag that gap in the report's Notes. This is an observation only: never generate cases to fill it in generic mode, that stays scoped to ticket mode's step T2. A clean "N/N PASS" next to thin coverage is misleading on its own. |
 | MUST | Use the report template in [report-template.md](./references/report-template.md) verbatim in structure — same headers, same table shape — so reports stay consistent across runs, products, and tools. Fill it from the actual CLI output, never from memory of a previous run. |
-| MUST | If (and only if) the product's config names a publish target, end the run by offering to publish the freshly exported collection and/or environments there, per [publishing.md](./references/publishing.md) — this is independent of test results, not conditional on them passing. |
+| MUST | If (and only if) the product's config names a publish target, end the run by offering to publish the freshly exported collection and/or environments there, per [publishing.md](./references/publishing.md) — this is independent of test results, not conditional on them passing. When `api.publish.localFolder` is set, also copy the latest export there (publishing.md, "Local copy"); that copy stays on this machine, so it needs no question. |
 | NEVER | Upload anything (to 1Password or Confluence: create an item or page, upload a file, update a body) before the user says yes to the summary in [publishing.md](./references/publishing.md), step 4: what goes where, from which folder, and which version each replaces. Before that summary, always read the published version and compare it with this run's base; a newer or different version is named there, never overwritten silently. No answer, or anything but a clear yes, means don't publish. |
 | NEVER | Put environments, `.env` files or anything with live tokens into the collection zip that goes to Confluence (the `full` import zip with environments is only for local import and 1Password; `.env` files stay out of every zip), or upload any file to Confluence that `scan_secrets.py` flags without the user's yes after seeing its list. Environments with secrets belong in 1Password. Never print a secret's value. |
 | NEVER | Put collection content (request bodies, raw exports, file dumps) inline in a Confluence page body. It stays a `lastUpdate` marker; the zip is attached as a file, not pasted as text. |
@@ -65,7 +65,7 @@ rules above:
 | --- | --- |
 | MUST | Test only on an environment the user named or confirmed for this run. If the message names one, use it. Otherwise, before running anything, ask: with `api.ticketEnvironment` set, propose it and ask to confirm (the change may be deployed somewhere else); without it, ask which environment to use. Offer the collection's environment names and, if known, where the ticket's PR was merged. Never assume `demo`, never fall back to `api.defaultEnvironment` silently, never pick a `local`-type one unless the user names it. See [ticket-driven-testing.md](./references/ticket-driven-testing.md), Step 4. |
 | MUST | Before doing anything else, read the ticket's acceptance criteria and its linked PR's diff (or the merged feature branch found by the repo's ticket-key naming convention, if no PR is linked) so the scenarios generated actually target what changed. |
-| MUST | Treat the published collection (1Password or Confluence, per `api.publish.collection`) as the latest version, not whatever's in the local repo checkout — diff the two and flag any divergence to the user rather than silently picking one. Download it into `<run folder>/published-collection/` and work only from there: new cases, the run and the export all use that folder. |
+| MUST | Treat the published collection (1Password or Confluence, per `api.publish.collection`; with `collection: "none"`, the copy in `api.publish.localFolder` when there is one) as the latest version, not whatever's in the local repo checkout — diff the two and flag any divergence to the user rather than silently picking one. Download it into `<run folder>/published-collection/` and work only from there: new cases, the run and the export all use that folder. |
 | MUST | Generate full scenario coverage for the ticket's endpoint(s) before executing anything, if the resolved collection doesn't already have it: happy path(s), validation/boundary cases, auth cases (missing/invalid/wrong-role token), and business-logic edge cases — not just the happy path. Follow the resolved adapter's existing naming/`docs:`/assertion conventions. |
 | MUST | After the report, always prepare a Jira-comment-ready block and explicitly ask the user whether to post it to the ticket now or just keep it as copy-pasteable text — never post it automatically. |
 | MUST | If any bug, scope mismatch, or discrepancy is found, draft a bug report (Title / Steps to reproduce / Expected / Actual) for each and explicitly ask the user whether to file it on the ticket or just keep it as a copy-pasteable draft — never file it automatically. |
@@ -132,7 +132,8 @@ End every run with a point-list summary, after the report and drafts:
          "vault": "<vault>",
          "collectionItem": "<Product> <Client> Collection",
          "environmentsItem": "<Product> <Client> Environments"
-       }
+       },
+       "localFolder": "<optional: folder on this machine for a copy of the latest export, e.g. <workDir>/collection>"
      },
      "confluence": {
        "cloudId": "<site>",
@@ -147,8 +148,9 @@ End every run with a point-list summary, after the report and drafts:
      }
    }
    ```
-   `publish` says where the collection and its environments are published, see
-   [publishing.md](./references/publishing.md); `confluence` is needed only when a
+   `publish` says where the collection and its environments are published, and
+   `publish.localFolder` where a copy of the latest export is kept on this
+   machine, see [publishing.md](./references/publishing.md); `confluence` is needed only when a
    part goes there. `knownCaveatsFile`, `secondaryAttachments`, and
    `envRefreshProcedure` are all optional — most products need none of them. See
    [confluence-publish.md](./references/confluence-publish.md) for how the last two

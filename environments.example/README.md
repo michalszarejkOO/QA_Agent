@@ -35,7 +35,8 @@ a product that has both a UI and an API collection).
   Insomnia), repo path, default environment, the environment ticket mode
   proposes for confirmation (`ticketEnvironment`, optional; without it, it asks),
   known stateful-case caveats, where updated collections and environments are
-  published (`publish`: 1Password, Confluence or nowhere, per part), and
+  published (`publish`: 1Password, Confluence or nowhere, per part, plus an
+  optional `localFolder` that keeps a copy of the latest export), and
   (optionally) a Confluence tracker page to publish results to.
 
 - [`evidence.example.json`](./evidence.example.json) — one file for all products,

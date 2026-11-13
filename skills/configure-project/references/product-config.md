@@ -99,7 +99,23 @@ entirely — a product needs at least one of the two, per `validate_environments
    - Any known stateful/order-dependent test cases worth flagging up front
      (`api.knownCaveats`) — optional, skip if none come to mind yet.
    - **Where updated collections and environments go** (`api.publish`, see
-     `testing-api`'s `references/publishing.md`). Ask about the two parts
+     `testing-api`'s `references/publishing.md`). Ask first, as one question:
+     1. **1Password** (suggested): collection and environments shared with the
+        team in a vault → `collection` and `environments`: `1password`.
+     2. **Local**: only a copy of the latest export on this machine, nothing
+        shared → both `none`, plus `localFolder`.
+     3. **1Password + local**: both of the above → both `1password`, plus
+        `localFolder`.
+     4. **Confluence**: the collection on a Confluence page → `collection:
+        "confluence"`; then ask where the environments go (below), since a
+        Confluence page is readable by everyone with access to the space.
+     For local (2, 3), ask for the folder, suggesting `<workDir>/collection`. It
+     must be outside the QA_Agent repo and any git repo (the copy holds live
+     values); write it as `localFolder` with `~` for the home folder. Say that
+     every run overwrites it with the latest export (Bruno: one import zip with
+     collection and environments; Postman: the collection and environment
+     files), keeping the previous version as `.prev`, without asking.
+     When the user wants a mix the four don't cover, ask about the two parts
      separately, because environments hold tokens and logins:
      - The collection: `1password` (suggested), `confluence`, or `none` (it only
        stays as a zip in the run folder).

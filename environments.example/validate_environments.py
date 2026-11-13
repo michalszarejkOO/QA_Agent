@@ -126,6 +126,17 @@ def check_product_config(data, connectors):
                                     errors.append(f"'api.publish.onePassword.{f}' is required when a part goes to 1password")
                     if "confluence" in targets and "confluence" not in api:
                         errors.append("'api.confluence' is required when api.publish sends a part to confluence")
+                    lf = pub.get("localFolder")
+                    if lf is not None:
+                        if not isinstance(lf, str) or not lf.strip():
+                            errors.append("'api.publish.localFolder' must be a non-empty path")
+                        elif not (lf.startswith("/") or lf.startswith("~")):
+                            errors.append(f"'api.publish.localFolder' must be an absolute path or start with ~, got {lf!r}")
+                        else:
+                            lfp = Path(lf).expanduser().resolve()
+                            qa_repo = Path(__file__).resolve().parent.parent
+                            if lfp == qa_repo or qa_repo in lfp.parents:
+                                errors.append("'api.publish.localFolder' must be outside the QA_Agent repo (it holds environments with live values)")
             conf = api.get("confluence")
             if conf is not None:
                 if not isinstance(conf, dict):

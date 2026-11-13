@@ -183,7 +183,8 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   and its environments separately, optionally publishes them where the product
   config says (1Password, as plain files in Secure Notes with an "Updated /
   Changes" note; or a Confluence tracker page for a secret-free collection; after
-  a check for a newer version and your yes), and produces a
+  a check for a newer version and your yes), keeps a copy of the latest export in
+  a local folder when the config sets `publish.localFolder`, and produces a
   pass/fail report ready to paste into a Jira comment. **Standalone, deliberately
   unbound** from `qa-tester` — this is collection-level API testing, not manual QA
   against a live app. Product- and tool-agnostic: which repo/collection/client and
