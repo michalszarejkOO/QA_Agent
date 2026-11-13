@@ -48,7 +48,7 @@ it's a high-value, easy-to-miss defect class distinct from an ordinary dead butt
 2. Discover the target: `agent-device devices [--platform ios|android]` to pick a
    device/simulator, `agent-device apps --device "<name>"` to find the app's bundle id
    if only its display name is known. For a **physical** device, run
-   `scripts/list_physical_devices.py --connect` and use the device its `pick` line
+   `python3 -I ~/.claude/skills/testing-apps/scripts/list_physical_devices.py --connect` and use the device its `pick` line
    names, which follows the user's connection order (Wi-Fi or cable first). See
    "Physical devices: cable or Wi-Fi" below.
    Then pick the install source per "Install source: distributed build by default"
@@ -120,10 +120,11 @@ debugging, iOS "Connect via network").
 `["wifi", "usb"]`: Wi-Fi first, the cable only when no device is ready over Wi-Fi.
 `["usb", "wifi"]` is the other way round; one entry means only that one. Read it
 with `python3 -I ~/.claude/skills/configure-project/scripts/preferences.py connection`.
-Not set: any ready device, cable and Wi-Fi equal (ask the user once, in the
-conversation that starts the run, and save the answer with `preferences.py
-connection <order>`; a subagent that can't ask uses any ready device and says the
-order isn't set).
+Not set: any ready device, cable and Wi-Fi equal. The conversation that starts
+the run (the main conversation gathering the brief, or `routing-qa-tickets`
+before it starts `qa-tester`) asks once and saves the answer with
+`preferences.py connection <order>`; a subagent that can't ask uses any ready
+device and says in the report that the order isn't set.
 
 1. Run the discovery script with `--connect`. It first tries to bring Wi-Fi
    devices back by itself (Android: `adb connect` for devices advertised over
@@ -146,7 +147,7 @@ every *paired* iPhone/iPad as `booted=true`, including ones that are asleep or o
 the network. Run the discovery script instead:
 
 ```
-python3 -I ../../scripts/list_physical_devices.py [--platform ios|android] [--connect] [--prefer wifi,usb]
+python3 -I ~/.claude/skills/testing-apps/scripts/list_physical_devices.py [--platform ios|android] [--connect] [--prefer wifi,usb]
 ```
 
 It prints one row per physical device with its `id` (UDID or adb serial),

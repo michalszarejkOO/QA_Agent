@@ -71,6 +71,10 @@ diff.
    - **Mobile** → nothing in the environment config shape resolves this today (see
      `environments.example/`), so ask the user for the device name/bundle id if the
      original request didn't already supply one — never invent or guess a target.
+     For a physical phone, also check the connection order
+     (`python3 -I ~/.claude/skills/configure-project/scripts/preferences.py connection`);
+     if none is saved, ask Wi-Fi or cable first and save it, since `qa-tester`
+     can't ask (testing-apps mobile adapter, "Physical devices: cable or Wi-Fi").
 
    Before invoking, resolve evidence recording from
    `~/.claude/environments/evidence.json`, because `qa-tester` runs as a subagent

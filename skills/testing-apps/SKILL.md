@@ -49,7 +49,9 @@ execution itself.
    save (`mode: ask` in evidence.json; two options, videos and screenshots or
    screenshots only, as "Recorded evidence" in
    [execution.md](./references/execution.md) lists them), and the product's working
-   directory and project skill if the target matches a product config. Resolve
+   directory and project skill if the target matches a product config. For a
+   physical phone with no connection order saved, ask Wi-Fi or cable first and
+   save it (mobile adapter, "Physical devices: cable or Wi-Fi"). Resolve
    the branch and environment per "Standalone runs: which branch and
    environment" below. Run the setup check:
    `python3 -I "$(dirname "$(dirname "$(readlink ~/.claude/agents/qa-tester.md)")")/skills/updating-qa-agent/scripts/check_setup.py"`.
