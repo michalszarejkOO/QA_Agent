@@ -105,13 +105,21 @@ Before invoking `qa-tester`, also say what it will do: target, ticket, and
 whether it will record evidence and where. `qa-tester` runs as a subagent and
 the user sees nothing until it returns. When it returns, relay its **Summary**
 (done, and not done/skipped with reasons) and its scenario-results table as-is,
-then the rest of the report. Save its cases, test data and results to
-`<workDir>/qa-evidence/<TICKET>/test-cases.md` as
+then the rest of the report, with the **Jira-ready comment** and every **bug
+report draft** printed in full in the chat (never only a file path). Save its
+cases, test data and results to `<workDir>/qa-evidence/<TICKET>/test-cases.md` as
 `~/.claude/skills/writing-test-cases/references/saved-file.md` says (update the
 file if it exists, the run goes on top under "Runs") and give the file's path.
 Do the same when you send `qa-tester` back to finish cases: the file then
-holds every case with its latest result. When the user then says yes to posting the comment
-or filing a bug, put its screenshots and videos on Jira as
+holds every case with its latest result. Then finish as the `configure-project`
+skill's [references/preferences.md](../configure-project/references/preferences.md),
+"After a test run", describes: actions set to `auto` were already done by the
+subagent (relay what it posted or filed, with links); ask about the `ask` ones
+(with "always"/"never" options that are saved); show the `never` ones as drafts;
+ask about the project-skill lines last. If the report has no comment draft or no
+bug drafts where bugs were found, write them yourself from its scenario results
+before asking. When the comment is posted or a bug filed, put its screenshots
+and videos on Jira as
 `~/.claude/skills/creating-jira-tickets/references/jira-attachments.md` says:
 through Atlassian's own server, from the run folder, never through
 `mcp-atlassian` and never via a copy in another folder.

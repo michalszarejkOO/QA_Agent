@@ -28,6 +28,13 @@ Coverage per endpoint:
 - <validation rules exercised>
 - <auth/business-logic cases>
 
+Request and response (happy path):
+<METHOD /path> — <happy-path case name>
+<request body, or the query parameters for a GET>
+Response: <status>
+<response body, trimmed to the fields that matter, with "..." where cut>
+...one block per endpoint that ran, plus one per failing case...
+
 Notes:
 - <any caveat surfaced in step 6/7 of run.md — failing case detail, a case that
   passed without truly testing what its name claims (e.g. expiry), an environment
@@ -61,6 +68,13 @@ Tool: <resolved api.client>, collection under <collectionPath>/<subfolder>
 Coverage per endpoint:
 - <bullets, same style as full report but only for the scoped endpoint(s)>
 
+Request and response (happy path):
+<METHOD /path> — <happy-path case name>
+<request body, or the query parameters for a GET>
+Response: <status>
+<response body, trimmed to the fields that matter, with "..." where cut>
+...one block per endpoint that ran, plus one per failing case...
+
 <Notes section only if there's a real caveat to flag — omit entirely otherwise>
 ```
 
@@ -70,11 +84,22 @@ Coverage per endpoint:
   product without `repo`, where the collection is
   `<run folder>/published-collection/` and has no git history): replace the
   Commit line with `Collection: published in <target>, version <version>`, taken
-  from `<run folder>/published-base.json` (or `local copy, version <version>`
-  when the run fell back to `api.localCopy`). Say what the run added on top of
-  it (e.g. "+ 12 cases generated for ABC-123"). In the full report's closing
-  line, write where the collection is published instead of "committed under
-  <collectionPath>".
+  from `<run folder>/published-base.json` (or `local folder, version <version>`
+  when the run fell back to `api.publish.apiCollectionsFolder`). Say what the
+  run added on top of it (e.g. "+ 12 cases generated for ABC-123"). In the full
+  report's closing line, write where the collection is published instead of
+  "committed under <collectionPath>".
+
+- **Every report shows the happy-path request and its response for each
+  endpoint that ran. Never skip it**, not for a short report, a scoped run or a
+  clean pass. Take it from this run's CLI output (Bruno: `--output` JSON,
+  `results[].request` / `response`), never from the collection's examples or
+  docs. Replace tokens, OTPs, passwords, phone numbers, national IDs and other
+  personal data with `<redacted>`. A happy path that didn't run or didn't pass:
+  show the closest successful request instead and say so in Notes, or, if
+  nothing passed, the failing request and its response. The Jira comment is not
+  part of this file: `writing-jira-comments` writes it (for an API ticket
+  without a project format, from its `api-comment-default-template.md`).
 
 - **Result line must match the CLI summary table exactly.** Don't round or
   editorialize — "34/35" stays "34/35", with the failing case named in Notes.

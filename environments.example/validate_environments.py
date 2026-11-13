@@ -23,11 +23,12 @@ import sys
 from pathlib import Path
 
 VALID_CLIENTS = {"bruno", "postman", "insomnia"}
-VALID_PUBLISH_TARGETS = {"1password", "confluence", "none"}
+VALID_PUBLISH_TARGETS = {"1password", "local", "1password+local", "confluence"}
 VALID_EVIDENCE_MODES = {"auto", "ask"}
 VALID_INSTALL_MODES = {"clean", "update", "installed"}
 VALID_CHECK_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-META_FILES = {"atlassian-connectors.json", "evidence.json", "postman.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
+META_FILES = {"atlassian-connectors.json", "evidence.json", "postman.json", "qa-agent-migrations.json",
+              "qa-agent-updates.json", "qa-agent-preferences.json"}
 
 
 def resolve_environments_dir():
@@ -98,15 +99,12 @@ def check_product_config(data, connectors):
             if "repo" in api and "collectionPath" not in api:
                 errors.append("'api.collectionPath' is required when 'api.repo' is present")
             if "repo" not in api:
-                # No repo: the published copy is the source, so both parts
-                # need a target every run can download from.
+                # No repo: the published package is the source, so a run needs
+                # a place to download it from.
                 pub_block = api.get("publish") if isinstance(api.get("publish"), dict) else {}
-                for part in ("collection", "environments"):
-                    if pub_block.get(part) not in ("1password", "confluence"):
-                        errors.append(
-                            f"'api.publish.{part}' must be \"1password\" or \"confluence\" "
-                            "when 'api.repo' is absent (the published copy is the source)"
-                        )
+                if pub_block.get("target") not in VALID_PUBLISH_TARGETS:
+                    errors.append("'api.publish.target' is required when 'api.repo' is absent "
+                                  "(the published package is the source)")
             tests_name = api.get("testsCollection")
             if tests_name is not None:
                 if not isinstance(tests_name, str) or not tests_name.strip():
@@ -115,15 +113,9 @@ def check_product_config(data, connectors):
                     errors.append("'api.testsCollection' is only supported with api.client \"postman\"")
                 elif tests_name.endswith(".json"):
                     errors.append("'api.testsCollection' is the collection's name, without .postman_collection.json")
-                if "repo" not in api:
-                    pub_block = api.get("publish") if isinstance(api.get("publish"), dict) else {}
-                    if pub_block.get("tests") != "1password":
-                        errors.append(
-                            "'api.publish.tests' must be \"1password\" when 'api.testsCollection' is set "
-                            "and 'api.repo' is absent (the published copy is the source)"
-                        )
-            if "localCopy" in api and (not isinstance(api["localCopy"], str) or not api["localCopy"].strip()):
-                errors.append("'api.localCopy' must be a non-empty string (a folder path)")
+            if "localCopy" in api:
+                errors.append("'api.localCopy' moved to 'api.publish.apiCollectionsFolder'; "
+                              "run 'update QA_Agent' (migration 016)")
             for f in ("defaultEnvironment", "ticketEnvironment"):
                 if f in api and (not isinstance(api[f], str) or not api[f].strip()):
                     errors.append(f"'api.{f}' must be a non-empty string")
@@ -132,33 +124,49 @@ def check_product_config(data, connectors):
                 if not isinstance(pub, dict):
                     errors.append("'api.publish' must be an object")
                 else:
-                    targets = []
-                    for part in ("collection", "environments"):
-                        t = pub.get(part, "none")
-                        if t not in VALID_PUBLISH_TARGETS:
-                            errors.append(f"'api.publish.{part}' must be one of {sorted(VALID_PUBLISH_TARGETS)}, got {t!r}")
-                        targets.append(t)
-                    if "tests" in pub:
-                        t = pub["tests"]
-                        if t not in ("1password", "none"):
-                            errors.append(f"'api.publish.tests' must be \"1password\" or \"none\", got {t!r}")
-                        if "testsCollection" not in api:
-                            errors.append("'api.publish.tests' needs 'api.testsCollection'")
-                        targets.append(t)
-                    if "1password" in targets:
-                        op = pub.get("onePassword")
-                        if not isinstance(op, dict):
-                            errors.append("'api.publish.onePassword' is required when a part goes to 1password")
+                    target = pub.get("target")
+                    if "localFolder" in pub:
+                        errors.append("'api.publish.localFolder' is now 'api.publish.apiCollectionsFolder'; "
+                                      "run 'update QA_Agent' (migration 016)")
+                    if "target" not in pub and ("collection" in pub or "environments" in pub):
+                        errors.append("'api.publish' has the old shape (collection/environments per part); "
+                                      "run 'update QA_Agent' (migration 016) to move it to 'target'")
+                    elif target not in VALID_PUBLISH_TARGETS:
+                        errors.append(f"'api.publish.target' must be one of {sorted(VALID_PUBLISH_TARGETS)}, got {target!r}")
+                    else:
+                        if "1password" in target:
+                            op = pub.get("onePassword")
+                            if not isinstance(op, dict):
+                                errors.append(f"'api.publish.onePassword' is required for target {target!r}")
+                            else:
+                                old_items = [f for f in ("collectionItem", "environmentsItem", "testsItem") if f in op]
+                                if old_items:
+                                    errors.append(f"'api.publish.onePassword' has {old_items}: one 'item' holds the whole package now; "
+                                                  "run 'update QA_Agent' (migration 016)")
+                                for f in ("vault", "item"):
+                                    if not isinstance(op.get(f), str) or not op[f].strip():
+                                        errors.append(f"'api.publish.onePassword.{f}' is required for target {target!r}")
+                        if target in ("local", "1password+local", "confluence") and "apiCollectionsFolder" not in pub:
+                            errors.append(f"'api.publish.apiCollectionsFolder' is required for target {target!r}")
+                        if target == "confluence":
+                            if "confluence" not in api:
+                                errors.append("'api.confluence' is required for target 'confluence'")
+                            if client == "insomnia":
+                                errors.append("target 'confluence' isn't available for insomnia: its export holds the environments")
+                    for extra in pub.get("extraEnvironmentFiles", []):
+                        if not isinstance(extra, dict) or "name" not in extra or "sourcePath" not in extra:
+                            errors.append("each 'api.publish.extraEnvironmentFiles[]' entry needs 'name' and 'sourcePath'")
+                    lf = pub.get("apiCollectionsFolder")
+                    if lf is not None:
+                        if not isinstance(lf, str) or not lf.strip():
+                            errors.append("'api.publish.apiCollectionsFolder' must be a non-empty path")
+                        elif not (lf.startswith("/") or lf.startswith("~")):
+                            errors.append(f"'api.publish.apiCollectionsFolder' must be an absolute path or start with ~, got {lf!r}")
                         else:
-                            item_parts = {"collectionItem": "collection", "environmentsItem": "environments", "testsItem": "tests"}
-                            for f in ("vault", "collectionItem", "environmentsItem", "testsItem"):
-                                part = item_parts.get(f)
-                                if part and pub.get(part) != "1password":
-                                    continue
-                                if not isinstance(op.get(f), str) or not op[f].strip():
-                                    errors.append(f"'api.publish.onePassword.{f}' is required when a part goes to 1password")
-                    if "confluence" in targets and "confluence" not in api:
-                        errors.append("'api.confluence' is required when api.publish sends a part to confluence")
+                            lfp = Path(lf).expanduser().resolve()
+                            qa_repo = Path(__file__).resolve().parent.parent
+                            if lfp == qa_repo or qa_repo in lfp.parents:
+                                errors.append("'api.publish.apiCollectionsFolder' must be outside the QA_Agent repo (it holds environments with live values)")
             conf = api.get("confluence")
             if conf is not None:
                 if not isinstance(conf, dict):
@@ -167,11 +175,9 @@ def check_product_config(data, connectors):
                     for f in ("cloudId", "spaceKey", "parentId", "pageTitle", "attachmentName"):
                         if f not in conf:
                             errors.append(f"'api.confluence.{f}' is required when 'api.confluence' is present")
-                    for extra in conf.get("secondaryAttachments", []):
-                        if not isinstance(extra, dict) or "name" not in extra or "sourcePath" not in extra:
-                            errors.append(
-                                "each 'api.confluence.secondaryAttachments[]' entry needs 'name' and 'sourcePath'"
-                            )
+                    if "secondaryAttachments" in conf or "envRefreshProcedure" in conf:
+                        errors.append("'api.confluence.secondaryAttachments' / 'envRefreshProcedure' moved to "
+                                      "'api.publish.extraEnvironmentFiles' / 'envRefreshProcedure'; run 'update QA_Agent' (migration 016)")
 
     if has_surfaces:
         surfaces = data["surfaces"]
@@ -282,6 +288,50 @@ def check_postman_file(data):
     return []
 
 
+PREF_ACTIONS = {"confirmTicketEnvironment", "publishCollection", "postJiraComment", "fileBugs",
+                "attachEvidence", "updateProjectSkill"}
+PREF_VALUES = {"ask", "auto", "never"}
+PERMISSION_GROUPS = {"1password-read", "1password-write", "jira-read", "jira-write", "confluence-read",
+                     "confluence-write"}
+
+
+def check_preferences_file(data):
+    errors = []
+
+    def check_actions(block, label):
+        if not isinstance(block, dict):
+            errors.append(f"'{label}' must be an object")
+            return
+        for action, value in block.items():
+            if action not in PREF_ACTIONS:
+                errors.append(f"{label}.{action}: unknown action (known: {sorted(PREF_ACTIONS)})")
+            elif value not in PREF_VALUES:
+                errors.append(f"{label}.{action} must be one of {sorted(PREF_VALUES)}, got {value!r}")
+
+    check_actions(data.get("actions", {}), "actions")
+    products = data.get("products", {})
+    if not isinstance(products, dict):
+        errors.append("'products' must be an object")
+    else:
+        for name, block in products.items():
+            if not name.startswith("<"):
+                check_actions(block, f"products.{name}")
+    results = data.get("results", {})
+    if not isinstance(results, dict) or not isinstance(results.get("saveReportFiles", False), bool):
+        errors.append("'results.saveReportFiles' must be true or false")
+    mobile = data.get("mobile", {})
+    conn = mobile.get("connection") if isinstance(mobile, dict) else None
+    if not isinstance(mobile, dict):
+        errors.append("'mobile' must be an object")
+    elif conn is not None and (not isinstance(conn, list) or not conn
+                               or any(c not in ("wifi", "usb") for c in conn) or len(set(conn)) != len(conn)):
+        errors.append("'mobile.connection' must be [\"wifi\", \"usb\"], [\"usb\", \"wifi\"], [\"wifi\"] or [\"usb\"]")
+    groups = data.get("claudePermissions", [])
+    if not isinstance(groups, list) or any(g not in PERMISSION_GROUPS for g in groups):
+        errors.append(f"'claudePermissions' must be a list of {sorted(PERMISSION_GROUPS)}")
+    return errors
+
+
 def main():
     env_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else resolve_environments_dir()
     if not env_dir.is_dir():
@@ -308,7 +358,8 @@ def main():
 
     any_errors = False
     for name, check in (("evidence.json", check_evidence_file), ("qa-agent-updates.json", check_updates_file),
-                        ("postman.json", check_postman_file)):
+                        ("postman.json", check_postman_file),
+                        ("qa-agent-preferences.json", check_preferences_file)):
         shared_path = env_dir / name
         if not shared_path.exists():
             continue

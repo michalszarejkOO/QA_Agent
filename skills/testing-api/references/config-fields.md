@@ -9,41 +9,35 @@ below, or a field isn't clear. The product config is the file in
 "api": {
   "client": "bruno",
   "repo": "~/Projects/<repo>   (optional: omit when the collection lives only where it is published, see \"No `repo`\")",
-  "localCopy": "<optional, with no repo: folder kept at the latest published version, e.g. <workDir>/postman>",
   "collectionPath": "bruno",
   "testsCollection": "<optional, Postman only: name of the tests collection kept next to the main one, see \"The tests collection\">",
   "defaultEnvironment": "staging",
-  "ticketEnvironment": "<optional: environment ticket mode proposes and asks to confirm; absent = ask every time>",
+  "ticketEnvironment": "<optional: environment ticket mode tests on; asked to confirm unless the confirmTicketEnvironment preference is auto; absent = ask every time>",
   "knownCaveats": ["<free text about stateful/order-dependent cases, if any>"],
   "knownCaveatsFile": "<filename of a fuller markdown doc kept next to this config in <workDir>/config/ — use this instead of/alongside knownCaveats when the caveat list is long enough that keeping it as JSON strings risks drifting out of sync with a richer doc>",
   "publish": {
-    "collection": "1password | confluence | none",
-    "environments": "1password | confluence | none",
-    "tests": "<with testsCollection: 1password | none>",
-    "onePassword": {
-      "vault": "<vault>",
-      "collectionItem": "<Product> <Client> Collection",
-      "environmentsItem": "<Product> <Client> Environments",
-      "testsItem": "<Product> <Client> Tests   (when tests is 1password)"
-    }
+    "target": "1password | local | 1password+local | confluence",
+    "onePassword": { "vault": "<vault>", "item": "<Product> <Client> Collection" },
+    "apiCollectionsFolder": "<with local, 1password+local, confluence: folder outside the QA_Agent repo kept at the last published package, e.g. <workDir>/postman>",
+    "extraEnvironmentFiles": [
+      { "name": "<fixed filename>", "sourcePath": "<path relative to repo root>" }
+    ],
+    "envRefreshProcedure": "<optional filename of a doc kept next to this config in <workDir>/config/, describing how to mint live values into an extraEnvironmentFiles file before export>"
   },
   "confluence": {
     "cloudId": "<site>",
     "spaceKey": "<space>",
     "parentId": "<folder page id>",
     "pageTitle": "<fixed page title>",
-    "attachmentName": "<fixed zip filename>",
-    "secondaryAttachments": [
-      { "name": "<fixed filename>", "sourcePath": "<path relative to repo root>" }
-    ],
-    "envRefreshProcedure": "<optional filename of a doc kept next to this config in <workDir>/config/, describing how to mint live values into a secondaryAttachments file before export>"
+    "attachmentName": "<fixed zip filename>"
   }
 }
 ```
 
 **No `repo`.** `repo` is optional when the collection lives only where it is
-published: nobody keeps it in a shared git repo. Then `publish.collection` and
-`publish.environments` must both be `1password` or `confluence`, and
+published: nobody keeps it in a shared git repo. Then `publish.target` must be
+set (any of the four; `1password+local` is recommended, so a run can start from
+`apiCollectionsFolder` when 1Password can't be read), and
 `collectionPath` is the collection's path inside the published copy (`.` when
 absent). Every run, generic ones too, downloads the published copy into its run
 folder and works there; new cases reach the team when the run publishes. Keep
@@ -51,15 +45,17 @@ folder and works there; new cases reach the team when the run publishes. Keep
 collection inside the backend repo, say): the repo is then where changes are
 reviewed, and publishing only hands out a copy.
 
-**`localCopy`** (with no `repo`, recommended): a folder, usually
-`<workDir>/postman/` or `<workDir>/<client>/`, that always holds the latest
-published version, laid out like the published copy (`<collectionPath>/` with
-`environments/`). It needn't be a git repo. Runs keep it current: after every
-publish, and when a run downloads a newer version than it holds
-([publishing.md](./publishing.md), "The local copy"). When the target can't be
-read, the run starts from it. Other files in it (upload fixtures a request
-points at, say) are left alone. It holds environments with live values: keep it
-out of any git repo with a remote.
+**`publish.apiCollectionsFolder`** (with `local`, `1password+local` and
+`confluence`): a folder, usually `<workDir>/postman/` or `<workDir>/<client>/`,
+that always holds the last published package, extracted (`<collectionPath>/`
+with the collections and `environments/`) plus `.published.json`. It needn't be
+a git repo. Runs keep it current: after every publish, and with
+`1password+local` when a run downloads a newer version than it holds
+([publishing.md](./publishing.md), "The API collections folder"). Without
+`repo`, a run starts from it when the target can't be read. Other files in it
+(upload fixtures a request points at, say) are left alone. It holds
+environments with live values: keep it out of the QA_Agent repo and out of any
+git repo with a remote.
 
 **The tests collection** (`testsCollection`, optional, Postman only). Test
 cases go into a collection of their own, so the main one stays readable for
@@ -79,27 +75,25 @@ after an import: the main collection's name with `_TESTS` (`ACME_TESTS` next to
   after a ticket; a case names its ticket in its description.
 - Every run executes the tests collection, generic ones too; the main
   collection runs only when the user asks for it.
-- Publishing has a third part, `tests` (`publish.tests`, `1password` or `none`),
-  in its own item (`onePassword.testsItem`). Without `repo` it must be
-  `1password`, like the other two.
+- The tests collection is published in the same package as the main one
+  (publishing.md, "The four targets"), in the same 1Password item.
 
 Without `testsCollection` nothing changes: generated cases go into the main
 collection, as before.
 
 **Several main collection files.** `<collectionPath>` may hold more than one
 `*.postman_collection.json` (one product with two collections). All of them
-except the tests collection make up part `collection`: published together in
-`collectionItem`, downloaded together, compared per file. Without
+except the tests collection make up the main collection: published together in
+the package, downloaded together, compared per file. Without
 `testsCollection`, a run executes the file the user or the project skill names,
 otherwise each one in turn, and the report has a row per file.
 
-`publish` says where the collection, its environments and the tests collection are published, see
-[publishing.md](./publishing.md); `confluence` is needed only when a
-part goes there. `knownCaveatsFile`, `secondaryAttachments`, and
+`publish` says where the package (the collections with their environments) is
+published, see [publishing.md](./publishing.md); `confluence` is needed only
+with `target: "confluence"`. `knownCaveatsFile`, `extraEnvironmentFiles` and
 `envRefreshProcedure` are all optional — most products need none of them. See
-[confluence-publish.md](./confluence-publish.md) for how the last two
-are used, and [adapters/bruno.md](./adapters/bruno.md) for
-`knownCaveatsFile`.
+publishing.md, "The four targets", for how the last two are used, and
+[adapters/bruno.md](./adapters/bruno.md) for `knownCaveatsFile`.
 
 **Finding `knownCaveatsFile` and `envRefreshProcedure`:** they belong next to
 the product's real config file, in `<workDir>/config/` (the file in

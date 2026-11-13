@@ -54,7 +54,7 @@ done
 
 # Product configs live in each project's <workDir>/config/; ENV_DIR only holds
 # symlinks to them (plus the shared atlassian-connectors.json, evidence.json, qa-agent-updates.json,
-# postman.json).
+# postman.json, qa-agent-preferences.json).
 mkdir -p "$ENV_DIR"
 link "$ENV_DIR" "$REPO_ROOT/environments"
 for cfg in "$ENV_DIR"/*.json; do
@@ -95,8 +95,8 @@ fi
 echo
 python3 -I "$REPO_ROOT/skills/updating-qa-agent/scripts/register_update_hook.py" || true
 
-# The 1Password CLI is required once a product publishes its API collection or
-# environments (which hold tokens) to 1Password (api.publish in its config).
+# The 1Password CLI is required once a product publishes its API collection with
+# its environments (which hold tokens) to 1Password (api.publish.target).
 # configure-project and migration 006 install it when that's chosen; this keeps it
 # installed. Setups without such a product (e.g. UI testing only) don't need it.
 needs_op=$(python3 -I - "$ENV_DIR" <<'PY'
@@ -107,7 +107,7 @@ for f in Path(sys.argv[1]).glob("*.json"):
         pub = (json.loads(f.read_text()).get("api") or {}).get("publish") or {}
     except (ValueError, OSError, AttributeError):
         continue
-    if "1password" in (pub.get("collection"), pub.get("environments")):
+    if "1password" in str(pub.get("target", "")) or "1password" in (pub.get("collection"), pub.get("environments")):
         print("yes")
         break
 PY
@@ -139,7 +139,7 @@ echo "Skills and agents linked into $CLAUDE_DIR, and $ENV_DIR is ready."
 
 product_files=$(find "$ENV_DIR" -maxdepth 1 -name '*.json' \
   ! -name atlassian-connectors.json ! -name evidence.json ! -name qa-agent-migrations.json \
-  ! -name qa-agent-updates.json ! -name postman.json | head -1)
+  ! -name qa-agent-updates.json ! -name postman.json ! -name qa-agent-preferences.json | head -1)
 MIGRATIONS_DIR="$REPO_ROOT/skills/updating-qa-agent/scripts"
 MIGRATIONS="$MIGRATIONS_DIR/migrations.py"
 if [ -z "$product_files" ]; then

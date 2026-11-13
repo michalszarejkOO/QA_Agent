@@ -1,9 +1,9 @@
 # Attaching files to Jira (screenshots, videos)
 
 How to put a run's evidence (a bug folder's `screenshot.png` and `video.mp4`, a
-checkpoint screenshot) on a Jira issue or into a comment. It runs only after the
-user's yes to filing the bug or posting the comment, in the conversation that has
-that yes.
+checkpoint screenshot) on a Jira issue or into a comment. It runs only when the bug
+is filed or the comment posted, after the user's yes or because `fileBugs` /
+`postJiraComment` is `auto`, and `attachEvidence` allows it (ask, or `auto`).
 
 ## Rules
 

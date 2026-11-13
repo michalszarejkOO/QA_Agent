@@ -21,8 +21,8 @@ It also creates `~/.claude/environments/` (global, never committed to any repo),
 index of products, plus `environments/` in this repo as a convenience link to it,
 removes product links there whose project folder is gone, and installs the
 1Password CLI (`op`) with Homebrew if a product needs it and it's missing. `op` is
-required once you test an API and publish its collection or environments (which
-hold tokens) to 1Password, the default `configure-project` suggests; setups for
+required once you test an API and publish its collection with its environments
+(which hold tokens) to 1Password, the default `configure-project` suggests; setups for
 UI testing only don't need it. Turn on its sign-in once in the 1Password app (Settings > Developer >
 Integrate with 1Password CLI); you always approve access yourself, Claude never
 handles the password.
@@ -64,6 +64,21 @@ pulled in the terminal but haven't applied yet, and offers to go through them.
 `configure-project` asks once, and you can change it any time by saying "change
 update settings" / "zmień ustawienia aktualizacji". `qa-tester`, `testing-apps` and `testing-api` also
 check the setup at the start of a run and warn when it's out of date.
+
+**What runs by itself.** `~/.claude/environments/qa-agent-preferences.json`
+sets, per action, whether QA_Agent asks first (`ask`, the default), just does it
+(`auto`) or never does it (`never`): confirming the ticket environment,
+publishing the API collection, posting the Jira comment, filing bugs, attaching
+evidence, adding lines to the project skill. Each question offers "Yes, always"
+and "No, never ask", which save the answer, so you're asked once. Safety stops (a
+newer published version, a production environment, secrets, a likely duplicate
+bug) always ask. `claudePermissions` in the same file lists which tool groups
+Claude Code may use without its own prompt (`preferences.py permissions
+--apply` adds them to `~/.claude/settings.json`). Say "zmień ustawienia
+QA_Agent" / "change my QA_Agent preferences" to change it; details in
+`skills/configure-project/references/preferences.md`. Whatever the settings,
+every test run ends with the summary, the scenario table, the Jira comment draft
+and the bug drafts in the chat.
 
 To see whether everything a run needs is in place (links, hooks, configs, MCP
 servers, tools, Jira access), say "check QA_Agent" / "sprawdź setup": the
@@ -174,7 +189,7 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
 - `skills/configure-project/` — interactive setup wizard for a new clone: asks which
   Atlassian MCP connectors are authorized and for which sites, then asks about each
   product (ticket prefixes, working directory, repo path, web/mobile UI and/or API collection,
-  credentials, where collections and environments are published) and writes the resulting
+  credentials, where the collection goes: 1Password, local, both, or Confluence) and writes the resulting
   `environments/*.json` files. Never edits any other skill or agent file — config
   only.
 - `agents/qa-tester.md` (rare cases it reads on demand in `agents/qa-tester/`; the ticket, PR and design link through `reading-jira-tickets`) —
@@ -259,12 +274,14 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   and its environments separately, optionally publishes them where the product
   config says (1Password, as plain files in Secure Notes with an "Updated /
   Changes" note; or a Confluence tracker page for a secret-free collection; after
-  a check for a newer version and your yes), and produces a
+  a check for a newer version and your yes), keeps a copy of the last published
+  collection in a local folder when the config sets
+  `publish.apiCollectionsFolder`, and produces a
   pass/fail report ready to paste into a Jira comment. The run itself goes to a
   subagent on Sonnet (Opus for one run when you ask for it: "puść na Opusie"), so CLI output and
   response bodies stay out of the main conversation; the main conversation
-  gathers the brief, asks the questions, and posts, files or publishes only after
-  your yes. **Standalone, deliberately
+  gathers the brief, asks what your preferences leave open, and posts, files or
+  publishes as they say. **Standalone, deliberately
   unbound** from `qa-tester` — this is collection-level API testing, not manual QA
   against a live app. Product- and tool-agnostic: which repo/collection/client and
   (if applicable) where it's published comes from

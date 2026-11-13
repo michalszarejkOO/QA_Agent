@@ -1,7 +1,8 @@
-# Default QA comment template
+# Default QA comment template for a UI ticket
 
-Used when the product's project skill has no "Jira QA comment" section, or the
-section says "Default template".
+Used for a ticket tested in the app (web or mobile) when the product's project
+skill has no "Jira QA comment" section, or the section says "Default template".
+An API ticket uses [api-comment-default-template.md](api-comment-default-template.md).
 
 ## Short form (most tickets)
 
