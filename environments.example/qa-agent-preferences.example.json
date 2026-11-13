@@ -1,0 +1,24 @@
+{
+  "notes": "QA_Agent preferences for this machine. ask: ask every time; auto: do it without asking; never: don't do it and don't ask (the draft is still shown). Docs: skills/configure-project/references/preferences.md.",
+  "actions": {
+    "confirmTicketEnvironment": "ask",
+    "publishCollection": "ask",
+    "postJiraComment": "ask",
+    "fileBugs": "ask",
+    "attachEvidence": "ask",
+    "updateProjectSkill": "ask"
+  },
+  "products": {
+    "<product>": {
+      "postJiraComment": "auto"
+    }
+  },
+  "results": {
+    "saveReportFiles": false
+  },
+  "claudePermissions": [
+    "1password-read",
+    "jira-read",
+    "confluence-read"
+  ]
+}

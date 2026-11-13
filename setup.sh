@@ -51,7 +51,8 @@ for name in $RETIRED_SKILLS; do
 done
 
 # Product configs live in each project's <workDir>/config/; ENV_DIR only holds
-# symlinks to them (plus the shared atlassian-connectors.json, evidence.json, qa-agent-updates.json).
+# symlinks to them (plus the shared atlassian-connectors.json, evidence.json, qa-agent-updates.json,
+# qa-agent-preferences.json).
 mkdir -p "$ENV_DIR"
 link "$ENV_DIR" "$REPO_ROOT/environments"
 for cfg in "$ENV_DIR"/*.json; do
@@ -136,7 +137,7 @@ echo "Skills and agent linked into $CLAUDE_DIR, and $ENV_DIR is ready."
 
 product_files=$(find "$ENV_DIR" -maxdepth 1 -name '*.json' \
   ! -name atlassian-connectors.json ! -name evidence.json ! -name qa-agent-migrations.json \
-  ! -name qa-agent-updates.json | head -1)
+  ! -name qa-agent-updates.json ! -name qa-agent-preferences.json | head -1)
 MIGRATIONS_DIR="$REPO_ROOT/skills/updating-qa-agent/scripts"
 MIGRATIONS="$MIGRATIONS_DIR/migrations.py"
 if [ -z "$product_files" ]; then

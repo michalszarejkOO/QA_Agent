@@ -31,7 +31,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 CLAUDE_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude"))
 ENV_DIR = CLAUDE_DIR / "environments"
-META = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
+META = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json", "qa-agent-updates.json",
+        "qa-agent-preferences.json"}
 SCRIPTS = REPO / "skills" / "updating-qa-agent" / "scripts"
 WRAPPER = CLAUDE_DIR / "skills" / "testing-apps" / "scripts" / "playwright-mcp.sh"
 

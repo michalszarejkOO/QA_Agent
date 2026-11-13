@@ -94,7 +94,15 @@ Before invoking `qa-tester`, also say what it will do: target, ticket, and
 whether it will record evidence and where. `qa-tester` runs as a subagent and
 the user sees nothing until it returns. When it returns, relay its **Summary**
 (done, and not done/skipped with reasons) and its scenario-results table as-is,
-then the rest of the report.
+then the rest of the report, with the **Jira-ready comment** and every **bug
+report draft** printed in full in the chat (never only a file path). Then finish
+as the `configure-project` skill's
+[references/preferences.md](../configure-project/references/preferences.md),
+"After a test run", describes: post the comment, file the bugs and add the
+project-skill lines by themselves, ask (with "always"/"never" options that are
+saved), or leave them as drafts, per the user's preferences. If the report has
+no comment draft or no bug drafts where bugs were found, write them yourself
+from its scenario results before asking.
 
 ## Output
 

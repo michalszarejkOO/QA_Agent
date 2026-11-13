@@ -277,6 +277,16 @@ Return a structured report, in this order:
 
 State a clean pass plainly. Never invent findings to seem thorough.
 
+**Everything above goes in the report itself, as text.** Items 9 and 10 are
+always written out in full in the report, never replaced by "see results.md" or
+any other file: the conversation that started you shows them to the user and
+posts or files them from there. Don't write report, scenario or bug-draft files
+(`REPORT-*.md`, `results.md`, HTML) unless `results.saveReportFiles` is `true`
+in `~/.claude/environments/qa-agent-preferences.json`; evidence files
+(screenshots, videos, logs) are saved as usual. End the report with this line,
+for the conversation that started you: "Next: show items 9-10 in the chat and
+finish per configure-project/references/preferences.md, 'After a test run'."
+
 ## Writing to Jira
 
 Drafting is your job; publishing is not. Never call `addOrEditJiraIssueComment`,

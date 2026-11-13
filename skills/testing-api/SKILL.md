@@ -1,6 +1,6 @@
 ---
 name: testing-api
-description: Runs a repo's API test collection — Bruno, Postman, or Insomnia — against a live environment via that tool's CLI, exports the collection to a zip the user can download and import into the matching desktop app, optionally, after the user approves, publishes the collection and its environments to the product's configured place (1Password, or a Confluence tracker page for a secret-free collection) after checking that nobody published a newer version, and produces a Jira-comment-ready pass/fail report. When the request is driven by a specific backend Jira ticket, switches to ticket mode: reads the ticket and its PR/branch for context, tests on the environment the user names or confirms (never a silently assumed one), generates full scenario coverage (not just happy path) for any endpoint the collection doesn't already cover, treats the published collection as the latest version, and closes by preparing (never auto-posting) a Jira comment and any bug reports for the user's approval. Use when asked to test the API, run the API test suite, verify endpoints are working, export/re-export an API collection, QA/test a backend Jira ticket, or produce a test summary/report for a Jira ticket, for any product with a Bruno, Postman, or Insomnia collection — not tied to one repo or one tool.
+description: Runs a repo's API test collection — Bruno, Postman, or Insomnia — against a live environment via that tool's CLI, exports the collection to a zip the user can download and import into the matching desktop app, optionally, after the user approves, publishes the collection and its environments to the product's configured place (1Password, or a Confluence tracker page for a secret-free collection) after checking that nobody published a newer version, and produces a Jira-comment-ready pass/fail report. When the request is driven by a specific backend Jira ticket, switches to ticket mode: reads the ticket and its PR/branch for context, tests on the environment the user names or confirms (never a silently assumed one), generates full scenario coverage (not just happy path) for any endpoint the collection doesn't already cover, treats the published collection as the latest version, and closes by showing a Jira comment and any bug reports in the chat, then posting/filing them only as the user's saved preferences allow (ask by default, never silently). Use when asked to test the API, run the API test suite, verify endpoints are working, export/re-export an API collection, QA/test a backend Jira ticket, or produce a test summary/report for a Jira ticket, for any product with a Bruno, Postman, or Insomnia collection — not tied to one repo or one tool.
 when_to_use: "Trigger on: 'przetestuj API', 'uruchom testy API/bruno/postman/insomnia', 'sprawdź czy endpointy działają', 'wygeneruj raport testów do jiry', 'wyeksportuj kolekcję', 'run the API tests', 'test this endpoint', 'export the collection', 'test/QA this backend ticket', a Jira ticket URL/ID for a [BE] or backend-only ticket, or any request to verify API behavior using a committed collection. Product-agnostic: resolve which repo/collection/tool via the environments config (see step 0) or ask if it can't be resolved."
 ---
 
@@ -50,7 +50,7 @@ and identical regardless of which tool a given repo happens to use.
 | MUST | Use the report template in [report-template.md](./references/report-template.md) verbatim in structure — same headers, same table shape — so reports stay consistent across runs, products, and tools. Fill it from the actual CLI output, never from memory of a previous run. |
 | MUST | If (and only if) the product's config names a publish target, end the run by offering to publish the freshly exported collection and/or environments there, per [publishing.md](./references/publishing.md) — this is independent of test results, not conditional on them passing. |
 | NEVER | Upload anything (to 1Password or Confluence: create an item or page, upload a file, update a body) before the user says yes to the summary in [publishing.md](./references/publishing.md), step 4: what goes where, from which folder, and which version each replaces. Before that summary, always read the published version and compare it with this run's base; a newer or different version is named there, never overwritten silently. No answer, or anything but a clear yes, means don't publish. |
-| NEVER | Put environments, `.env` files or anything with live tokens into the collection zip, or upload any file to Confluence that `scan_secrets.py` flags without the user's yes after seeing its list. Environments with secrets belong in 1Password. Never print a secret's value. |
+| NEVER | Put environments, `.env` files or anything with live tokens into the collection zip that goes to Confluence (the `full` import zip with environments is only for local import and 1Password; `.env` files stay out of every zip), or upload any file to Confluence that `scan_secrets.py` flags without the user's yes after seeing its list. Environments with secrets belong in 1Password. Never print a secret's value. |
 | NEVER | Put collection content (request bodies, raw exports, file dumps) inline in a Confluence page body. It stays a `lastUpdate` marker; the zip is attached as a file, not pasted as text. |
 | NEVER | Commit, push, or otherwise persist results/exports into git without being asked. The zip export is a local artifact, not a repo change. |
 | NEVER | Claim a PASS the CLI did not report. If any request fails, show the failing assertion(s) and response detail, and reflect the real status in the report. |
@@ -208,8 +208,12 @@ End every run with a point-list summary, after the report and drafts:
    [publishing.md](./references/publishing.md) step 1 gives, so repeat exports
    keep the same predictable name. The collection zip never holds environments or
    `.env` files; export the environments as their own zip (part `environments`)
-   too. Export from the folder the run uses: the worktree from step 2 in generic
-   mode, or `<run folder>/published-collection/` (as the repo root) in ticket
+   too. For a Bruno collection with an `environments/` folder, also export the
+   **import zip** (part `full`, `<run folder>/<product>-<client>-import.zip`):
+   collection and environments in one file, which Bruno imports with everything.
+   Name it as the file to import in the run summary; it holds live values, so it
+   stays local or goes to 1Password, never to Confluence. Export from the folder
+   the run uses: the worktree from step 2 in generic mode, or `<run folder>/published-collection/` (as the repo root) in ticket
    mode. Report the output paths and which folder they came from.
 
 4. **Check the target environment.** For a local-style environment, verify the
@@ -237,15 +241,19 @@ End every run with a point-list summary, after the report and drafts:
    filled with this run's real numbers, current commit (`git rev-parse --short HEAD`,
    run in the repo root) and branch, the environment used, which client/tool ran the
    suite, and a Notes section that includes any caveats found in step 6 or flagged by
-   the adapter/`api.knownCaveats` for cases that ran. Present it in a fenced code
-   block so it's a clean paste into Jira, and save the same text as
-   `<run folder>/report.md`.
+   the adapter/`api.knownCaveats` for cases that ran. Show it in the chat, in full,
+   in a fenced code block so it's a clean paste into Jira; never only as a file
+   path. Save the same text as `<run folder>/report.md` only when
+   `results.saveReportFiles` is `true` in the preferences
+   ([preferences.md](../configure-project/references/preferences.md)).
 
 8. **If the product's config names a publish target**, offer to publish there,
    following [publishing.md](./references/publishing.md) exactly (identifiers come
    from config, not from this file). It scans whatever goes to Confluence for
-   secrets, compares the export with what is published now, and asks the user;
-   nothing is uploaded before a yes. A generic run exports `origin/<branch>`
+   secrets, compares the export with what is published now, and then follows the
+   `publishCollection` preference: asks (`ask`), publishes when the check is
+   clean (`auto`), or keeps the zips local (`never`). Nothing is uploaded without
+   a yes or `auto`. A generic run exports `origin/<branch>`
    without uncommitted changes, so the published collection may be newer than this
    one: that check is what keeps it from being overwritten. Offer this regardless
    of whether the tests passed. Give the user the link or the vault and item when
@@ -290,17 +298,23 @@ T3. **Run steps 1 and 3–6 of the generic procedure** (load adapter, export, ch
     the one the user named or confirmed for this run (ticket-driven-testing.md,
     Step 4), never a `local`-type one unless the user names it.
 
-T4. **Write the report** (generic step 7), then **prepare the Jira comment** and
-    **ask the user** whether to post it to the ticket now or keep it as
-    copy-pasteable text.
+T4. **Write the report** (generic step 7) and **prepare the Jira comment**, both
+    shown in the chat.
 
 T5. **If any bug, scope mismatch, or discrepancy surfaced**, draft a bug report per
-    case (Title / Steps to reproduce / Expected / Actual) and ask the user whether
-    to file it on the ticket or keep it as a copy-pasteable draft.
+    case (Title / Steps to reproduce / Expected / Actual), shown in full in the
+    chat.
 
-T6. **Always finish by offering to publish** (generic step 8) whenever the product
+    Then finish T4 and T5 as [preferences.md](../configure-project/references/preferences.md),
+    "After a test run", describes: post the comment and file the bugs, ask
+    (with "always"/"never" options that are saved), or leave them as drafts,
+    per `postJiraComment` and `fileBugs`. Whatever happens, the drafts stay in
+    the chat.
+
+T6. **Always finish with the publish step** (generic step 8) whenever the product
     has a publish target — the (possibly extended) collection from
     `<run folder>/published-collection/` and the refreshed environments. Never skip
-    offering it in ticket mode, whatever the results; publish only after the user's
-    yes, given after the version check in
-    [publishing.md](./references/publishing.md), step 4.
+    it in ticket mode, whatever the results; publish after the version check in
+    [publishing.md](./references/publishing.md), step 4, on the user's yes or
+    with `publishCollection: auto`. Ask T4/T5's and this step's questions
+    together, so the user answers once at the end.

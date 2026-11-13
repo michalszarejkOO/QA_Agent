@@ -24,7 +24,7 @@ repo's `skills/` or `agents/`.
 | Severity | Rule |
 | --- | --- |
 | MUST | Make sure `$CLAUDE_CONFIG_DIR/environments` (or `~/.claude/environments`) exists before writing any config: `./setup.sh` creates it, and if it's missing, create it yourself (`mkdir -p`) rather than stopping. |
-| MUST | Write each product file to `<workDir>/config/<product>-<environment>.json` (the real file) and put only a symlink to it in `~/.claude/environments/`, the same way skills are linked into `~/.claude/skills/`. Everything about a product then lives in its working directory. Only the shared files (`atlassian-connectors.json`, `evidence.json`, `qa-agent-updates.json`) are real files in `~/.claude/environments/`. |
+| MUST | Write each product file to `<workDir>/config/<product>-<environment>.json` (the real file) and put only a symlink to it in `~/.claude/environments/`, the same way skills are linked into `~/.claude/skills/`. Everything about a product then lives in its working directory. Only the shared files (`atlassian-connectors.json`, `evidence.json`, `qa-agent-updates.json`, `qa-agent-preferences.json`) are real files in `~/.claude/environments/`. |
 | NEVER | Put `<workDir>/config/` inside a git repo without gitignoring it: it holds credentials. If `git -C <workDir> rev-parse` succeeds, add `config/` to that repo's `.gitignore` (show the change first). |
 | MUST | Read `environments.example/README.md`, `environments.example/app-with-ui.example.json`, and `environments.example/api-collection.example.json` fresh at the start of every run, not from memory — the shape is the source of truth and this skill must never drift from it. |
 | MUST | Resolve each Atlassian connector's site with a live call to its own `getAccessibleAtlassianResources` tool, never by asking the user to type a site/cloudId from memory — see [references/connectors.md](./references/connectors.md). |
@@ -95,6 +95,29 @@ repo's `skills/` or `agents/`.
    works: the first Claude session on such a day checks (a new one, a resumed
    one, or after `/clear`; or the next one when there was none that day), and if there's something new, Claude asks
    whether to see what's new and update; nothing is pulled without a yes.
+
+5b. **Choose what runs by itself.** Skip if
+   `environments/qa-agent-preferences.json` already exists (show it with
+   `scripts/preferences.py show`). Otherwise ask one question with tappable
+   options: "After a test run, how much should I do without asking?"
+   - **ask each time, remember "always"/"never" answers** (default: nothing
+     set, every action asks the first time, with "Yes, always" / "No, never
+     ask" options that save the answer),
+   - as much as possible: confirm-free ticket environment and publishing, and
+     post the Jira comment by itself (`confirmTicketEnvironment`,
+     `publishCollection`, `postJiraComment`, `attachEvidence` → `auto`; bugs
+     still ask),
+   - drafts only: never post or file, never ask (`postJiraComment`, `fileBugs`
+     → `never`).
+   Then ask which Claude Code permission groups to allow so its own prompts stop
+   too (multi-select, see [references/preferences.md](./references/preferences.md),
+   "Claude Code permissions"): read groups suggested, write groups only if the
+   matching action is `auto`. Write the file with `scripts/preferences.py set`
+   per action (and `claudePermissions` / `results` by hand, following
+   `environments.example/qa-agent-preferences.example.json`), run
+   `scripts/preferences.py permissions --apply` if they picked any group, and
+   say they can change any of it later by saying "zmień ustawienia QA_Agent" /
+   "change my QA_Agent preferences".
 
 6. **Offer folder access from anywhere.** Ask whether Claude may read and write
    the working directories and repo path(s) just configured without asking, from

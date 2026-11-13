@@ -12,7 +12,9 @@ its own file:
 | `confluence` | [confluence-publish.md](./confluence-publish.md) |
 | `none` | Nothing is uploaded; the zips stay in the run folder. |
 
-**In every mode, nothing is uploaded anywhere before the user says yes in step 4.**
+**In every mode, nothing is uploaded anywhere before the user says yes in step 4,
+or the `publishCollection` preference is `auto` and step 4 found nothing to warn
+about.**
 
 ## Where each part goes
 
@@ -35,6 +37,11 @@ The product config's `api.publish` block names a target per part:
   file named `*-populated*` elsewhere in the collection is kept (a request may
   carry that word) but the script names it on stderr; check it, and the secret
   scan catches live values in it.
+  **Exception, Bruno to 1Password:** there the collection is the import zip
+  (part `full`): collection and `environments/` in one file, so whoever downloads
+  it imports everything into Bruno at once, as before the split. 1Password is
+  encrypted and shared only with the vault's members, so environments may travel
+  with the collection there; to Confluence they never do.
 - **environments**: the environments zip (part `environments`), plus any
   `api.confluence.secondaryAttachments` files (live-populated environments that an
   `envRefreshProcedure` fills): separate attachments on Confluence, added into the
@@ -91,9 +98,14 @@ client too. So:
    These names stay the same on every run, so each upload becomes a new version
    of the same file. **Exception, 1Password:** files go up as they are (see
    [onepassword-publish.md](./onepassword-publish.md), "What goes into each
-   item"): copy the collection file (Postman, Insomnia) or the collection zip
-   (Bruno), and each environment file, into `<run folder>/publish/`; the
-   environments zip isn't needed there. Confluence always gets zips.
+   item"): copy the collection file (Postman, Insomnia) or, for Bruno, the import
+   zip (part `full`, `<run folder>/<product>-<client>-import.zip`, which step 3 of
+   SKILL.md already exported) under the item's collection file name, and each
+   environment file, into `<run folder>/publish/`; the environments zip isn't
+   needed there. Before copying the Bruno import zip, add each
+   `secondaryAttachments` file into it as `<collectionPath>/environments/<name>`,
+   so the import holds the live environment too. Confluence always gets zips, and
+   never the import zip.
    If an `envRefreshProcedure` is configured and the environments have a target,
    follow it before exporting (see [confluence-publish.md](./confluence-publish.md),
    "Identifiers"); with `environments: "none"` skip it, nothing would use it.
@@ -150,7 +162,15 @@ client too. So:
    When a newer or different version is published, offer the choices: publish
    anyway (it replaces that version), stop so the user can merge it locally first
    (in ticket mode: take the newer one as the base and run again), or don't
-   publish. **Only a clear yes goes on.** Anything else: upload nothing, give the
+   publish.
+   **Whether to ask** comes from the `publishCollection` preference
+   ([preferences.md](../../configure-project/references/preferences.md)):
+   `auto` shows the summary and goes on to step 5 without a question, but only
+   when there's no warning (no newer or different published version, no secret
+   scan finding, no production environment, no uncommitted changes left out);
+   any warning asks as below. `never`: show the summary, upload nothing, give the
+   zips' paths. `ask` (the default): ask, with the "always"/"never" options that
+   are saved. **Only a clear yes, or `auto` with no warning, goes on.** Anything else: upload nothing, give the
    zips' paths, and list "<target> not updated (user didn't approve)" under Not done
    in the run summary.
 5. **Upload**, per the target's file. Right before each upload, read the published
@@ -174,7 +194,10 @@ the same place in the run folder:
 Download from wherever `publish.collection` points (the target's file has the
 steps), extract into `published-collection/`, which must be new and empty
 (`unzip -q <zip> -d <folder>`), check that `<collectionPath>` is there, and write
-`published-base.json`. The collection zip has no environments, so copy the
+`published-base.json`. A Bruno collection from 1Password is the import zip and
+already holds `environments/`; when the environments item was downloaded too,
+its files replace those (both are uploaded together, so they normally match;
+say so if they differ). Otherwise the collection zip has no environments, so copy the
 collection's `environments/` folder into `published-collection/<collectionPath>/`:
 from the published environments when `publish.environments` has a target (download
 them the same way into `<run folder>/published-environments/` first), otherwise

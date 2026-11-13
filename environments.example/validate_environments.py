@@ -27,7 +27,8 @@ VALID_PUBLISH_TARGETS = {"1password", "confluence", "none"}
 VALID_EVIDENCE_MODES = {"auto", "ask"}
 VALID_INSTALL_MODES = {"clean", "update", "installed"}
 VALID_CHECK_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-META_FILES = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
+META_FILES = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json", "qa-agent-updates.json",
+              "qa-agent-preferences.json"}
 
 
 def resolve_environments_dir():
@@ -240,6 +241,43 @@ def check_updates_file(data):
     return errors
 
 
+PREF_ACTIONS = {"confirmTicketEnvironment", "publishCollection", "postJiraComment", "fileBugs",
+                "attachEvidence", "updateProjectSkill"}
+PREF_VALUES = {"ask", "auto", "never"}
+PERMISSION_GROUPS = {"1password-read", "1password-write", "jira-read", "jira-write", "confluence-read",
+                     "confluence-write"}
+
+
+def check_preferences_file(data):
+    errors = []
+
+    def check_actions(block, label):
+        if not isinstance(block, dict):
+            errors.append(f"'{label}' must be an object")
+            return
+        for action, value in block.items():
+            if action not in PREF_ACTIONS:
+                errors.append(f"{label}.{action}: unknown action (known: {sorted(PREF_ACTIONS)})")
+            elif value not in PREF_VALUES:
+                errors.append(f"{label}.{action} must be one of {sorted(PREF_VALUES)}, got {value!r}")
+
+    check_actions(data.get("actions", {}), "actions")
+    products = data.get("products", {})
+    if not isinstance(products, dict):
+        errors.append("'products' must be an object")
+    else:
+        for name, block in products.items():
+            if not name.startswith("<"):
+                check_actions(block, f"products.{name}")
+    results = data.get("results", {})
+    if not isinstance(results, dict) or not isinstance(results.get("saveReportFiles", False), bool):
+        errors.append("'results.saveReportFiles' must be true or false")
+    groups = data.get("claudePermissions", [])
+    if not isinstance(groups, list) or any(g not in PERMISSION_GROUPS for g in groups):
+        errors.append(f"'claudePermissions' must be a list of {sorted(PERMISSION_GROUPS)}")
+    return errors
+
+
 def main():
     env_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else resolve_environments_dir()
     if not env_dir.is_dir():
@@ -265,7 +303,8 @@ def main():
             print(f"{connectors_path.name}: invalid JSON — {e}")
 
     any_errors = False
-    for name, check in (("evidence.json", check_evidence_file), ("qa-agent-updates.json", check_updates_file)):
+    for name, check in (("evidence.json", check_evidence_file), ("qa-agent-updates.json", check_updates_file),
+                        ("qa-agent-preferences.json", check_preferences_file)):
         shared_path = env_dir / name
         if not shared_path.exists():
             continue

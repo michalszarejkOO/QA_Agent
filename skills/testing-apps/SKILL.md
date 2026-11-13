@@ -171,6 +171,15 @@ End every run with a point-list summary:
 - **Proposed additions to the project skill:** each new product-specific finding,
   worded as the line to add, or "None".
 
+Then, in a standalone run, show the scenario-results table, a Jira comment draft
+(when the run was for a ticket) and every bug draft (via `reporting-bugs`) in
+full in the chat, and finish as the `configure-project` skill's
+[references/preferences.md](../configure-project/references/preferences.md),
+"After a test run", describes. Don't put the results into a report file (`.md`,
+`.html`) instead of the chat; save a copy only when `results.saveReportFiles` is
+`true`. This holds for long and regression runs too: split a very long result
+into several messages rather than moving it to a file.
+
 ## Standalone runs: which branch and environment
 
 Run standalone (no ticket or PR, not inside `qa-tester`), this skill tests the

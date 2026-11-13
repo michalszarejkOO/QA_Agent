@@ -110,9 +110,14 @@ on `uat`, a feature still only on `development`), so ticket mode never runs on a
 environment the user hasn't named or confirmed for this run:
 
 1. **The user's message names one** ("test IMS-123 on uat") → use it.
-2. **The config has `api.ticketEnvironment`** → propose it and ask the user to
+2. **The config has `api.ticketEnvironment`** → read the
+   `confirmTicketEnvironment` preference
+   ([preferences.md](../../configure-project/references/preferences.md)). `auto`:
+   use it and say so in one line ("Testing on `<env>` (ticketEnvironment)"),
+   unless Step 1 found the PR merged to a branch that maps to another
+   environment; then ask. `ask` (the default): propose it and ask the user to
    confirm before running anything: "Test on `<env>`? The change may be deployed
-   elsewhere."
+   elsewhere.", with the "always" option that saves `auto`.
 3. **No `api.ticketEnvironment`** → ask which environment to test on. Don't
    fall back to `api.defaultEnvironment` silently; it's for plain runs, and one
    product's config files can each have a different one.
@@ -130,18 +135,21 @@ Run the collection from the folder Step 2 settled on
 (`<run folder>/published-collection/` when the download worked), so the result
 is for the same collection that gets exported and published.
 
-## Step 5: Comment and bug-report drafts — always ask, never auto-post
+## Step 5: Comment and bug-report drafts — shown in the chat, posted per preference
 
 After the report is written:
 
-1. Prepare the Jira-comment-ready block (per `report-template.md`). Ask the user
-   explicitly: post it to the ticket now, or keep it as copy-pasteable text? Do not
-   post without that answer, even if the run passed cleanly.
+1. Prepare the Jira-comment-ready block (per `report-template.md`) and show it in
+   the chat in full.
 2. For each bug, scope mismatch, or discrepancy found (including a collection gap
    discovered along the way, e.g. "this endpoint's success path can't currently be
-   reached"), draft a bug report (Title / Steps to reproduce / Expected / Actual).
-   Ask the user explicitly: file it on the ticket, or keep it as a copy-pasteable
-   draft? Do not file without that answer.
+   reached"), draft a bug report (Title / Steps to reproduce / Expected / Actual)
+   and show it in the chat in full.
+3. Post and file per the `postJiraComment` and `fileBugs` preferences, as
+   [preferences.md](../../configure-project/references/preferences.md), "After a
+   test run", describes: `auto` posts/files and gives the link, `ask` (the
+   default) asks with "always"/"never" options that are saved, `never` leaves the
+   drafts. Nothing is posted or filed on any other basis.
 
 ## Step 6: Always offer to publish the collection and environments
 

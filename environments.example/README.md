@@ -13,7 +13,8 @@ into `~/.claude/skills/`. So everything about a product (config, project skill,
 evidence, run output) lives in its own folder and goes away with it. Deleting
 a project folder leaves a dangling link: the validator reports it and
 `./setup.sh` removes it. Only the shared files, `atlassian-connectors.json`,
-`evidence.json`, `qa-agent-updates.json` and `qa-agent-migrations.json`, are real
+`evidence.json`, `qa-agent-updates.json`, `qa-agent-preferences.json` and
+`qa-agent-migrations.json`, are real
 files in `~/.claude/environments/`.
 
 Run `./setup.sh` first, then add products with the `configure-project` skill (or by
@@ -60,6 +61,18 @@ a product that has both a UI and an API collection).
   resumed, or after `/clear`), or the next one if there was none that day; when there are new changes, Claude
   says so and asks whether to see what's new and update. Nothing is ever pulled
   without a yes.
+
+- [`qa-agent-preferences.example.json`](./qa-agent-preferences.example.json) — one
+  file for this machine, saved as `environments/qa-agent-preferences.json`. Per
+  action (`confirmTicketEnvironment`, `publishCollection`, `postJiraComment`,
+  `fileBugs`, `attachEvidence`, `updateProjectSkill`): `ask` (the default),
+  `auto` or `never`, in `actions` for every product and in `products.<product>`
+  for one. `results.saveReportFiles` also saves reports as files (they're always
+  shown in the chat). `claudePermissions` lists the Claude Code tool groups to
+  allow. Written by `configure-project`, and by
+  `skills/configure-project/scripts/preferences.py set` whenever the user
+  answers "always" or "never"; see
+  `skills/configure-project/references/preferences.md`.
 
 ## Working directory (`workDir`)
 

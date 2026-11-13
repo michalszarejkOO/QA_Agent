@@ -64,6 +64,21 @@ one if you skipped that day.
 update settings" / "zmień ustawienia aktualizacji". `qa-tester`, `testing-apps` and `testing-api` also
 check the setup at the start of a run and warn when it's out of date.
 
+**What runs by itself.** `~/.claude/environments/qa-agent-preferences.json`
+sets, per action, whether QA_Agent asks first (`ask`, the default), just does it
+(`auto`) or never does it (`never`): confirming the ticket environment,
+publishing the API collection, posting the Jira comment, filing bugs, attaching
+evidence, adding lines to the project skill. Each question offers "Yes, always"
+and "No, never ask", which save the answer, so you're asked once. Safety stops (a
+newer published version, a production environment, secrets, a likely duplicate
+bug) always ask. `claudePermissions` in the same file lists which tool groups
+Claude Code may use without its own prompt (`preferences.py permissions
+--apply` adds them to `~/.claude/settings.json`). Say "zmień ustawienia
+QA_Agent" / "change my QA_Agent preferences" to change it; details in
+`skills/configure-project/references/preferences.md`. Whatever the settings,
+every test run ends with the summary, the scenario table, the Jira comment draft
+and the bug drafts in the chat.
+
 To see whether everything a run needs is in place (links, hooks, configs, MCP
 servers, tools, Jira access), say "check QA_Agent" / "sprawdź setup": the
 `checking-qa-agent` skill prints a FAIL/WARN/OK report with a fix command for each
