@@ -270,14 +270,15 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   (it applies before a feature is delivered, so `qa-tester` would never use it —
   binding it would only raise the context cost of every test run).
 - `skills/testing-api/` — runs a repo's API test collection (Bruno, Postman, or
-  Insomnia) via that tool's CLI against a live environment, exports the collection
-  and its environments separately, optionally publishes them where the product
-  config says (1Password, as plain files in Secure Notes with an "Updated /
-  Changes" note; or a Confluence tracker page for a secret-free collection; after
-  a check for a newer version and your yes), keeps a copy of the last published
-  collection in a local folder when the config sets
-  `publish.apiCollectionsFolder`, and produces a
-  pass/fail report ready to paste into a Jira comment. The run itself goes to a
+  Insomnia) via that tool's CLI against a live environment and produces a
+  pass/fail report ready for a Jira comment (for a ticket, the endpoint, request
+  and response of the happy path). It can publish the collection, the tests
+  collection and the environments as one package to the product's
+  `api.publish.target`: `1password` (one zip in one vault item), `local` (the
+  `api.publish.apiCollectionsFolder`), `1password+local`, or `confluence` (the
+  collection without environments on the page, the package in the local
+  folder). It checks for a newer published version first and publishes after
+  your yes, or by itself when your preferences say so. The run itself goes to a
   subagent on Sonnet (Opus for one run when you ask for it: "puść na Opusie"), so CLI output and
   response bodies stay out of the main conversation; the main conversation
   gathers the brief, asks what your preferences leave open, and posts, files or
