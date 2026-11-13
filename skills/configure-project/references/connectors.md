@@ -148,6 +148,9 @@ Mistakes seen in real runs, and what to do instead:
   `content_format: "markdown"` is easier to read than the default `html`.
 - **Jira search** (`searchJiraIssuesUsingJql`): ask only for the fields you need
   and a small `maxResults` (e.g. 20); a full result overflows the tool output.
+  This is about search only: never pass `fields` to `getJiraIssue`, which
+  silently drops some of them. Both rules, with examples, are in
+  `reading-jira-tickets` ("The ticket", "Searching Jira").
   Issue types are per project: list them (`listJiraProjectIssueTypesMetadata`)
   before filtering on one, never guess a name like "Regression Bug".
 - **Files.** Upload operations (`createConfluenceAttachment`,
