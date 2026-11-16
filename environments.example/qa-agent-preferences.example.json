@@ -6,7 +6,8 @@
     "postJiraComment": "ask",
     "fileBugs": "ask",
     "attachEvidence": "ask",
-    "updateProjectSkill": "ask"
+    "updateProjectSkill": "ask",
+    "updateLocalApp": "never"
   },
   "products": {
     "<product>": {

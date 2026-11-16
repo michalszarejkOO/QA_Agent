@@ -129,6 +129,14 @@ repo's `skills/` or `agents/`.
    fallback, Wi-Fi only, or cable only. Save it with
    `scripts/preferences.py connection <order>`. Ask this even when the
    preferences file already exists but has no `mobile.connection`.
+   If any product's `api.client` is `postman` or `bruno`, also ask how its
+   collection reaches the app after a publish (`updateLocalApp`, see
+   [references/preferences.md](./references/preferences.md), "Choosing in the
+   setup wizard"): **manual** (suggested; you import it, with Replace in
+   Postman) or **auto** (the agent replaces it in Postman or Bruno, same names,
+   no import). Save it with `scripts/preferences.py set updateLocalApp
+   <never|auto>`. Ask this even when the preferences file already exists but
+   has no `updateLocalApp` in `actions`.
 
 6. **Offer folder access from anywhere.** Ask whether Claude may read and write
    the working directories and repo path(s) just configured without asking, from

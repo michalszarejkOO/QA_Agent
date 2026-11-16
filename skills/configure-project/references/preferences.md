@@ -34,6 +34,7 @@ Read a value with
 | `fileBugs` | after any test run (below) | Create a Jira bug for each bug draft |
 | `attachEvidence` | with `postJiraComment` / `fileBugs` | Attach that bug's or run's screenshots and videos |
 | `updateProjectSkill` | after any run that proposed lines for the project skill | Add the proposed lines to `<projectSkill>/SKILL.md` |
+| `updateLocalApp` | `testing-api` (publishing.md step 8) | After a publish, replace the collection and environments in this machine's Postman (through the Postman API) or Bruno (its folder). Default `never`, shown as **manual**: the user imports it |
 
 Evidence recording keeps its own switch, `mode` in `evidence.json`.
 
@@ -54,9 +55,25 @@ Full `auto` for `updateProjectSkill` too is set through **mix** or later with
 "zmień ustawienia QA_Agent". End with one sentence: every action can be changed
 later.
 
+`updateLocalApp` is not part of these four options. When any product's
+`api.client` is `postman` or `bruno`, ask it as its own question, "Jak
+aktualizować kolekcję w Postmanie / Bruno po publikacji?" (in the user's
+language), with two options:
+
+| Option | Writes | Description |
+| --- | --- | --- |
+| **manual** (suggested to start with) | `never` | After a publish you import the collection yourself: in Postman Import with Replace, in Bruno open the collection folder. Nothing in your app changes without you |
+| **auto** | `auto` | After a publish the agent replaces the collection and environments in your Postman workspace through the Postman API (or Bruno reloads them from the local folder), with the same names, so you never import. It stops and asks when something changed in your app after the check |
+
+For Bruno, `auto` needs a local copy: with the target `1password` say so and
+suggest `1password+local`. For Postman, it needs the Postman API key set up
+(`postman.json`, migration 010); without it say auto will report "Postman not
+connected" until the key is set.
+
 **`auto` never skips a safety stop.** These always ask, whatever the file says:
-a newer published version than the run started from, a production environment
-in an upload, secret-scan findings for Confluence, a likely duplicate found by
+a newer published version than the run started from, a collection or
+environment changed in the Postman app after the check (`updateLocalApp`), a
+production environment in an upload, secret-scan findings for Confluence, a likely duplicate found by
 `find-duplicates` before filing a bug, a required Jira field with no value, data
 the project skill says must not be touched, and anything the user's message for
 this run says to ask about. A run whose result

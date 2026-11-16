@@ -303,7 +303,7 @@ def check_postman_file(data):
 
 
 PREF_ACTIONS = {"confirmTicketEnvironment", "publishCollection", "postJiraComment", "fileBugs",
-                "attachEvidence", "updateProjectSkill"}
+                "attachEvidence", "updateProjectSkill", "updateLocalApp"}
 PREF_VALUES = {"ask", "auto", "never"}
 PERMISSION_GROUPS = {"1password-read", "1password-write", "jira-read", "jira-write", "confluence-read",
                      "confluence-write"}

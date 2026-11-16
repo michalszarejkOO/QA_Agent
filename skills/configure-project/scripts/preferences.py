@@ -44,6 +44,7 @@ ACTIONS = {
     "fileBugs": ("ask", "after a test run, create a Jira bug for each bug draft"),
     "attachEvidence": ("ask", "attach screenshots/videos to the posted comment or the filed bug"),
     "updateProjectSkill": ("ask", "add the run's proposed lines to the product's project skill"),
+    "updateLocalApp": ("never", "after a publish, replace the collection and environments in this machine's Postman or Bruno (auto), or leave the import to the user (never: manual)"),
 }
 
 # Claude Code permission groups -> rules. Atlassian groups expand per connector

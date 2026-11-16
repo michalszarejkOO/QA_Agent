@@ -40,6 +40,13 @@ run folder's `.publish/` (see [publishing.md](../publishing.md), "Staging"); the
 script's own fallback, `~/Desktop/<repo-folder-name>-bruno-<part>.zip`, is only
 for calling it by hand.
 
+
+**Keeping Bruno current.** Bruno reads the collection straight from a folder
+and reloads it when its files change, so the user opens
+`<apiCollectionsFolder>/<collectionPath>` once (Open Collection) instead of
+importing every new zip; each publish rewrites that folder (publishing.md,
+steps 7 and 8, `updateLocalApp`).
+
 ## Run
 
 The Bruno CLI treats the folder it is started from as the collection: it reads

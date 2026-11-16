@@ -258,6 +258,43 @@ way (step 7).
    `1password+local`, only once step 6 confirmed the new version in 1Password:
    a package that wasn't published (no yes, upload failed) leaves the folder as
    it was. With `local` and `confluence`, the folder is written in any case.
+8. **Update the app on this machine** (Postman and Bruno; Insomnia: skip).
+   Only after a publish that went through (step 6 confirmed it; with `local`,
+   once step 7 wrote the folder). The `updateLocalApp` preference
+   ([preferences.md](../../configure-project/references/preferences.md))
+   decides: `never` (shown to the user as **manual**, the default) leaves the
+   import to the user, `auto` does it without asking, `ask` asks with the usual
+   four options. Names never change, so the user's app always gets the same
+   collection and environments back, never a copy.
+   - **Postman, `auto` or yes.** Start the `postman-sync` agent again in **push
+     mode**: the brief names the folder the package was built from
+     (`<run root>/<collectionPath>`), and, from its step 1 report, the workspace
+     and, per collection and environment file, the matched cloud uid and the
+     `updatedAt` it saw. It replaces each one through the Postman API
+     (`scripts/postman-push.py`), and the app shows the new version within
+     seconds, as after Import > Replace. **Safety stop, also with `auto`:** a collection or
+     environment changed in Postman since step 1 (exit code 3) is not replaced;
+     report it and ask, since someone edited it in the app after the check. A
+     cloud copy step 1 didn't match (new environment, no match) is not created:
+     name it for the user to import. If the workspace is shared with a team,
+     the replacement reaches everyone in it; it carries exactly what was just
+     published.
+   - **Bruno, `auto` or yes.** Bruno reads a collection straight from its
+     folder and reloads it when the files change, so nothing is imported. With
+     `apiCollectionsFolder` (step 7 just wrote it) the app is already current;
+     say once: "Bruno: open `<apiCollectionsFolder>/<collectionPath>` with Open
+     Collection; after every publish it reloads by itself". Hand edits made in
+     that folder are kept as "The API collections folder" step 2 says. Target
+     `1password` (no folder): there is nothing on disk to update; say that
+     `auto` needs a local copy and suggest the target `1password+local`.
+   - **Manual (`never`, or no).** One line in the report: Postman: import the
+     zip's files and choose **Replace** for the collection and each
+     environment; Bruno: open `<apiCollectionsFolder>/<collectionPath>`, or
+     import the zip when there is no folder.
+   - Report it: "Postman updated: <collection>, <n> environments" or "not
+     updated: <reason>". A subagent run doesn't do this step: it returns
+     "update the app" with the push brief, and the main conversation does it
+     once the publish is confirmed.
 
 ## Downloading the published collection (ticket mode)
 
