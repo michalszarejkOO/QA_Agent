@@ -86,7 +86,9 @@ def message(mode, tokens):
                 "user's message save the work state with the session-handoff skill (it updates "
                 "handoff.md in the ticket's folder) without asking, then tell the user in one "
                 "line, in their language, where it is and that /clear followed by "
-                "'kontynuuj <ticket key>' continues from it. If it is work in progress "
+                "'kontynuuj <ticket key>' continues from it. If an agent or background task "
+                "started here is still running, don't stop it and don't suggest /clear until "
+                "it reports back (the skill says how). If it is work in progress "
                 "without a ticket, ask first and propose a path, as the skill's 'Where' says. "
                 "Otherwise ignore this note.")
     return (f"[QA_Agent session-handoff] This conversation's context is {size}, and every "
@@ -94,7 +96,9 @@ def message(mode, tokens):
             "worth carrying on, after handling the user's message offer once, in one line in "
             "their language, to save the work state with the session-handoff skill and continue "
             "in a fresh session after /clear (without a ticket, propose a path, as the "
-            "skill's 'Where' says). Don't save without their yes. Otherwise ignore this note.")
+            "skill's 'Where' says; while an agent or background task started here is still "
+            "running, say /clear has to wait for its result and never stop it). Don't save "
+            "without their yes. Otherwise ignore this note.")
 
 
 def hook():

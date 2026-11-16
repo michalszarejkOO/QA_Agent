@@ -63,6 +63,8 @@ evidence and notes.
 
    ## Open
    - Questions waiting for someone (who), blockers.
+   - Agents still running when this was saved: what each one does and where
+     its output goes. Their results aren't in this file.
 
    ## Next
    1. The next concrete step, then the ones after it.
@@ -77,6 +79,13 @@ evidence and notes.
    80 lines at most; details stay in the files it points to.
 4. In the chat: the file's path on its own line, then the two steps, each on
    its own line: `/clear`, and `kontynuuj IP-123` (with the real key).
+5. **An agent still running** (a subagent or background task started in this
+   conversation that hasn't reported back): saving is fine, but `/clear` now
+   would lose its result. Never stop or cancel it for a handoff. List it under
+   "Open", and instead of the two steps tell the user to wait: say which agent
+   is still working, and that once it reports you'll update the handoff and
+   then `/clear` is safe. When its result arrives, add it to the file (Done,
+   Findings, Drafts) before offering `/clear`.
 
 ## Loading
 
