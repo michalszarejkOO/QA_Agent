@@ -33,7 +33,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 CLAUDE_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude"))
 ENV_DIR = CLAUDE_DIR / "environments"
-META = {"atlassian-connectors.json", "evidence.json", "postman.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
+META = {"atlassian-connectors.json", "evidence.json", "handoff.json", "postman.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
 SCRIPTS = REPO / "skills" / "updating-qa-agent" / "scripts"
 WRAPPER = CLAUDE_DIR / "skills" / "testing-apps" / "scripts" / "playwright-mcp.sh"
 
@@ -258,6 +258,38 @@ def check_repo(r):
     else:
         r.add("WARN", "git hooks not enabled: pulls won't re-run setup.sh or say when an update is needed",
               f"{REPO / 'setup.sh'}")
+
+
+def handoff_check(r):
+    folder = REPO / "skills/session-handoff/scripts"
+    out = subprocess.run([sys.executable, "-I", str(folder / "context_hook.py"), "--settings"],
+                         capture_output=True, text=True)
+    try:
+        conf = json.loads(out.stdout)
+    except ValueError:
+        conf = {"mode": "ask", "thresholdTokens": 100000}
+    if not (ENV_DIR / "handoff.json").exists():
+        r.add("INFO", "no handoff.json: the context hook offers a handoff past 100k tokens (mode ask)")
+    else:
+        r.add("INFO", f"session handoff: mode {conf['mode']}, from {conf['thresholdTokens'] // 1000}k tokens")
+    chosen = (load(ENV_DIR / "handoff.json") or {}).get("statusLine")
+    if chosen == "qa-agent":
+        line = subprocess.run([sys.executable, "-I", str(folder / "register_statusline.py"), "--check"],
+                              capture_output=True, text=True)
+        if line.returncode == 0:
+            r.add("OK", "context status line set (ctx turns yellow at the handoff threshold, red 20k later)")
+        else:
+            r.add("WARN", "QA_Agent status line chosen but not set: you won't see when the context grows large",
+                  f"python3 -I {folder / 'register_statusline.py'} (or run setup.sh)")
+    if conf["mode"] == "never":
+        return
+    reg = subprocess.run([sys.executable, "-I", str(folder / "register_handoff_hook.py"), "--check"],
+                         capture_output=True, text=True)
+    if reg.returncode == 0:
+        r.add("OK", "session-handoff context check runs on every prompt (UserPromptSubmit hook)")
+    else:
+        r.add("WARN", "session-handoff hook not registered: no hint when a conversation grows large",
+              f"python3 -I {folder / 'register_handoff_hook.py'} (or run setup.sh)")
 
 
 def check_configs(r, products):
@@ -582,6 +614,7 @@ def full():
     check_postman(r, postman_products(products))
     check_stray_files(r, products)
     check_compact_window(r)
+    handoff_check(r)
     days = update_settings()["checkDays"]
     when = {"daily": "every day", "never": "never"}.get(days) if isinstance(days, str) else ", ".join(days)
     r.add("INFO", f"update check: {when}" + ("" if days == "never" else " (first session that day)"),
