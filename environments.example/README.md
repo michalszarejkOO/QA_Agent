@@ -13,7 +13,7 @@ into `~/.claude/skills/`. So everything about a product (config, project skill,
 evidence, run output) lives in its own folder and goes away with it. Deleting
 a project folder leaves a dangling link: the validator reports it and
 `./setup.sh` removes it. Only the shared files, `atlassian-connectors.json`,
-`evidence.json`, `qa-agent-updates.json`, `postman.json`,
+`evidence.json`, `handoff.json`, `qa-agent-updates.json`, `postman.json`,
 `qa-agent-preferences.json` and `qa-agent-migrations.json`, are real files in
 `~/.claude/environments/`.
 
@@ -55,6 +55,18 @@ a product that has both a UI and an API collection).
   automatic output files instead of the folder Claude was opened in (see
   `skills/testing-apps/references/adapters/web.md`).
   Mobile videos use `agent-device record`.
+
+- [`handoff.example.json`](./handoff.example.json) — one file for this machine,
+  saved as `environments/handoff.json`. It sets what the `session-handoff`
+  context hook does once a conversation's context passes `thresholdTokens`
+  (default 100000): `"mode": "ask"` (the default) offers to save the work state
+  to `<workDir>/qa-evidence/<TICKET>/handoff.md` and continue after `/clear`,
+  `"auto"` saves it without asking, `"never"` stays silent. It speaks again only
+  after the context grows by `repeatTokens` (default 40000).
+  `"statusLine": "qa-agent"` sets the QA_Agent status line, whose `ctx` part
+  shows the context in percent and tokens and turns green, purple (from 100k),
+  yellow (from `thresholdTokens`) and red with `/clear!` (20k later); `"own"`
+  keeps your own status line.
 
 - [`qa-agent-updates.example.json`](./qa-agent-updates.example.json) — one file
   for this machine, saved as `environments/qa-agent-updates.json`. `checkDays`

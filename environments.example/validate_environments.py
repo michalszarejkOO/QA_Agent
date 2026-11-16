@@ -25,9 +25,10 @@ from pathlib import Path
 VALID_CLIENTS = {"bruno", "postman", "insomnia"}
 VALID_PUBLISH_TARGETS = {"1password", "local", "1password+local", "confluence"}
 VALID_EVIDENCE_MODES = {"auto", "ask"}
+VALID_HANDOFF_MODES = {"ask", "auto", "never"}
 VALID_INSTALL_MODES = {"clean", "update", "installed"}
 VALID_CHECK_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-META_FILES = {"atlassian-connectors.json", "evidence.json", "postman.json", "qa-agent-migrations.json",
+META_FILES = {"atlassian-connectors.json", "evidence.json", "handoff.json", "postman.json", "qa-agent-migrations.json",
               "qa-agent-updates.json", "qa-agent-preferences.json"}
 
 
@@ -280,6 +281,19 @@ def check_updates_file(data):
     return errors
 
 
+def check_handoff_file(data):
+    errors = []
+    mode = data.get("mode", "ask")
+    if mode not in VALID_HANDOFF_MODES:
+        errors.append(f"'mode' must be one of {sorted(VALID_HANDOFF_MODES)}, got {mode!r}")
+    for key in ("thresholdTokens", "repeatTokens"):
+        if key in data and not (isinstance(data[key], int) and not isinstance(data[key], bool) and data[key] > 0):
+            errors.append(f"'{key}' must be a positive whole number of tokens, got {data[key]!r}")
+    if data.get("statusLine", "own") not in ("qa-agent", "own"):
+        errors.append(f"'statusLine' must be \"qa-agent\" or \"own\", got {data['statusLine']!r}")
+    return errors
+
+
 def check_postman_file(data):
     ref = data.get("apiKeyRef") if isinstance(data, dict) else None
     parts = ref[len("op://"):].split("/") if isinstance(ref, str) and ref.startswith("op://") else []
@@ -359,7 +373,8 @@ def main():
     any_errors = False
     for name, check in (("evidence.json", check_evidence_file), ("qa-agent-updates.json", check_updates_file),
                         ("postman.json", check_postman_file),
-                        ("qa-agent-preferences.json", check_preferences_file)):
+                        ("qa-agent-preferences.json", check_preferences_file),
+                        ("handoff.json", check_handoff_file)):
         shared_path = env_dir / name
         if not shared_path.exists():
             continue

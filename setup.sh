@@ -95,6 +95,16 @@ fi
 echo
 python3 -I "$REPO_ROOT/skills/updating-qa-agent/scripts/register_update_hook.py" || true
 
+# Point out when a conversation grows large, so the work can be handed off to a
+# fresh session (session-handoff skill). What it does is set in
+# environments/handoff.json (ask / auto / never).
+python3 -I "$REPO_ROOT/skills/session-handoff/scripts/register_handoff_hook.py" || true
+# The context status line (ctx turns yellow at the handoff threshold, red 20k
+# later), only for those who chose it ("statusLine": "qa-agent" in handoff.json).
+if [ "$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1])).get("statusLine",""))' "$ENV_DIR/handoff.json" 2>/dev/null)" = "qa-agent" ]; then
+  python3 -I "$REPO_ROOT/skills/session-handoff/scripts/register_statusline.py" || true
+fi
+
 # The 1Password CLI is required once a product publishes its API collection with
 # its environments (which hold tokens) to 1Password (api.publish.target).
 # configure-project and migration 006 install it when that's chosen; this keeps it
