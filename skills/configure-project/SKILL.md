@@ -114,9 +114,9 @@ repo's `skills/` or `agents/`.
    - **mix**: one question per action (`ask` / `auto` / `never`), two questions
      of three; suggest `ask` for `updateProjectSkill`.
    Then ask which Claude Code permission groups to allow so its own prompts stop
-   too (multi-select, see [references/preferences.md](./references/preferences.md),
-   "Claude Code permissions"): read groups suggested, write groups only if the
-   matching action is `auto`. Write the file with `scripts/preferences.py set`
+   too, exactly as [references/preferences.md](./references/preferences.md),
+   "Asking about permissions" says: plain labels, read suggested, write only
+   when a writing action is `auto`. Write the file with `scripts/preferences.py set`
    per action (and `claudePermissions` / `results` by hand, following
    `environments.example/qa-agent-preferences.example.json`), run
    `scripts/preferences.py permissions --apply` if they picked any group, and

@@ -153,6 +153,36 @@ groups of tools to allow, so those prompts stop too:
 | `jira-read` / `jira-write` | read / comment, create, update tools of each Atlassian server in `atlassian-connectors.json` |
 | `confluence-read` / `confluence-write` | read / create, update, upload tools of the same servers |
 
+### Asking about permissions
+
+Users mix these prompts up with QA_Agent's own questions, and a question that
+names group ids (`jira-read`) or packs the suggestion into it gets cut off and
+means nothing. Ask it like this, in the user's language:
+
+- The question says, in plain words, that this is about Claude Code's own
+  "allow this tool?" prompt, separate from the previous question, and asks
+  which tools may skip it. About this length (Polish): "Claude Code sam pyta
+  „pozwolić?” przy pierwszym użyciu narzędzia, niezależnie od pytań QA_Agent.
+  Z których narzędzi może korzystać bez tego pytania?" No suggestion, no
+  parentheses in the question: the recommendation goes in the option labels.
+- Multi-select, four options, labels in plain words (no group ids), each
+  description one sentence on what Claude can then do without the prompt:
+  1. "Odczyt 1Password (zalecane)": look up items and read values, for
+     example the collection or an environment; nothing is changed.
+  2. "Odczyt Jiry (zalecane)": read tickets, comments and links on the Jira
+     sites from `atlassian-connectors.json`; nothing is changed.
+  3. "Odczyt Confluence (zalecane)": read pages on the same sites.
+  4. "Zapis w 1Password, Jirze i Confluence", marked "(zalecane)" only when
+     one of publishCollection, postJiraComment, fileBugs is `auto`: create
+     and edit (publish the collection, post comments, file bugs, create
+     pages), never delete. Its description adds: pick it only for actions set
+     to `auto`; with `ask`, QA_Agent asks before every write anyway.
+- Map the picks to `claudePermissions`: 1 `1password-read`, 2 `jira-read`,
+  3 `confluence-read`, 4 the three write groups.
+- After the answer, say in one line what was allowed and that removing the
+  rule from `permissions.allow` in `~/.claude/settings.json` brings the prompt
+  back. It doesn't stop 1Password's Touch ID; that's a separate step.
+
 `preferences.py permissions` shows which allow rules are missing from
 `~/.claude/settings.json`; `preferences.py permissions --apply` adds them (it
 never removes any) and keeps `settings.json.bak`. Adding permissions is the

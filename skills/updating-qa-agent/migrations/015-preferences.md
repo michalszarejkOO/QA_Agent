@@ -35,7 +35,9 @@ and nothing is asked twice.
    agent can now publish, post and file by itself, per action. Then ask as
    `configure-project` step 5b does, with its four options and their
    descriptions (`ask`, suggested; `auto`, which leaves `updateProjectSkill` at
-   `ask`; `never`; `mix`, per action), then the permission groups question, and
+   `ask`; `never`; `mix`, per action), then the permission groups question
+   exactly as `configure-project` `references/preferences.md`, "Asking about
+   permissions" says, and
    write the file with `preferences.py set` (and the `claudePermissions` list
    by hand). Show `preferences.py show`.
 2. **Permissions (asks; default: yes when a group was picked).** Run
