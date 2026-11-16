@@ -1,7 +1,7 @@
 ---
 name: session-handoff
 description: Saves the state of work on a ticket to handoff.md in the ticket's folder (what was checked, findings, decisions, drafts and whether they were posted, open questions, the next step), so the user can /clear a long conversation and carry on in a fresh one, and loads it back at the start of that new session. Keeps one current file per ticket, rewritten on every save. A hook can point out when the context has grown large (environments/handoff.json, mode ask, auto or never).
-when_to_use: "Trigger on: 'zapisz stan', 'zapisz stan pracy nad IP-123', 'zrób handoff', 'save the state', 'hand off this session', 'kontynuuj IP-123', 'wczytaj handoff', 'resume IP-123', 'where did we stop on IP-123', a session-handoff note from the context hook, or a new session that names a ticket with a handoff.md in its folder. Do NOT trigger for the Jira comment (writing-jira-comments), test cases (writing-test-cases) or product-wide knowledge (that goes into the project skill)."
+when_to_use: "Trigger on: 'zapisz stan', 'zapisz stan pracy nad IP-123', 'zrób handoff', 'save the state', 'hand off this session', 'kontynuuj IP-123', 'continue IP-123', 'wczytaj handoff', 'resume IP-123', 'where did we stop on IP-123', a session-handoff note from the context hook, or a new session that names a ticket with a handoff.md in its folder. Do NOT trigger for the Jira comment (writing-jira-comments), test cases (writing-test-cases) or product-wide knowledge (that goes into the project skill)."
 ---
 
 # Session handoff
