@@ -11,12 +11,43 @@ feature, written before the pull request, not one per commit.
 
 ## Unreleased
 
+- Sessions cost less. Test runs (API, app exploration, qa-tester) happen in a
+  subagent on Sonnet, so responses, screenshots and diffs no longer stay in
+  the main conversation; ask for Opus ("puść na Opusie") when one run needs
+  it. Skills load less on every run and Jira tickets are read with lighter
+  calls. The update asks at what size Claude Code should compact a long
+  conversation (200k recommended).
 - Long conversations can be handed off to a fresh session: "save the state"
   writes what was done, found and drafted to `handoff.md` in the ticket's
   folder, and after `/clear` "continue IP-123" picks it up from there. Past a
-  context size you set, Claude offers the handoff or saves it on its own. The
-  update asks how it should behave (ask, auto or never), at what context size,
-  and whether to install a status line that shows the context size in colour.
+  context size you set, Claude offers the handoff or saves it on its own, and
+  never while an agent is still working. The update asks how it should behave
+  (ask, auto or never), at what context size, and whether to install a status
+  line that shows the context size in colour.
+- New skills: retest fixed bugs and reworked tickets ("retest IP-330"),
+  analyse a screen recording or screenshot you point to, and draft the QA
+  comment for Jira in your product's format. Every skill now reads the whole
+  ticket, comments included, which often change the acceptance criteria. The
+  update asks which Jira comment format each product uses.
+- Postman no longer loads its 233 tools into every session: syncing with the
+  Postman app runs in its own agent, signed in with your Postman API key from
+  1Password. The update asks for that key's 1Password reference. Its warning
+  lists only the variables the collection really needs.
+- The API collection can live only in 1Password or Confluence, with a local
+  copy kept at the latest published version, and Postman products can keep
+  their test cases in a separate tests collection. The update asks where each
+  product's collection lives and whether to use a tests collection.
+- Everything about one ticket is in its folder: test cases, notes, SQL,
+  scripts and the handoff. The update offers to move existing ticket files
+  there.
+- New users get the same setup questions as existing ones, an update shows
+  this list before it starts, and the setup wizards say where every suggested
+  answer comes from.
+- Smaller fixes: readable evidence videos (recorded at the page's real size),
+  API defects in bugs as copyable JSON instead of screenshots, retest
+  comments cover only the retested ticket, reading a ticket's code never
+  moves your checkout, and every skill's triggers fit in Claude Code's
+  listing.
 
 ## 1.1.0
 
