@@ -11,6 +11,13 @@ feature, written before the pull request, not one per commit.
 
 ## Unreleased
 
+- Long conversations can be handed off to a fresh session: "save the state"
+  writes what was done, found and drafted to `handoff.md` in the ticket's
+  folder, and after `/clear` "continue IP-123" picks it up from there. Past a
+  context size you set, Claude offers the handoff or saves it on its own. The
+  update asks how it should behave (ask, auto or never), at what context size,
+  and whether to install a status line that shows the context size in colour.
+
 ## 1.1.0
 
 - Everything about a product lives in its own working directory: its config,
