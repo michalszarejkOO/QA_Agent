@@ -273,9 +273,11 @@ environment holds more than one item.
   `- <METHOD> <path> (<request name>)`, the path as the request has it with
   the base URL variable left out. A request outside any folder goes under
   `Root:`, one in a subfolder is written `- <METHOD> <path> (<Subfolder> /
-  <request name>)` under its top-level folder. With a tests
-  collection, add a third section, `Tests collection changes:`, in the same
-  shape.
+  <request name>)` under its top-level folder.
+- **Only the main collection.** The tests collection (`testsCollection`) is a
+  copy of the main one extended with test requests, so it gets no release
+  note: don't compare it, don't list its changes, and leave its description
+  as it is.
 - **Environment changes.** `<ENV>` is the environment's name in capitals
   (`STAGE`, `UAT`), on its own line, with one `- <variable>` line per
   variable under it. ADDED: variables only in this export, or `- new
@@ -308,7 +310,7 @@ Where it goes:
 
 | Client | Description |
 | --- | --- |
-| `postman` | `info.description` of the main collection, and of the tests collection when there is one (a string, or the `content` of a `{content, type}` object) |
+| `postman` | `info.description` of the main collection only, never the tests collection (a string, or the `content` of a `{content, type}` object) |
 | `bruno` | The `docs { ... }` block of `collection.bru` (add the block if missing) |
 | `insomnia` | The `description` of the workspace resource in the export file |
 
