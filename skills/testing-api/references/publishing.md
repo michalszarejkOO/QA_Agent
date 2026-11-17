@@ -337,19 +337,23 @@ environment holds more than one item.
   `PRODUCTION: <file>` after `Updated:`.
 
 **Into each collection's description.** Each collection's own note sits at
-the top of its description between two markers, in a code block so it keeps
-its lines:
+the top of its description: a `RELEASE NOTE` line, then the note in a code
+block so it keeps its lines:
 
 ````
-<!-- qa-agent:release-note -->
+RELEASE NOTE
 ```
 <the release note>
 ```
-<!-- /qa-agent:release-note -->
 ````
 
-Replace the block between the markers on every publish; keep everything else
-in the description as it was (with no description, the block is all of it).
+On every publish, replace that block (the `RELEASE NOTE` line and the code
+block right after it) at the top of the description; keep everything else in
+the description as it was (with no description, the block is all of it). A
+description published before this format has the note between
+`<!-- qa-agent:release-note -->` and `<!-- /qa-agent:release-note -->`:
+replace that whole part, markers included, the same way.
+
 Where it goes:
 
 | Client | Description |
