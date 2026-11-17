@@ -29,6 +29,17 @@ feature, written before the pull request, not one per commit.
   Tests items in 1Password that are no longer updated: archive them yourself
   once everyone on the team has updated. Update before the first publish with
   this version, since older versions can't read the new package.
+- Every publish says what changed: the 1Password item's note and the top of
+  the collection's description show the new version, when it was published,
+  the requests added, removed and changed per folder, and the environment
+  variables added, removed or with a new value (names only, never values).
+  The rest of the collection's description stays as it was.
+- After a publish, Claude can also update the collection and environments in
+  your Postman app, or keep the folder Bruno has open current, so you don't
+  import anything by hand. Names stay the same, so no copy appears, and a
+  collection you changed in the app since is never replaced without asking.
+  The update asks whether to do this by itself, ask, or leave it to you
+  (the default).
 - Jira comments: an API ticket gets "QA result" with the endpoint, request and
   response of the happy path, a UI ticket "Checked with status". Screenshots
   sit inside the comment where they belong. The update asks, for each API
