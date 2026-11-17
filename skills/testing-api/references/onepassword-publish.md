@@ -45,20 +45,14 @@ Build the zip from `<run folder>/.publish/` (publishing.md, "Staging"), never
 from the repo files themselves. Its layout is the one `apiCollectionsFolder`
 keeps (publishing.md, "The API collections folder"). A Bruno zip published before environments were
 included, or Postman files published loose, are simply replaced by the zip;
-say so in the `Changes` line ("one zip with environments and tests").
+say so in the summary (publishing.md step 4).
 
-**Notes and tags, every upload.** Replace the item's notes with just when it was
-updated and what this upload changed, nothing else:
-
-```
-Updated: <YYYY-MM-DD HH:MM> (local time)
-Changes: <what this upload changed, in a few words>
-```
-
-`Changes` names what differs from the version it replaces, e.g. "stage:
-+qiwa_api_key", "demo added", "3 requests added in QIWA, 1 removed", or "first
-upload". Never put values in it. An environment whose file name looks like
-production (`prod`, `prd`, `production`, `live`) gets one more line,
+**Notes and tags, every upload.** Replace the item's notes with the release
+note, nothing else: the same text the collection's description gets, in the
+format publishing.md "The release note" gives (`Version`, `Updated`,
+`Collection changes`, `Environment changes`). `Version` is the item's
+`version` + 1, since the one edit call makes exactly one new version; 1 for a
+new item. Variable names only, never values. A production environment adds
 `PRODUCTION: <file>`; publishing.md step 4 asks about it separately. Tags:
 `<product>`, `<client>`, `qa-agent` (lowercase).
 

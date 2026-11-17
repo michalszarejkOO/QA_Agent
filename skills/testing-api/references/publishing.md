@@ -162,6 +162,118 @@ When it's written:
 - Never print values from its environment files, and never put it inside a git
   repo with a remote.
 
+## The release note
+
+Every publish carries one release note: what this version changes compared with
+the version it replaces. The same text goes into the 1Password item's notes
+([onepassword-publish.md](./onepassword-publish.md)) and into the description of
+the published collection, so a teammate sees it in 1Password and in Postman or
+Bruno after the import. Built in step 3, shown in step 4, written into the
+staged package before step 5.
+
+```
+Version: <N>
+Updated: <YYYY-MM-DD HH:MM>
+
+Collection changes:
+ADDED:
+<Folder>: <request>, <request>
+REMOVED:
+<Folder>: <request>
+CHANGED:
+<Folder>: <request>
+
+Environment changes:
+ADDED:
+<ENV>: <variable>, <variable>
+<ENV>: new environment
+REMOVED:
+<ENV>: <variable>
+CHANGED VALUES:
+<ENV>: <variable>
+```
+
+Example:
+
+```
+Version: 13
+Updated: 2026-11-16 12:00
+
+Collection changes:
+ADDED:
+QIWA: Get establishment, Update owner
+REMOVED:
+Auth: Old login
+CHANGED:
+Auth: Login
+
+Environment changes:
+ADDED:
+STAGE: old_token, ip265
+DEMO: new environment
+REMOVED:
+STAGE: legacy_key
+CHANGED VALUES:
+UAT: qiwa_api_key
+```
+
+- **Version** is the version this publish creates: the target's current
+  version + 1 (the 1Password item's `version`, the Confluence attachment's
+  `version.number`, `.published.json`'s `version` for `local`), 1 for a first
+  upload. If step 5 finds the version moved, rebuild the note.
+- **Updated** is local time, when the note is built.
+- **The base** is what this upload replaces: `<run folder>/published-newer/`
+  when step 3 downloaded it, otherwise `<run folder>/published-collection/`.
+  Compare it with the folder this run exports from.
+- **Collection changes.** A request is identified by its folder and name.
+  ADDED: only in this export. REMOVED: only in the base. CHANGED: in both, but
+  its method, URL, headers, body, auth or scripts differ (ignore ids such as
+  `_postman_id`, `uid`, `seq`, and the collection's own description). One line
+  per top-level folder, `<Folder>: <requests, comma-separated>`; a request
+  outside any folder goes under `Root`, one in a subfolder is written
+  `<Subfolder> / <request>` on its top-level folder's line. With a tests
+  collection, add a third section, `Tests collection changes:`, in the same
+  shape.
+- **Environment changes.** `<ENV>` is the environment's name in capitals
+  (`STAGE`, `UAT`). ADDED: variables only in this export, or `<ENV>: new
+  environment` for a whole new file. REMOVED: variables only in the base, or
+  `<ENV>: environment removed`. CHANGED VALUES: variables in both whose value
+  differs. Compare values in a script and **print only the variable names,
+  never a value**, in the note or in the chat.
+- Leave out a heading with nothing under it (no `REMOVED:` when nothing was
+  removed). A section with no changes at all reads `Collection changes: none`
+  or `Environment changes: none`.
+- **First upload**: no base, so both sections are replaced by one line,
+  `First upload`.
+- **A production environment** in the package (publishing step 4) adds
+  `PRODUCTION: <file>` after `Updated:`.
+
+**Into the collection's description.** The note sits at the top of the
+description between two markers, in a code block so it keeps its lines:
+
+````
+<!-- qa-agent:release-note -->
+```
+<the release note>
+```
+<!-- /qa-agent:release-note -->
+````
+
+Replace the block between the markers on every publish; keep everything else
+in the description as it was (with no description, the block is all of it).
+Where it goes:
+
+| Client | Description |
+| --- | --- |
+| `postman` | `info.description` of the main collection, and of the tests collection when there is one (a string, or the `content` of a `{content, type}` object) |
+| `bruno` | The `docs { ... }` block of `collection.bru` (add the block if missing) |
+| `insomnia` | The `description` of the workspace resource in the export file |
+
+Change only the staged copy, never the repo: take the collection file out of
+the package zip into a scratch folder, edit it, and `zip` it back under the same
+path (Insomnia: edit the file in `.publish/`). The repo's collection never holds
+the note, so when comparing (step 3) ignore the collection's description.
+
 ## Procedure
 
 1. **Postman: sync with the app first.** For `client: "postman"`, the files
@@ -209,8 +321,10 @@ When it's written:
    file (Postman, Insomnia), compare the request names in each, e.g. with a short
    `python3 -I` script that walks the `item` tree. Report it as: only in the
    published one (publishing drops these), only in this export, changed in both.
-   For environments, compare only the file names and which variables each defines,
-   never the values.
+   For environments, compare the file names, which variables each defines and
+   whether a value changed, never printing the values.
+   From this comparison build the release note ("The release note" above) and
+   write it into the staged package.
 4. **Show the summary and ask.** Put any warning first (a newer version, scan
    findings, uncommitted changes, a production environment), then:
    ```
@@ -224,6 +338,9 @@ When it's written:
    - lastUpdate (Confluence only): <date>, commit <commit> on <branch>
    - API collections folder: <apiCollectionsFolder> (written without asking; with 1password+local after the upload)   (when the target has one)
    - Check: unchanged since the download (version <N>) | NEWER: version <M> | differs from this export: <summary>
+
+   Release note (1Password notes and the collection's description):
+   <the release note>
    ```
    **Production environments.** If an environment file's name looks like
    production (`prod`, `prd`, `production`, `live`), say so first, in its own
