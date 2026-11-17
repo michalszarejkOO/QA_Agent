@@ -202,6 +202,15 @@ CHANGED VALUES:
 - <variable>
 ```
 
+With a tests collection, a `Tests collection changes:` section goes between
+the two (see "Tests collection changes" below):
+
+```
+Tests collection changes:
+<Folder>:
+- <METHOD> <path> (<subfolder name>)
+```
+
 Example:
 
 ```
@@ -279,10 +288,26 @@ environment holds more than one item.
   (whole folder)` under ADDED or REMOVED; only the outermost new or removed
   subfolder gets a line, nothing inside it. Requests added to or removed from
   a subfolder that already existed are still listed one by one.
-- **Only the main collection.** The tests collection (`testsCollection`) is a
-  copy of the main one extended with test requests, so it gets no release
-  note: don't compare it, don't list its changes, and leave its description
-  as it is.
+- **Tests collection changes.** With a tests collection (`testsCollection`),
+  add a `Tests collection changes:` section after `Collection changes`. It
+  only says where tests changed, never which tests: `<Folder>:` on its own
+  line, then one line per endpoint (the subfolder that holds that endpoint's
+  tests) in which any test request was added, changed or removed, written
+  `- <METHOD> <path> (<subfolder name>)`, or `- <subfolder name>` when the
+  name holds no method and path. No single test requests, no counts, no
+  ADDED / REMOVED / CHANGED headings. A test request directly in a top-level
+  folder puts the folder itself on the list, as `- <Folder>`. Nothing
+  changed: `Tests collection changes: none`. The note still goes into the
+  main collection's description only; the tests collection's description
+  stays as it is. Example, for a new `Certificate` folder with 156 test
+  requests in two endpoint subfolders:
+
+  ```
+  Tests collection changes:
+  Certificate:
+  - POST /v1/assessments/{assessmentId}/submit (certificate after the audit is completed)
+  - GET /v1/storage/{attachmentId}/download-url (certificate)
+  ```
 - **Environment changes.** `<ENV>` is the environment's name in capitals
   (`STAGE`, `UAT`), on its own line, with one `- <variable>` line per
   variable under it. ADDED: variables only in this export, or `- new
