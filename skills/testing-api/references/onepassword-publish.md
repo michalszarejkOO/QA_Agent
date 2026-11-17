@@ -48,9 +48,10 @@ included, or Postman files published loose, are simply replaced by the zip;
 say so in the summary (publishing.md step 4).
 
 **Notes and tags, every upload.** Replace the item's notes with the release
-note, nothing else: the same text the collection's description gets, in the
-format publishing.md "The release note" gives (`Version`, `Updated`,
-`Collection changes`, `Environment changes`). `Version` is the item's
+note, nothing else: the full note publishing.md "The release note" gives
+(`Version`, `Updated`, `Collection changes`, `Tests collection changes` with a
+tests collection, `Environment changes`), while each collection's description
+holds only its own part. `Version` is the item's
 `version` + 1, since the one edit call makes exactly one new version; 1 for a
 new item. Variable names only, never values. A production environment adds
 `PRODUCTION: <file>`; publishing.md step 4 asks about it separately. Tags:

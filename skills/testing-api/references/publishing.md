@@ -164,12 +164,21 @@ When it's written:
 
 ## The release note
 
-Every publish carries one release note: what this version changes compared with
-the version it replaces. The same text goes into the 1Password item's notes
-([onepassword-publish.md](./onepassword-publish.md)) and into the description of
-the published collection, so a teammate sees it in 1Password and in Postman or
-Bruno after the import. Built in step 3, shown in step 4, written into the
-staged package before step 5.
+Every publish carries a release note: what this version changes compared with
+the version it replaces. Each collection gets its own note in its description,
+with only its own changes, so a teammate sees them in Postman or Bruno after
+the import:
+
+- **The main collection's note**: `Version`, `Updated`, `Collection changes`
+  and `Environment changes`.
+- **The tests collection's note** (with a `testsCollection`): `Version`,
+  `Updated` and `Tests collection changes`.
+- **The 1Password item's notes**
+  ([onepassword-publish.md](./onepassword-publish.md)) and the step 4 summary:
+  the full note, all sections in the order below.
+
+Built in step 3, shown in step 4, written into the staged package before
+step 5.
 
 ```
 Version: <N>
@@ -203,9 +212,13 @@ CHANGED VALUES:
 ```
 
 With a tests collection, a `Tests collection changes:` section goes between
-the two (see "Tests collection changes" below):
+the two in the full note (see "Tests collection changes" below). The tests
+collection's own note is that section alone under the same header:
 
 ```
+Version: <N>
+Updated: <YYYY-MM-DD HH:MM>
+
 Tests collection changes:
 <Folder>:
 - <METHOD> <path> (<subfolder name>)
@@ -297,10 +310,10 @@ environment holds more than one item.
   name holds no method and path. No single test requests, no counts, no
   ADDED / REMOVED / CHANGED headings. A test request directly in a top-level
   folder puts the folder itself on the list, as `- <Folder>`. Nothing
-  changed: `Tests collection changes: none`. The note still goes into the
-  main collection's description only; the tests collection's description
-  stays as it is. Example, for a new `Certificate` folder with 156 test
-  requests in two endpoint subfolders:
+  changed: `Tests collection changes: none`. This section is the tests
+  collection's own note (with `Version` and `Updated`) and part of the full
+  note; it never goes into the main collection's description. Example, for a
+  new `Certificate` folder with 156 test requests in two endpoint subfolders:
 
   ```
   Tests collection changes:
@@ -323,8 +336,9 @@ environment holds more than one item.
 - **A production environment** in the package (publishing step 4) adds
   `PRODUCTION: <file>` after `Updated:`.
 
-**Into the collection's description.** The note sits at the top of the
-description between two markers, in a code block so it keeps its lines:
+**Into each collection's description.** Each collection's own note sits at
+the top of its description between two markers, in a code block so it keeps
+its lines:
 
 ````
 <!-- qa-agent:release-note -->
@@ -340,14 +354,15 @@ Where it goes:
 
 | Client | Description |
 | --- | --- |
-| `postman` | `info.description` of the main collection only, never the tests collection (a string, or the `content` of a `{content, type}` object) |
+| `postman` | `info.description` of each collection file: the main note in the main collection, the tests note in the tests collection (a string, or the `content` of a `{content, type}` object) |
 | `bruno` | The `docs { ... }` block of `collection.bru` (add the block if missing) |
 | `insomnia` | The `description` of the workspace resource in the export file |
 
-Change only the staged copy, never the repo: take the collection file out of
-the package zip into a scratch folder, edit it, and `zip` it back under the same
-path (Insomnia: edit the file in `.publish/`). The repo's collection never holds
-the note, so when comparing (step 3) ignore the collection's description.
+Change only the staged copies, never the repo: take the collection files out
+of the package zip into a scratch folder, edit them, and `zip` them back under
+the same paths (Insomnia: edit the file in `.publish/`). The repo's collections
+never hold the note, so when comparing (step 3) ignore each collection's
+description.
 
 ## Procedure
 
@@ -414,8 +429,8 @@ the note, so when comparing (step 3) ignore the collection's description.
    - API collections folder: <apiCollectionsFolder> (written without asking; with 1password+local after the upload)   (when the target has one)
    - Check: unchanged since the download (version <N>) | NEWER: version <M> | differs from this export: <summary>
 
-   Release note (1Password notes and the collection's description):
-   <the release note>
+   Release note (1Password notes; each collection's description gets its own part):
+   <the full release note>
    ```
    **Production environments.** If an environment file's name looks like
    production (`prod`, `prd`, `production`, `live`), say so first, in its own
