@@ -274,6 +274,11 @@ environment holds more than one item.
   the base URL variable left out. A request outside any folder goes under
   `Root:`, one in a subfolder is written `- <METHOD> <path> (<Subfolder> /
   <request name>)` under its top-level folder.
+  When a whole subfolder is new (or a whole subfolder was removed), write one
+  line with the subfolder's name instead of its requests, `- <Subfolder>
+  (whole folder)` under ADDED or REMOVED; only the outermost new or removed
+  subfolder gets a line, nothing inside it. Requests added to or removed from
+  a subfolder that already existed are still listed one by one.
 - **Only the main collection.** The tests collection (`testsCollection`) is a
   copy of the main one extended with test requests, so it gets no release
   note: don't compare it, don't list its changes, and leave its description
