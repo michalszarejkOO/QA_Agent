@@ -177,20 +177,29 @@ Updated: <YYYY-MM-DD HH:MM>
 
 Collection changes:
 ADDED:
-<Folder>: <request>, <request>
+<Folder>:
+- <METHOD> <path> (<request name>)
+- <METHOD> <path> (<request name>)
 REMOVED:
-<Folder>: <request>
+<Folder>:
+- <METHOD> <path> (<request name>)
 CHANGED:
-<Folder>: <request>
+<Folder>:
+- <METHOD> <path> (<request name>)
 
 Environment changes:
 ADDED:
-<ENV>: <variable>, <variable>
-<ENV>: new environment
+<ENV>:
+- <variable>
+- <variable>
+<ENV>:
+- new environment
 REMOVED:
-<ENV>: <variable>
+<ENV>:
+- <variable>
 CHANGED VALUES:
-<ENV>: <variable>
+<ENV>:
+- <variable>
 ```
 
 Example:
@@ -201,21 +210,52 @@ Updated: 2026-11-16 12:00
 
 Collection changes:
 ADDED:
-QIWA: Get establishment, Update owner
+Certificate:
+- POST /v1/assessments/{assessmentId}/submit (certificate after the audit is completed)
+- GET /v1/storage/{attachmentId}/download-url (certificate)
+QIWA:
+- GET /v1/establishments/{establishmentId} (Get establishment)
 REMOVED:
-Auth: Old login
+Auth:
+- POST /v1/auth/login-old (Old login)
 CHANGED:
-Auth: Login
+Auth:
+- POST /v1/auth/login (Login)
 
 Environment changes:
 ADDED:
-STAGE: old_token, ip265
-DEMO: new environment
+STAGE:
+- old_token
+- ip265
+DEMO:
+- new environment
 REMOVED:
-STAGE: legacy_key
+STAGE:
+- legacy_key
 CHANGED VALUES:
-UAT: qiwa_api_key
+UAT:
+- qiwa_api_key
 ```
+
+**One item per line, always.** Under each heading, the folder (or environment)
+name sits alone on its line ending with `:`, and every request or variable
+gets its own line below it, starting with `- `. Never put two items on one
+line, never join them with commas or spaces, even when there are only two:
+
+```
+Certificate:
+- POST /v1/assessments/{assessmentId}/submit (certificate after the audit is completed)
+- GET /v1/storage/{attachmentId}/download-url (certificate)
+```
+
+not
+
+```
+Certificate: POST /v1/assessments/{assessmentId}/submit (certificate after the audit is completed) GET /v1/storage/{attachmentId}/download-url (certificate)
+```
+
+Before writing the note anywhere, check it: no line under a folder or
+environment holds more than one item.
 
 - **Version** is the version this publish creates: the target's current
   version + 1 (the 1Password item's `version`, the Confluence attachment's
@@ -228,16 +268,19 @@ UAT: qiwa_api_key
 - **Collection changes.** A request is identified by its folder and name.
   ADDED: only in this export. REMOVED: only in the base. CHANGED: in both, but
   its method, URL, headers, body, auth or scripts differ (ignore ids such as
-  `_postman_id`, `uid`, `seq`, and the collection's own description). One line
-  per top-level folder, `<Folder>: <requests, comma-separated>`; a request
-  outside any folder goes under `Root`, one in a subfolder is written
-  `<Subfolder> / <request>` on its top-level folder's line. With a tests
+  `_postman_id`, `uid`, `seq`, and the collection's own description). Group
+  by top-level folder: `<Folder>:` on its own line, then one line per request,
+  `- <METHOD> <path> (<request name>)`, the path as the request has it with
+  the base URL variable left out. A request outside any folder goes under
+  `Root:`, one in a subfolder is written `- <METHOD> <path> (<Subfolder> /
+  <request name>)` under its top-level folder. With a tests
   collection, add a third section, `Tests collection changes:`, in the same
   shape.
 - **Environment changes.** `<ENV>` is the environment's name in capitals
-  (`STAGE`, `UAT`). ADDED: variables only in this export, or `<ENV>: new
+  (`STAGE`, `UAT`), on its own line, with one `- <variable>` line per
+  variable under it. ADDED: variables only in this export, or `- new
   environment` for a whole new file. REMOVED: variables only in the base, or
-  `<ENV>: environment removed`. CHANGED VALUES: variables in both whose value
+  `- environment removed`. CHANGED VALUES: variables in both whose value
   differs. Compare values in a script and **print only the variable names,
   never a value**, in the note or in the chat.
 - Leave out a heading with nothing under it (no `REMOVED:` when nothing was
