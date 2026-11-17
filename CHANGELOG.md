@@ -33,7 +33,9 @@ feature, written before the pull request, not one per commit.
   the collection's description show the new version, when it was published,
   the requests added, removed and changed per folder, and the environment
   variables added, removed or with a new value (names only, never values).
-  The rest of the collection's description stays as it was.
+  For a tests collection it lists only the endpoints whose tests changed,
+  not every test request. The rest of the collection's description stays as
+  it was.
 - After a publish, Claude can also update the collection and environments in
   your Postman app, or keep the folder Bruno has open current, so you don't
   import anything by hand. Names stay the same, so no copy appears, and a
