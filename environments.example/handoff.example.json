@@ -1,6 +1,6 @@
 {
   "mode": "ask",
-  "thresholdTokens": 100000,
+  "thresholdTokens": 200000,
   "repeatTokens": 40000,
   "statusLine": "qa-agent",
   "notes": "What the session-handoff context hook does when a conversation grows large (one file for this machine, saved as environments/handoff.json). mode \"ask\" (default): Claude offers in one line to save the work state to handoff.md in the ticket's folder and continue after /clear; \"auto\": Claude saves it without asking and says so; \"never\": the hook stays silent (saving still works on request, e.g. 'zapisz stan'). thresholdTokens: context size at which it speaks; repeatTokens: how much more the context must grow before it speaks again. statusLine: \"qa-agent\" sets the QA_Agent status line, whose ctx part turns green, purple (from 100k), yellow (from thresholdTokens) and red with /clear! (from thresholdTokens + 20k), so you see when to hand off; \"own\" leaves your own status line alone."

@@ -59,7 +59,7 @@ a product that has both a UI and an API collection).
 - [`handoff.example.json`](./handoff.example.json) — one file for this machine,
   saved as `environments/handoff.json`. It sets what the `session-handoff`
   context hook does once a conversation's context passes `thresholdTokens`
-  (default 100000): `"mode": "ask"` (the default) offers to save the work state
+  (default 200000): `"mode": "ask"` (the default) offers to save the work state
   to `<workDir>/qa-evidence/<TICKET>/handoff.md` and continue after `/clear`,
   `"auto"` saves it without asking, `"never"` stays silent. It speaks again only
   after the context grows by `repeatTokens` (default 40000).
