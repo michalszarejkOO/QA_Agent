@@ -89,8 +89,42 @@ def push_collection(uid, file_path, expected_updated_at, api_key):
     cloud_id = uid.split("-", 1)[1]
     collection["info"]["_postman_id"] = cloud_id
     collection["info"]["name"] = current["name"]
+    fixed = stringify_header_values(collection.get("item", []))
     call("PUT", f"/collections/{uid}", api_key, {"collection": collection})
-    print(f"collection replaced: {current['name']} ({uid}), {count_requests(collection.get('item', []))} requests")
+    report = f"collection replaced: {current['name']} ({uid}), {count_requests(collection.get('item', []))} requests"
+    if fixed > 0:
+        report += f", {fixed} header values sent as text"
+    print(report)
+
+
+def stringify_header_values(items):
+    """Postman saves some header values as numbers (e.g. ':status': 403); the API's
+    v2.1 schema accepts only strings and rejects the whole collection with a 400.
+    Changes only the copy sent to the API, never the file. Returns how many it changed."""
+    fixed = 0
+    for item in items:
+        if "item" in item:
+            fixed += stringify_header_values(item["item"])
+        parts = [item.get("request")]
+        for response in item.get("response") or []:
+            parts.append(response)
+            if isinstance(response, dict):
+                parts.append(response.get("originalRequest"))
+        for part in parts:
+            if not isinstance(part, dict) or not isinstance(part.get("header"), list):
+                continue
+            for header in part["header"]:
+                if not isinstance(header, dict) or "value" not in header:
+                    continue
+                value = header["value"]
+                if isinstance(value, str):
+                    continue
+                if value is None:
+                    header["value"] = ""
+                else:
+                    header["value"] = json.dumps(value)
+                fixed += 1
+    return fixed
 
 
 def count_requests(items):

@@ -483,7 +483,9 @@ way (step 7).
      and, per collection and environment file, the matched cloud uid and the
      `updatedAt` it saw. It replaces each one through the Postman API
      (`scripts/postman-push.py`), and the app shows the new version within
-     seconds, as after Import > Replace. **Safety stop, also with `auto`:** a collection or
+     seconds, as after Import > Replace. Header values Postman saved as numbers
+     (e.g. `:status` in a saved response) are sent as text, since the API
+     rejects them otherwise; the files themselves stay unchanged. **Safety stop, also with `auto`:** a collection or
      environment changed in Postman since step 1 (exit code 3) is not replaced;
      report it and ask, since someone edited it in the app after the check. A
      cloud copy step 1 didn't match (new environment, no match) is not created:
