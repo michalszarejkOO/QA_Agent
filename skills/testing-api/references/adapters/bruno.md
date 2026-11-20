@@ -27,18 +27,25 @@ config, timing) is recorded.
 ## Export
 
 ```
-./scripts/export-collection.sh <repo_root> <dest_zip_path> <collectionPath> bruno [collection|environments]
+./scripts/export-collection.sh <repo_root> <dest_zip_path> <collectionPath> bruno [full|collection]
 ```
 
-Zips the collection for import into the Bruno desktop app. The default part,
-`collection`, leaves out `environments/` and `.env` files;
-`environments` zips `environments/` on its own (see
-[publishing.md](../publishing.md)). Always pass a `dest_zip_path` inside the run
-folder (see the parent skill's step 3); the script's own fallback,
-`~/Desktop/<repo-folder-name>-bruno-<part>.zip`, is only for calling it by hand.
-Publishing to 1Password uses the collection zip but sends each environment file
-(`environments/<env>.yml`) as a file of its own (see
-[onepassword-publish.md](../onepassword-publish.md), "What goes into each item").
+Zips the collection for import into the Bruno desktop app. Part `full` is the
+**package**: the collection with `environments/` in one zip (never `.env` files or
+`.git`), which Bruno imports with everything. It goes to 1Password and/or the
+local folder, never to Confluence. Part `collection` leaves out `environments/` and
+`.env` files; it is only for `target: "confluence"`. (The script's third part,
+`environments`, isn't used by this skill.) Always pass a `dest_zip_path` in the
+run folder's `.publish/` (see [publishing.md](../publishing.md), "Staging"); the
+script's own fallback, `~/Desktop/<repo-folder-name>-bruno-<part>.zip`, is only
+for calling it by hand.
+
+
+**Keeping Bruno current.** Bruno reads the collection straight from a folder
+and reloads it when its files change, so the user opens
+`<apiCollectionsFolder>/<collectionPath>` once (Open Collection) instead of
+importing every new zip; each publish rewrites that folder (publishing.md,
+steps 7 and 8, `updateLocalApp`).
 
 ## Run
 

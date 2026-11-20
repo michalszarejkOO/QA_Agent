@@ -126,8 +126,10 @@ to run any number of times.
 ## Fresh install
 `ask` or `skip`, then why. `ask`: the user decides something (a setting, a
 preference), so configure-project runs these Steps on a new machine too.
-`skip`: it only fixes an older install (moved files, an old layout), or
-configure-project already asks the same thing.
+`skip`: it only fixes an older install (moved files, an old layout; say a
+fresh install "has no" old state or gets it "from the start"), or
+configure-project already asks the same thing (name its step, e.g.
+"product-config.md step 5"). `lint` rejects a `skip` that says neither.
 
 ## Steps
 Numbered, written as a wizard: say what changes and why in plain words, ask

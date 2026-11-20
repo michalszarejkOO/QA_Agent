@@ -34,19 +34,26 @@ Postman product (product-config.md step 5).
    it (one product's configs for several environments count as one). Say in
    short: test cases the agent generates can go into a separate collection
    that runs execute, so the main collection keeps one request per endpoint in
-   its own folders and stays readable in Postman; the tests collection is
-   published to its own 1Password item next to the other two. Ask per product
+   its own folders and stays readable in Postman. With the old publish shape
+   (no `api.publish.target`) the tests collection is published to its own
+   1Password item next to the other two; with `api.publish.target` it goes
+   into the same package as the main collection. Ask per product
    "Keep test cases in a separate tests collection?":
    - **Yes** (recommended), then its name, suggesting the main
      collection's name with `_TESTS` (e.g. `ACME_TESTS` next to `ACME`), so the
-     two are easy to tell apart after an import into Postman, and, when the collection goes to 1Password,
-     the item title, suggesting `<Product> Postman Tests`;
+     two are easy to tell apart after an import into Postman, and, only for
+     the old publish shape with the collection in 1Password, the item title,
+     suggesting `<Product> Postman Tests`;
    - no: the configs stay as they are.
 2. **Update the configs (runs by itself).** In every config of each product
-   with a yes, add `api.testsCollection` with the name, and
-   `api.publish.tests` (`"1password"` when `api.publish.collection` is
-   `1password`, otherwise `"none"`) with `api.publish.onePassword.testsItem`
-   for 1Password. Show the diff and run the validator. Don't create the
+   with a yes, add `api.testsCollection` with the name. Then:
+   - the config has `api.publish.target` (migration 016's shape): nothing
+     else; the tests collection travels in the package, and `api.publish`
+     gets no `tests` or `testsItem`;
+   - otherwise (the old shape): add `api.publish.tests` (`"1password"` when
+     `api.publish.collection` is `1password`, otherwise `"none"`) with
+     `api.publish.onePassword.testsItem` for 1Password. Migration 016 later
+     folds them into the one package. Show the diff and run the validator. Don't create the
    1Password item: the first run starts the tests collection and the first
    publish creates the item, after the user's yes.
 3. **The project skill (asks only if something is found).** Search each
@@ -65,5 +72,6 @@ Postman product (product-config.md step 5).
 ## Verify
 
 - `validate_environments.py` prints ok for every changed config.
-- Each changed config has `api.testsCollection`, and `api.publish.tests` with
-  `onePassword.testsItem` when it is `1password`.
+- Each changed config has `api.testsCollection`. With the old shape it also
+  has `api.publish.tests`, with `onePassword.testsItem` when it is
+  `1password`; with `api.publish.target` it has neither.
