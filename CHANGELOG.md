@@ -87,8 +87,10 @@ feature, written before the pull request, not one per commit.
   publish target, evidence videos are readable (recorded at the page's real
   size), API defects in bugs are copyable JSON instead of screenshots, retest
   comments cover only the retested ticket, reading a ticket's code never
-  moves your checkout, and every skill's triggers fit in Claude Code's
-  listing.
+  moves your checkout, every skill's triggers fit in Claude Code's
+  listing, and updating the collection in the Postman app no longer fails
+  when a request or saved response has a number or true/false as a header
+  value.
 
 ## 1.1.0
 
