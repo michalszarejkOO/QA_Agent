@@ -44,7 +44,8 @@ order:
 - **Web:** use the product's environment config whose `environment` field
   matches the branch, and take its `surfaces.<name>.appUrl`. If none matches, ask
   for the URL and don't fall back to another environment's URL.
-- **Mobile:** build from the branch (fresh worktree at `origin/<branch>`) with
+- **Mobile:** build from the branch (fresh worktree at `origin/<branch>`, under
+  `<workDir>/worktrees/`) with
   the config's build command. The build command decides which backend the app
   talks to; don't swap build variants to match the branch name.
 

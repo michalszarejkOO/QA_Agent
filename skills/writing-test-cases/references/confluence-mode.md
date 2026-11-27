@@ -396,7 +396,9 @@ render.
   5. A one-line note telling the tester how to do a fast pass: "For a smoke pass, run
      only the rows tagged Type: Smoke" (these will already be at the top of the
      granular table).
-- Use `getContentFormatGuide` for `createConfluencePage` before authoring the HTML
+- Use `getContentFormatGuide` with `toolName` `createConfluencePage` (through
+  `discover`, see [configure-project/references/connectors.md](../../configure-project/references/connectors.md#atlassian-tool-names);
+  the page itself is created with `createConfluenceContent`) before authoring the HTML
   body if you haven't recently — the page body format has real nesting rules (e.g.
   callouts can't contain tables, but table cells can contain lists and status
   lozenges) that are easy to get wrong from memory.

@@ -1,14 +1,24 @@
 # environments/ config shape
 
-`environments/` (a real directory on your machine, gitignored here — see the root
-`.gitignore`) holds one JSON file per product/environment, e.g.
-`osh-staging.json` or `mowaamah-demo.json`. `qa-tester` and `testing-api`
-match a ticket key or a repo name against each file's `ticketPrefixes` to find the
-right one — never hardcode credentials or environment facts into the skills/agent
-themselves.
+`~/.claude/environments/` (created by `./setup.sh`; `environments/` in this repo
+is a gitignored link to it) is the index of products: one JSON file per
+product/environment, e.g. `osh-staging.json` or `mowaamah-demo.json`. `qa-tester`
+and `testing-api` match a ticket key or a repo name against each file's
+`ticketPrefixes` to find the right one — never hardcode credentials or
+environment facts into the skills/agent themselves.
 
-Run `./setup.sh` first, then create your own files under `environments/` following
-the two shapes below (mix and match fields — both examples in one file is fine for
+Each product file is a **symlink** to the real file in that product's working
+directory, `<workDir>/config/<product>-<env>.json`, the same way skills are linked
+into `~/.claude/skills/`. So everything about a product (config, project skill,
+evidence, run output) lives in its own folder and goes away with it. Deleting
+a project folder leaves a dangling link: the validator reports it and
+`./setup.sh` removes it. Only the shared files, `atlassian-connectors.json`,
+`evidence.json`, `qa-agent-updates.json` and `qa-agent-migrations.json`, are real
+files in `~/.claude/environments/`.
+
+Run `./setup.sh` first, then add products with the `configure-project` skill (or by
+hand: write `<workDir>/config/<product>-<env>.json` and symlink it into
+`~/.claude/environments/`), following the two shapes below (mix and match fields — both examples in one file is fine for
 a product that has both a UI and an API collection).
 
 - [`app-with-ui.example.json`](./app-with-ui.example.json) — a product `qa-tester`
@@ -21,18 +31,76 @@ a product that has both a UI and an API collection).
   app, data kept).
 - [`api-collection.example.json`](./api-collection.example.json) — a product
   `testing-api` runs an API collection against: which client (Bruno, Postman, or
-  Insomnia), repo path, default environment, known stateful-case caveats, and
+  Insomnia), repo path, default environment, the environment ticket mode
+  proposes for confirmation (`ticketEnvironment`, optional; without it, it asks),
+  known stateful-case caveats, where updated collections and environments are
+  published (`publish`: 1Password, Confluence or nowhere, per part), and
   (optionally) a Confluence tracker page to publish results to.
 
 - [`evidence.example.json`](./evidence.example.json) — one file for all products,
-  saved as `environments/evidence.json`. It sets where `qa-tester` saves run
+  saved as `environments/evidence.json`. It sets whether `qa-tester` records run
   evidence (a video per scenario, sorted into happy path, error handling and
   edge cases, plus a separate folder per bug with its screenshot and video)
-  and whether it records automatically (`"mode": "auto"`, the default) or asks
-  first (`"ask"`). Web videos need a Playwright MCP server named
+  automatically (`"mode": "auto"`, the default) or asks first (`"ask"`). The
+  evidence itself goes to the product's `workDir` (below), not to a folder set
+  here; an optional `"dir"` is only a fallback for runs that match no product
+  config. Web videos need a Playwright MCP server named
   `playwright-video` started with `--caps=devtools`. Add it once with
-  `claude mcp add --scope user playwright-video -- npx -y @playwright/mcp@latest --isolated --caps=devtools`.
+  `claude mcp add --scope user playwright-video -- ~/.claude/skills/testing-apps/scripts/playwright-mcp.sh --isolated --caps=devtools`.
+  The wrapper gives each Claude window its own folder for Playwright's
+  automatic output files instead of the folder Claude was opened in (see
+  `skills/testing-apps/references/adapters/web.md`).
   Mobile videos use `agent-device record`.
+
+- [`qa-agent-updates.example.json`](./qa-agent-updates.example.json) — one file
+  for this machine, saved as `environments/qa-agent-updates.json`. `checkDays`
+  sets on which days of the week QA_Agent checks for a newer version of itself:
+  a list such as `["mon"]` (the default) or `["mon", "thu"]`, `"daily"`, or
+  `"never"`. The check runs at the first Claude session on a check day (new,
+  resumed, or after `/clear`), or the next one if there was none that day; when there are new changes, Claude
+  says so and asks whether to see what's new and update. Nothing is ever pulled
+  without a yes.
+
+## Working directory (`workDir`)
+
+Every product file has a required top-level `"workDir"`: one folder per product
+where every file a run produces lands, so switching projects means deleting one
+folder instead of hunting across the machine. Several files for the same product
+(one per environment) share the same `workDir`. Skills create the subfolders
+on demand:
+
+```
+<workDir>/
+  qa-evidence/<ticket or session>/<YYYY-MM-DD>-<web|ios|android>/   testing-apps videos and bug screenshots
+  api-runs/<ticket or YYYY-MM-DD-<env>>/                            testing-api CLI results, report, exported collection and environments zips
+    published-collection/                                           the published collection (1Password or Confluence); ticket runs work from here
+  worktrees/<ticket or branch>/                                     fresh checkouts for mobile builds and branch API runs
+  reports/                                                          create-quality-metrics HTML dashboards
+```
+
+A product with no collection repo of its own can keep its collection inside
+`workDir` too (e.g. `<workDir>/postman/`, pointed at by `api.repo`). Code repos
+may live inside it or anywhere else; `repo` fields keep pointing at them either
+way.
+
+## Old files (`legacyFileKeywords`)
+
+Optional top-level list of words that appear in names of this product's files
+outside `workDir` (e.g. `["Assessment Invoice"]`), besides ticket keys and the
+product name. `configure-project`, migration 007 and `checking-qa-agent` use it to
+find such files (`skills/updating-qa-agent/scripts/find_project_files.py`) and
+offer to move them into `workDir`, always asking first.
+
+## Project skill (`projectSkill`)
+
+Optional but offered for every product: the folder of a skill that holds
+everything specific to the product that isn't config (gotchas, test-data rules,
+workflows, links, lessons from runs). It lives inside `workDir` (usually
+`<workDir>/skills/<product>/`) and is symlinked into `~/.claude/skills/`, so it
+loads in any session. `qa-tester`, `testing-apps` and `testing-api` read its
+`SKILL.md` once they've matched the product, and propose additions to it instead
+of to this repo's skills or Claude's memory. `configure-project` scaffolds it from
+`skills/configure-project/assets/project-skill-template.md`.
 
 Runs without a ticket (generic API runs, standalone app runs) test the
 product's staging-like branch. They detect it from merged MRs/PRs with

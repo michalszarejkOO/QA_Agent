@@ -17,16 +17,77 @@ This links `agents/qa-tester.md` and every folder under `skills/` into `~/.claud
 (or `$CLAUDE_CONFIG_DIR`, if set). If something else already lives at those paths,
 `setup.sh` backs it up to `.bak` before swapping in the symlink — safe to re-run.
 
-Then create `~/.claude/environments/` (global, gitignored, never committed to any
-repo) and add your own `<product>-<env>.json` files with the access details for your
-own staging environments — shape and fields documented in
-[`environments.example/`](./environments.example/). `environments/` in this repo is
-just a convenience symlink to that location so it can be inspected from the project.
+It also creates `~/.claude/environments/` (global, never committed to any repo), the
+index of products, plus `environments/` in this repo as a convenience link to it,
+removes product links there whose project folder is gone, and installs the
+1Password CLI (`op`) with Homebrew if a product needs it and it's missing. `op` is
+required once you test an API and publish its collection or environments (which
+hold tokens) to 1Password, the default `configure-project` suggests; setups for
+UI testing only don't need it. Turn on its sign-in once in the 1Password app (Settings > Developer >
+Integrate with 1Password CLI); you always approve access yourself, Claude never
+handles the password.
 
-**Fastest path:** instead of doing the above by hand, ask Claude to run the
-`configure-project` skill (`skills/configure-project/`) — it walks you through which
-Atlassian connectors are authorized, which products/repos you're testing, and
-generates the `environments/*.json` files for you.
+Then add your products: ask Claude to run the `configure-project` skill
+(`skills/configure-project/`). It walks you through which Atlassian connectors are
+authorized (Atlassian's own MCP server only: the claude.ai Atlassian connector or
+`https://mcp.atlassian.com/v2/mcp`, see
+[`connectors.md`](./skills/configure-project/references/connectors.md)) and which
+products/repos you're testing, and for each product writes
+`<workDir>/config/<product>-<env>.json` in the project's own working directory and
+symlinks it into `~/.claude/environments/`. Shape and fields are documented in
+[`environments.example/`](./environments.example/).
+
+## Updating an existing install
+
+```
+git pull
+./setup.sh
+```
+
+Or open Claude in this folder and say "set up QA_Agent" / "zrób setup": `CLAUDE.md`
+tells it to run `setup.sh` and then whichever of `configure-project` (no products
+yet) or `updating-qa-agent` (pending migrations) applies.
+
+The first `setup.sh` also enables the repo's git hooks (`core.hooksPath=.githooks`):
+from then on every `git pull` and branch switch re-runs `setup.sh` and prints
+whether the setup needs an update. Git never enables hooks by itself, so that
+first run is always manual. `setup.sh` also registers a Claude Code
+SessionStart hook (`skills/updating-qa-agent/scripts/check_updates.py`): whatever
+folder you open Claude in, it fetches the QA_Agent repo and, if there are new
+changes, says a newer version is available and asks whether to see what's new
+and update. It never pulls without your yes. It checks only on the days of the
+week you choose (`checkDays` in `~/.claude/environments/qa-agent-updates.json`,
+e.g. Monday, or Monday and Thursday; also "daily" or "never"; Monday by default),
+at the first new, resumed or cleared (`/clear`) session that day, or the next
+one if you skipped that day.
+`configure-project` asks once, and you can change it any time by saying "change
+update settings" / "zmień ustawienia aktualizacji". `qa-tester`, `testing-apps` and `testing-api` also
+check the setup at the start of a run and warn when it's out of date.
+
+To see whether everything a run needs is in place (links, hooks, configs, MCP
+servers, tools, Jira access), say "check QA_Agent" / "sprawdź setup": the
+`checking-qa-agent` skill prints a FAIL/WARN/OK report with a fix command for each
+problem and changes nothing. `setup.sh` prints the same report minus the live Jira
+check, and `configure-project` / `updating-qa-agent` end with it.
+
+`setup.sh` does everything that needs no decision and lists any pending
+**migrations**: changes that existing installs can't pick up from `git pull` alone
+(a new required config field, files that move, an MCP server registered
+differently). Apply them by telling Claude "update QA_Agent" / "aktualizuj skille":
+the `updating-qa-agent` skill runs them in order, asks only what it can't work
+out (e.g. a project's working directory), and records what's done, so every
+machine ends up with the same setup however many updates it skipped.
+
+## Making changes to QA_Agent
+
+If your change needs something done on machines that already use QA_Agent, add
+a migration in the same commit: `skills/updating-qa-agent/migrations/NNN-<slug>.md`
+with the sections "What changed", "Is it needed", "Steps" and "Verify" (details in
+[`skills/updating-qa-agent/SKILL.md`](./skills/updating-qa-agent/SKILL.md)), then run
+`python3 -I skills/updating-qa-agent/scripts/migrations.py lint`. A change that
+only edits skill text needs no migration. Removing or renaming a skill folder:
+add its old name to `RETIRED_SKILLS` in `setup.sh`. Keep skills and the agent
+product-agnostic (see "Generic skills here, project knowledge in the project").
 
 ## Contents
 
@@ -38,11 +99,14 @@ generates the `environments/*.json` files for you.
   happen to be working in — a new app arrives, you add another
   `<product>-<env>.json` file with a `ticketPrefixes` field, and both find it
   automatically by ticket prefix or repo, instead of waiting for details to be
-  pasted in mid-session. See [`environments.example/`](./environments.example/) for
+  pasted in mid-session. Each product file also names a required working
+  directory (`workDir`): the one folder where everything a run produces for that
+  product lands (evidence, API run output, worktrees, reports), so dropping a
+  project means deleting one folder. See [`environments.example/`](./environments.example/) for
   the exact JSON shape (separate examples for a product with a UI and a product with
   an API collection). `environments.example/validate_environments.py` checks the
   shape of these files (required fields, valid `api.client`, a product with neither
-  `api` nor `surfaces`) and one cross-file consistency check: whether a product's
+  `api` nor `surfaces`, a `workDir` that doesn't exist) and one cross-file consistency check: whether a product's
   `jira.connector` actually exists in `atlassian-connectors.json` and whether the two
   files agree on the site. It does not check whether a given connector is actually
   authorized live right now — that drifts independently of the files and needs a
@@ -50,8 +114,8 @@ generates the `environments/*.json` files for you.
 
 - `skills/configure-project/` — interactive setup wizard for a new clone: asks which
   Atlassian MCP connectors are authorized and for which sites, then asks about each
-  product (ticket prefixes, repo path, web/mobile UI and/or API collection,
-  credentials, Confluence tracker) and writes the resulting
+  product (ticket prefixes, working directory, repo path, web/mobile UI and/or API collection,
+  credentials, where collections and environments are published) and writes the resulting
   `environments/*.json` files. Never edits any other skill or agent file — config
   only.
 - `agents/qa-tester.md` — the subagent that performs QA on a live application based
@@ -87,7 +151,7 @@ generates the `environments/*.json` files for you.
   skill) carries the `agent-device` mechanics: converting screenshot pixels to
   points for `press`, verifying a "dead button" both by ref and by coordinates (to
   catch real accessibility hit-frame mismatches instead of reporting a false
-  alarm), the gotcha where the daemon holds onto stale environment variables, and a
+  alarm), the shared daemon that holds onto stale environment variables, and a
   separate reference file for one-time signing setup on a physical iPhone. Rules
   shared by both platforms (the real-account/real-payment boundary, "don't judge
   without examining the screenshot") live once, in the main `SKILL.md`, not
@@ -100,15 +164,18 @@ generates the `environments/*.json` files for you.
   (it applies before a feature is delivered, so `qa-tester` would never use it —
   binding it would only raise the context cost of every test run).
 - `skills/testing-api/` — runs a repo's API test collection (Bruno, Postman, or
-  Insomnia) via that tool's CLI against a live environment, exports it to a zip,
-  optionally refreshes a Confluence tracker page (attaching the zip), and produces a
+  Insomnia) via that tool's CLI against a live environment, exports the collection
+  and its environments separately, optionally publishes them where the product
+  config says (1Password, as plain files in Secure Notes with an "Updated /
+  Changes" note; or a Confluence tracker page for a secret-free collection; after
+  a check for a newer version and your yes), and produces a
   pass/fail report ready to paste into a Jira comment. **Standalone, deliberately
   unbound** from `qa-tester` — this is collection-level API testing, not manual QA
   against a live app. Product- and tool-agnostic: which repo/collection/client and
-  (if applicable) which Confluence page comes from
+  (if applicable) where it's published comes from
   `environments/<product>-<env>.json` → the `api` key (`client`: `bruno` |
   `postman` | `insomnia`, plus repo, collectionPath, defaultEnvironment,
-  knownCaveats, optionally confluence). Tool-specific mechanics (how to package the
+  optionally ticketEnvironment, knownCaveats, optionally publish and confluence). Tool-specific mechanics (how to package the
   collection, the exact CLI invocation, where per-case annotations/caveats live)
   live in one adapter file per client (`references/adapters/{bruno,
   postman,insomnia}.md`); everything else (report template, Confluence publishing,
@@ -132,6 +199,24 @@ generates the `environments/*.json` files for you.
   doesn't guess, it asks the user. Doesn't duplicate anyone else's context — it only
   classifies and hands off.
 
+- `skills/creating-jira-tickets/` — turns a drafted bug or task into a real Jira
+  issue: reconciles it with the project's required fields, asks for what's
+  missing, and creates it only after explicit confirmation.
+- `skills/create-quality-metrics/` — client-facing QA quality dashboard (HTML or
+  Confluence) with a release-readiness verdict, from real Jira/test/CI numbers only.
+  The HTML goes to the product's `<workDir>/reports/`.
+- `skills/updating-qa-agent/` — brings an existing install up to date after a
+  pull: runs `setup.sh`, then applies pending migrations from its `migrations/`
+  folder in order (state in `~/.claude/environments/qa-agent-migrations.json`).
+  Anyone changing QA_Agent in a way existing installs must act on adds a migration
+  here (see "Making changes to QA_Agent").
+- `skills/checking-qa-agent/` — read-only health check ("doctor"): links, hooks,
+  migrations, configs, MCP servers, tools, and live Jira access, each problem with
+  its fix command. Its script part (`updating-qa-agent/scripts/check_setup.py`) also
+  runs quickly at the start of every test run and after every pull.
+- `CLAUDE.md` and `.githooks/` — route "set up / update QA_Agent" requests to the
+  right skill, and re-run `setup.sh` after every pull or branch switch.
+
 ## Origin notes
 
 Several pieces of this repo grew out of real QA sessions rather than being designed
@@ -152,8 +237,10 @@ registering the device's UDID with a developer account) took up most of that
 session and was moved into its own reference file so later runs wouldn't
 re-discover it by trial and error. Two lessons from that session are worth knowing
 regardless of project: the `agent-device` daemon holds onto the environment
-variables from when it started (a later `export` doesn't reach it — it has to be
-killed and restarted), and `press <x> <y>` takes iOS points, not screenshot pixels —
+variables from when it started (a later `export` doesn't reach it, and since every
+session shares that daemon, a signed run gets one of its own through
+`AGENT_DEVICE_STATE_DIR` instead of killing it), and `press <x> <y>` takes iOS
+points, not screenshot pixels —
 mixing up the units once produced a false "dead button" report for a control that
 actually worked once tapped in the right place (and still surfaced a real bug: its
 accessibility hit-frame was offset from its visible position — a serious issue in an
@@ -185,6 +272,27 @@ startup, rather than loading them on demand the way a normal session does, so
 `reporting-bugs` calls it, not `qa-tester` directly.
 `preparing-refinement-questions` is invoked directly, independent of `qa-tester` —
 e.g. "prepare refinement questions for ACME-1234".
+
+## Generic skills here, project knowledge in the project
+
+This repo's skills and agent stay product-agnostic: nothing in `skills/` or
+`agents/` names a real product. Everything specific to one product lives in two
+places outside the repo, both found through the product's
+`environments/<product>-<env>.json`:
+
+- **Config** (URLs, logins, repos, collection, Jira connector): the JSON file
+  itself, kept in `<workDir>/config/` and symlinked into `~/.claude/environments/`.
+- **Knowledge** (gotchas, test-data rules, workflows, links, lessons from runs):
+  the product's own skill, `projectSkill`, a folder inside the product's
+  `workDir`, symlinked into `~/.claude/skills/<product>`.
+
+A normal session loads the project skill by its description. A subagent only
+gets the skills in its frontmatter, so `qa-tester` (and `testing-apps` /
+`testing-api` wherever they run) read `projectSkill/SKILL.md` explicitly once
+they've matched the product. When a run turns up something new about the product,
+it's proposed as an addition to that skill, applied only after the user approves,
+and never added to this repo or to Claude's memory. Dropping a project means
+deleting its `workDir`, and the config, output and knowledge all go with it.
 
 ## Eval suite
 

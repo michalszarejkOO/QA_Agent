@@ -16,13 +16,22 @@ evals/results/
 # run from live Jira/test data, not part of the project.
 *-quality-*.html
 
-# testing-apps fallback evidence folder (videos/screenshots) when
-# environments/evidence.json has no 'dir', plus Playwright MCP videos waiting to
+# testing-apps / testing-api fallback output folders when a run matches no
+# product config with a 'workDir', plus Playwright MCP videos waiting to
 # be moved into the run folder.
 qa-evidence/
 qa-video/
+api-runs/
+
+# Local staging for Confluence uploads (exported collection zips, environment
+# files with live tokens) — never commit.
+.upload-tmp/
+*.zip
+*-populated.yml
 
 # OS cruft
 .DS_Store
 # Local claude settings
 .claude/settings.local.json
+# Python bytecode from running the repo scripts.
+__pycache__/

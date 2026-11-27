@@ -73,9 +73,11 @@ diff.
    - No file, or no `dir` → ask the user which folder to save run videos and bug
      screenshots to, write it to `evidence.json` (`mode: "auto"` unless they say
      otherwise), then continue.
-   - `mode: "ask"` → ask the user whether to record and save evidence for this
-     run, and pass the answer in the brief ("evidence: record and save" / "evidence:
-     don't record").
+   - `mode: "ask"` → ask the user which evidence to save for this run, with
+     two options: videos and screenshots (default), or screenshots only. Pass
+     the answer in the brief as its line from "Recorded evidence" in the
+     `testing-apps` skill ("evidence: record and save" / "evidence: screenshots
+     only").
    - `mode: "auto"` or missing → nothing to ask; `qa-tester` records by default.
 
    Stop here once `qa-tester` is invoked.
@@ -94,7 +96,11 @@ Before invoking `qa-tester`, also say what it will do: target, ticket, and
 whether it will record evidence and where. `qa-tester` runs as a subagent and
 the user sees nothing until it returns. When it returns, relay its **Summary**
 (done, and not done/skipped with reasons) and its scenario-results table as-is,
-then the rest of the report.
+then the rest of the report. When the user then says yes to posting the comment
+or filing a bug, put its screenshots and videos on Jira as
+`~/.claude/skills/creating-jira-tickets/references/jira-attachments.md` says:
+through Atlassian's own server, from the run folder, never through
+`mcp-atlassian` and never via a copy in another folder.
 
 ## Output
 

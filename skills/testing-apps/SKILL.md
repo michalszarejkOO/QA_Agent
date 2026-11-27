@@ -24,8 +24,8 @@ execution mechanics in between.
 
 A macOS, Apple TV, or web-only `agent-device` target is out of scope for the mobile
 adapter — `agent-device` supports those too, but this skill's mobile rules
-(physical-device signing, points/pixels conversion, the daemon-env gotcha) are
-specific to iOS/Android handhelds and simulators/emulators. Call `agent-device`
+(physical-device signing, points/pixels conversion, the shared daemon and its
+signing env) are specific to iOS/Android handhelds and simulators/emulators. Call `agent-device`
 directly for a desktop/TV target, or the web adapter if the target is actually a
 web page.
 
@@ -52,6 +52,13 @@ web page.
   logout/account-deletion too — see the mobile adapter.
 - **Never restart, switch, or reconfigure the pinned target.** The delegated app
   URL, device, or app is fixed for the run.
+- **Follow the project skill.** Once the target is matched to a product config
+  with `projectSkill`, read `<projectSkill>/SKILL.md` before the first scenario
+  (inside `qa-tester` it's already read). Its rules on test data, logins and
+  environment quirks apply on top of these. When the run turns up something new
+  about the product, propose it as an addition to that skill in the end summary,
+  and add it only after the user approves. Product-specific findings never go
+  into this skill or Claude's memory.
 
 ## Recorded evidence (scenario videos and bug folders)
 
@@ -61,25 +68,36 @@ and a video, and saves everything to a folder the user chose. This is separate
 from the checkpoint screenshots you take to judge pass/fail (see above), which
 you take either way.
 
-**Settings.** Read `~/.claude/environments/evidence.json` (or
+**Settings.** Read `mode` from `~/.claude/environments/evidence.json` (or
 `$CLAUDE_CONFIG_DIR/environments/evidence.json`) at the start of the run:
+`auto` (the default, also when the field or the file is missing) records and
+saves without asking; `ask` means the user chooses for this run. The delegating
+conversation asks before the run, with these two options, and passes the
+answer in the brief as the quoted line:
 
-| Field | Meaning |
-| --- | --- |
-| `dir` | Root folder for saved evidence. Expand `~` yourself. |
-| `mode` | `auto` (the default, also when the field or the file is missing): record and save without asking. `ask`: record and save only if the user said yes for this run. |
+| Option | Brief line | What the run saves |
+| --- | --- | --- |
+| Videos and screenshots (default) | `evidence: record and save` | Everything below: scenario videos, bug folders with screenshot and video, checkpoints |
+| Screenshots only | `evidence: screenshots only` | No videos: no `testing/` folder, bug folders hold only their screenshots, checkpoints as always |
 
-- `mode: ask`: the delegating conversation asks the user before the run and
-  passes the answer in the brief. A subagent can't ask, so with no answer in the
-  brief, don't record or save, and say so in the report.
-- No `dir` configured: the delegating conversation asks the user for a folder
-  and writes it to `evidence.json` before delegating. If you still have no
-  folder, save to `./qa-evidence/` and flag in the report that the folder isn't
-  configured.
-- A folder named in the brief overrides `dir` for that run.
+There is no "save nothing" option: checkpoint screenshots are how pass/fail was
+judged, so they are kept either way. A subagent can't ask, so with no answer in
+the brief, work as with "screenshots only" and say in the report that the
+evidence choice was missing. With "screenshots only", don't start any
+recording, and report the videos as switched off by the user, not as missing.
+
+**Evidence root.** Use the first of these that applies, expanding `~` yourself:
+
+1. A folder named in the brief, for that run only.
+2. `<workDir>/qa-evidence/`, where `workDir` comes from the product config that
+   matched the ticket or target. This is the normal case: everything for one
+   project stays in its working directory.
+3. `dir` from `evidence.json`, only for a run that matches no product config.
+4. `./qa-evidence/`, flagged in the report as "no working directory
+   configured".
 
 **Layout.** Put everything for one run in
-`<dir>/<ticket key, or a short session name>/<YYYY-MM-DD>-<web|ios|android>/`,
+`<evidence root>/<ticket key, or a short session name>/<YYYY-MM-DD>-<web|ios|android>/`,
 creating it with `mkdir -p`:
 
 ```
@@ -91,11 +109,17 @@ bugs/
   <bug-n>-<slug>/
     screenshot.png
     video.mp4
+checkpoints/<n>-<slug>.png      screenshots taken to judge each step
+playwright-mcp/                 web only: page snapshots and console logs
 ```
 
 `testing/` holds the test evidence, one video per scenario, whatever the
 result. `bugs/` holds one folder per bug, with everything needed to attach to
 that bug's ticket and nothing else.
+
+Checkpoint screenshots are saved whatever `mode` says: they're how pass/fail was
+judged, not recordings. With no evidence root at all, they still go to the run
+folder the fallback picks, never to the folder Claude was opened in.
 
 If the run folder already exists from an earlier run today, add `-2`, `-3`, ...
 so nothing is overwritten.
@@ -112,7 +136,8 @@ standalone):
 
 If a scenario fits more than one, pick the one its expected result is about.
 
-**What to record.**
+**What to record.** With `evidence: screenshots only`, skip step 1 and the
+videos in step 2; everything else stays the same.
 
 1. **Every scenario:** start recording at the scenario's first step and stop
    after its expected result is visible. Save the video under `testing/` in
@@ -154,6 +179,8 @@ End every run with a point-list summary:
   saved and where).
 - **Not done / skipped:** each scenario, step, or piece of evidence that wasn't
   done, with its reason. If nothing was skipped, write "Nothing skipped."
+- **Proposed additions to the project skill:** each new product-specific finding,
+  worded as the line to add, or "None".
 
 ## Standalone runs: which branch and environment
 
@@ -167,6 +194,10 @@ the branch instead.
 
 ## Procedure
 
+0. Standalone (not inside `qa-tester`, which already did this): run
+   `python3 -I "$(dirname "$(dirname "$(readlink ~/.claude/agents/qa-tester.md)")")/skills/updating-qa-agent/scripts/check_setup.py"`. If it prints a warning, show it to the user before the run and
+   offer to update first (`./setup.sh`, then the `updating-qa-agent` skill). If
+   they'd rather test now, continue; outputs then fall back as the warning says.
 1. Resolve the adapter from the target (table above). Standalone, first resolve
    the branch and environment per the section above.
 2. Load that adapter's reference file and follow it exactly — it owns discovery,

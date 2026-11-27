@@ -1,6 +1,8 @@
 {
   "product": "acme",
   "environment": "staging",
+  "workDir": "~/Projects/acme",
+  "projectSkill": "~/Projects/acme/skills/acme",
   "ticketPrefixes": ["ACME"],
   "targetBranch": "staging",
   "basicAuth": {

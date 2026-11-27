@@ -56,8 +56,10 @@ than picking colors ad hoc.
 
 ## Saving and presenting
 
-Save as a single `.html` file (suggest a name like `<project>-quality-<scope>.html` in
-the current working directory unless the user names a path), then tell the user the
+Save as a single `.html` file named like `<project>-quality-<scope>.html`, in
+`<workDir>/reports/` when the project matches a product file under
+`~/.claude/environments/` (by its Jira project key in `ticketPrefixes`), else in
+the current working directory, unless the user names a path. Then tell the user the
 file path and that it can be opened directly in a browser or printed to PDF. Don't
 open it in a browser yourself unless asked — presenting the path is enough.
 

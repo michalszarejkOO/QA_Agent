@@ -32,8 +32,9 @@ rather than assuming a fixed template covers it.
    from context (e.g. filing into the same project as a linked ticket), ask — never
    guess a project key.
 3. **Fetch the real schema** for that project + issue type with
-   `getJiraIssueTypeMetaWithFields` (or `getJiraProjectIssueTypesMetadata` to first
-   confirm the issue type exists). This is the authoritative required-field list and,
+   `getJiraIssueTypeMetaWithFields` (after `listJiraProjectIssueTypesMetadata`, which
+   gives the issue type's id; both run through `discover`, see
+   [configure-project/references/connectors.md](../configure-project/references/connectors.md#atlassian-tool-names)). This is the authoritative required-field list and,
    for enumerated fields, their allowed values — read it fresh each time rather than
    reusing a remembered field set from a different project.
 4. **Map the draft onto known fields** — title → summary, steps/expected/actual (or
@@ -53,13 +54,20 @@ rather than assuming a fixed template covers it.
      fixed value set) — ask directly in conversation; a forced-choice widget doesn't
      fit open-ended input.
 6. **Show the full assembled field set for confirmation** before creating anything —
-   every field value that will be sent, not just the ones that changed. Creating a
+   every field value that will be sent, not just the ones that changed, and the
+   files that will be attached. Creating a
    Jira ticket is visible to the whole team and hard to undo cleanly, so this
    confirmation is required every run, not just the first time this skill is used.
 7. **On explicit confirmation, create the ticket** with `createJiraIssue` using
    exactly the confirmed fields. If the user changes anything at this step, re-show
    the updated set before creating — don't file on an unconfirmed edit.
-8. **Report the result** — the created ticket's key and link. If creation fails
+8. **Attach the evidence.** If the draft names a bug folder or files
+   (`screenshot.png`, `video.mp4`), attach each to the new ticket as
+   [references/jira-attachments.md](./references/jira-attachments.md) says:
+   Atlassian's own server, the file from where it lies, never a copy elsewhere.
+   The confirmation in step 6 lists these files, so the yes covers them.
+9. **Report the result** — the created ticket's key and link, and which files
+   were attached (or which to attach by hand, with their full paths). If creation fails
    (e.g. a field Jira rejects), report the actual error rather than retrying with
    guessed field changes.
 

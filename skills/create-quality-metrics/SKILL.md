@@ -46,7 +46,7 @@ spent, and bugs-per-tester are QA-internal metrics and stay off the headline pag
 | [metrics-definitions.md](./references/metrics-definitions.md) | Step 2 (computing) and step 5 (footer) | Each metric's definition, formula, source, and starting JQL |
 | [thresholds.md](./references/thresholds.md) | Step 4 | Default Ready / Ready-with-risks / Not-ready conditions, evaluation order, override handling |
 | [html-output.md](./references/html-output.md) | Step 5, HTML branch | Filling [assets/dashboard-template.html](./assets/dashboard-template.html), the `dataviz` skill hand-off for the trend chart, save/present |
-| [confluence-output.md](./references/confluence-output.md) | Step 5, Confluence branch | Filling [assets/confluence-template.xml](./assets/confluence-template.xml), storage-format macros, live JQL issue macros, preserve-vs-replace on update, publish confirmation |
+| [confluence-output.md](./references/confluence-output.md) | Step 5, Confluence branch | Filling [assets/confluence-template.html](./assets/confluence-template.html), the page HTML (panels, status lozenges, expand), live JQL issue macros, preserve-vs-replace on update, publish confirmation |
 
 ## Procedure
 

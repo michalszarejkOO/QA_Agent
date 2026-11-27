@@ -27,23 +27,43 @@ config, timing) is recorded.
 ## Export
 
 ```
-./scripts/export-collection.sh <repo_root> [dest_zip_path] [collection_subpath]
+./scripts/export-collection.sh <repo_root> <dest_zip_path> <collectionPath> bruno [collection|environments]
 ```
 
-Zips the collection for import into the Bruno desktop app. Without a
-`dest_zip_path` it defaults to `~/Desktop/<repo-folder-name>-bruno-collection.zip`.
-`collection_subpath` defaults to `bruno`.
+Zips the collection for import into the Bruno desktop app. The default part,
+`collection`, leaves out `environments/` and `.env` files;
+`environments` zips `environments/` on its own (see
+[publishing.md](../publishing.md)). Always pass a `dest_zip_path` inside the run
+folder (see the parent skill's step 3); the script's own fallback,
+`~/Desktop/<repo-folder-name>-bruno-<part>.zip`, is only for calling it by hand.
+Publishing to 1Password uses the collection zip but sends each environment file
+(`environments/<env>.yml`) as a file of its own (see
+[onepassword-publish.md](../onepassword-publish.md), "What goes into each item").
 
 ## Run
 
+The Bruno CLI treats the folder it is started from as the collection: it reads
+the collection file (`opencollection.yml` / `bruno.json`), `environments/<env>.yml`
+and the collection's `.env` from there. Started from the repo root, it finds none
+of them and fails on the environment, or runs without its variables. So always run
+it from the collection folder, in the same command, wherever the session is:
+
 ```
-npx --yes @usebruno/cli run <scope-path> --env <env> -r
+cd "<collection dir>" && npx --yes @usebruno/cli run [<scope>] --env <env> -r --output "<run folder>/bruno-run.json"
 ```
 
-`<scope-path>` is `<collectionPath>` for the full collection or
-`<collectionPath>/<subfolder>` for a scoped run, resolved relative to the repo root.
-`-r` (recursive) is required to actually walk sub-folders. Capture the per-request
-assertion results and the summary table.
+- `<collection dir>` is `<run root>/<collectionPath>`, absolute. `<run root>` is
+  the folder the run uses as repo root: the worktree in generic mode,
+  `<run folder>/published-collection/` in ticket mode, or the repo itself when
+  the user asks to run the local checkout. Check that `opencollection.yml` (or
+  `bruno.json`) is there before running.
+- `<scope>` is relative to the collection folder, not the repo: leave it out for
+  the full collection, or give the subfolder (`auth/verify-otp`) for a scoped run.
+- Pass `--output` as an absolute path into the run folder. A relative one would land
+  inside the collection, and in ticket mode end up in the exported zip.
+- `-r` (recursive) is required to actually walk sub-folders.
+
+Capture the per-request assertion results and the summary table.
 
 ## Finding known stateful / order-dependent cases
 
@@ -53,8 +73,8 @@ else that mutates server-side state:
 1. Check that product's `environments/*.json` → `api.knownCaveats` for a list of
    named cases with real caveats (e.g. "case X only passes with env var Y set",
    "case Z depends on case W having run first for the same identifier"). If
-   `api.knownCaveatsFile` is also set, load that file too (resolved relative to the
-   same `environments/` directory) — it's the fuller version for products whose
+   `api.knownCaveatsFile` is also set, load that file too (found as SKILL.md step 0
+   says: `<workDir>/config/` first) — it's the fuller version for products whose
    caveat list is too long/structured to keep as flat JSON strings without drifting
    out of sync. Where the two disagree, the file is the more current one.
 2. If nothing is recorded there but a case's name or `docs:` block implies
