@@ -9,7 +9,7 @@ session-handoff hook (environments/handoff.json, thresholdTokens):
 
 - green  below 100k: carry on;
 - purple from 100k up to the threshold: the conversation is getting long;
-- yellow from the threshold (default 140k): the hook saves or offers the
+- yellow from the threshold (default 200k): the hook saves or offers the
   handoff, time for /clear and 'kontynuuj ABC-123';
 - red with "/clear!" from the threshold + 20k: auto-compact is close.
 """
@@ -30,9 +30,9 @@ def env_dir():
 def threshold():
     try:
         value = json.loads((env_dir() / "handoff.json").read_text()).get("thresholdTokens")
-        return value if isinstance(value, int) and value > 0 else 140000
+        return value if isinstance(value, int) and value > 0 else 200000
     except (OSError, ValueError, AttributeError):
-        return 140000
+        return 200000
 
 
 def paint(code, text):

@@ -18,7 +18,7 @@ envRefreshProcedure), project skill and REPLACE_ME values,
 playwright-video and maestro, and the tools runs need (git, python, node, ffmpeg,
 agent-device, Xcode/adb, the agent-device iOS signing vars, the 1Password CLI when a product publishes to 1Password), the Postman API key
 reference for postman-sync when a product uses Postman, and the
-auto-compact window against the recommended 200k. Whether each Jira site is reachable through an
+auto-compact window against the recommended 250k. Whether each Jira site is reachable through an
 Atlassian MCP server can only be checked from inside Claude; the
 checking-qa-agent skill does that part.
 """
@@ -33,7 +33,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 CLAUDE_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude"))
 ENV_DIR = CLAUDE_DIR / "environments"
-META = {"atlassian-connectors.json", "evidence.json", "handoff.json", "postman.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
+META = {"atlassian-connectors.json", "evidence.json", "handoff.json", "postman.json", "qa-agent-migrations.json",
+        "qa-agent-updates.json", "qa-agent-preferences.json"}
 SCRIPTS = REPO / "skills" / "updating-qa-agent" / "scripts"
 WRAPPER = CLAUDE_DIR / "skills" / "testing-apps" / "scripts" / "playwright-mcp.sh"
 
@@ -66,7 +67,7 @@ def pending_migrations():
     return run(sys.executable, "-I", SCRIPTS / "migrations.py", "pending").stdout.split()
 
 
-COMPANION_FIELDS = ("knownCaveatsFile", "confluence.envRefreshProcedure")
+COMPANION_FIELDS = ("knownCaveatsFile", "publish.envRefreshProcedure", "confluence.envRefreshProcedure")
 
 
 def collection_environments(api):
@@ -267,9 +268,9 @@ def handoff_check(r):
     try:
         conf = json.loads(out.stdout)
     except ValueError:
-        conf = {"mode": "ask", "thresholdTokens": 100000}
+        conf = {"mode": "ask", "thresholdTokens": 200000}
     if not (ENV_DIR / "handoff.json").exists():
-        r.add("INFO", "no handoff.json: the context hook offers a handoff past 100k tokens (mode ask)")
+        r.add("INFO", "no handoff.json: the context hook offers a handoff past 200k tokens (mode ask)")
     else:
         r.add("INFO", f"session handoff: mode {conf['mode']}, from {conf['thresholdTokens'] // 1000}k tokens")
     chosen = (load(ENV_DIR / "handoff.json") or {}).get("statusLine")
@@ -340,7 +341,7 @@ def check_product(r, path, servers):
         (f"surfaces.{n}.repo", s.get("repo")) for n, s in (data.get("surfaces") or {}).items() if isinstance(s, dict)
     ] + [(f"repos.{n}", v if isinstance(v, str) else (v or {}).get("repoLocalPath")) for n, v in (data.get("repos") or {}).items()] + [
         ("api.repo", (data.get("api") or {}).get("repo")),
-        ("api.localCopy", (data.get("api") or {}).get("localCopy")),
+        ("api.publish.apiCollectionsFolder", ((data.get("api") or {}).get("publish") or {}).get("apiCollectionsFolder")),
     ]:
         if p and not Path(p).expanduser().exists():
             missing.append(f"{label} ({p})")
@@ -472,11 +473,12 @@ def check_tools(r, any_mobile, any_web):
 
 
 def uses_onepassword(products):
-    """Products whose API collection or environments are published to 1Password."""
+    """Products whose API collection is published to 1Password (api.publish.target, or the
+    old per-part shape before migration 016)."""
     names = []
     for p in products:
         pub = ((load(p) or {}).get("api") or {}).get("publish") or {}
-        if isinstance(pub, dict) and "1password" in (pub.get("collection"), pub.get("environments")):
+        if isinstance(pub, dict) and ("1password" in str(pub.get("target", "")) or "1password" in (pub.get("collection"), pub.get("environments"))):
             names.append(p.name)
     return names
 
@@ -553,7 +555,7 @@ def check_stray_files(r, products):
               "moves them, asking before each move")
 
 
-RECOMMENDED_COMPACT_WINDOW = 200_000
+RECOMMENDED_COMPACT_WINDOW = 250_000
 COMPACT_ENV = "CLAUDE_CODE_AUTO_COMPACT_WINDOW"
 
 
@@ -583,16 +585,16 @@ def compact_window():
 def check_compact_window(r):
     tokens, source = compact_window()
     why = "cost per session explained in README, \"Context and token cost\""
-    fix = "in Claude: /autocompact 200k (this session), or \"autoCompactWindow\": 200000 in ~/.claude/settings.json (every session)"
+    fix = "in Claude: /autocompact 250k (this session), or \"autoCompactWindow\": 250000 in ~/.claude/settings.json (every session)"
     if tokens is None and source is None:
         r.add("INFO", "auto-compact window not set: sessions on 1M-context models compact only near 1M tokens, "
-              f"so a long day costs about 3x more than at the recommended 200k ({why})", fix)
+              f"so a long day costs about 3x more than at the recommended 250k ({why})", fix)
     elif tokens is None:
-        r.add("WARN", f"{source} is not a token count (expected e.g. 200000 or 200k)", fix)
+        r.add("WARN", f"{source} is not a token count (expected e.g. 250000 or 250k)", fix)
     elif tokens == RECOMMENDED_COMPACT_WINDOW:
         r.add("OK", f"sessions compact at {tokens // 1000}k tokens (recommended; {source})")
     else:
-        r.add("INFO", f"sessions compact at {tokens // 1000}k tokens ({source}); recommended is 200k ({why})", fix)
+        r.add("INFO", f"sessions compact at {tokens // 1000}k tokens ({source}); recommended is 250k ({why})", fix)
 
 
 def full():

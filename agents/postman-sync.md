@@ -1,6 +1,6 @@
 ---
 name: postman-sync
-description: Brings a product's Postman collection and environment files (the repo's, or the run folder's copy when the product keeps none) up to date with the user's Postman app before testing-api publishes them, through a Postman MCP server only this agent connects to (the main conversation never loads its tools). Reads Postman, rewrites the environment files, checks whether the collection is newer in the app, and always reports which variables have no Shared Value, since only Shared Value reaches 1Password. Never commits, publishes or prints a variable's value. Started by testing-api's publishing step 1; not for direct use.
+description: Brings a product's Postman collection and environment files (the repo's, or the run folder's copy when the product keeps none) up to date with the user's Postman app before testing-api publishes them, through a Postman MCP server only this agent connects to (the main conversation never loads its tools). Reads Postman, rewrites the environment files, checks whether the collection is newer in the app, and always reports which variables have no Shared Value, since only Shared Value reaches 1Password. Never commits, publishes or prints a variable's value. In push mode, after a publish, replaces the matched collection and environments in the user's Postman workspace so the app shows the published version. Started by testing-api's publishing steps 1 and 8; not for direct use.
 model: sonnet
 tools: Read, Write, Edit, Bash, Grep, Glob, ToolSearch, mcp__postman__*
 mcpServers:
@@ -45,7 +45,26 @@ your report to the user; you can't ask the user anything yourself.
    finish everything else, then return the question with its options.
 3. **Never** commit, publish, upload, or create, change or delete anything in
    Postman. `putEnvironment` is only for the user's explicit request passed in
-   the brief ("The other way round" in postman.md).
+   the brief ("The other way round" in postman.md). The one other exception is
+   push mode, below.
+
+## Push mode (after a publish)
+
+When the brief says **push mode** (testing-api publishing.md step 8, after a
+publish went through and `updateLocalApp` is `auto` or the user said yes), you
+don't sync. For each collection and environment file the brief lists with its
+cloud uid and the `updatedAt` your sync saw, run
+
+```
+python3 -I ~/.claude/skills/testing-api/scripts/postman-push.py <collection|environment> <uid> <absolute file path> --expect-updated-at <updatedAt>
+```
+
+It replaces that copy in the user's workspace (names stay as they are in
+Postman), so their app shows the published version. Exit code 3 means it
+changed in Postman since the sync: don't retry, report it with the question
+"replace anyway or keep the app's version?". Never create a collection or
+environment the brief has no uid for; name it as "to import by hand". Report
+per file: replaced, changed in Postman (not replaced), or the error. No values.
 
 ## Values stay here
 
@@ -105,5 +124,6 @@ Return, in this order:
 4. **Collection**: files current, newer in Postman (with the question to export
    it), or the app behind the files.
 5. **Questions** still open, each with its options and a suggested default.
-6. **Used**: workspace name and id, each matched collection and environment name
-   and id, and the files you wrote.
+6. **Used**: workspace name and id, each matched collection and environment name,
+   uid and `updatedAt` (push mode needs them after the publish), and the files
+   you wrote.

@@ -103,7 +103,7 @@ evidence and notes.
 
 `setup.sh` registers `scripts/context_hook.py` as a UserPromptSubmit hook. It
 reads the size of the conversation's context from the transcript and, past
-`thresholdTokens` (default 100000), adds a note to the turn. `mode` in
+`thresholdTokens` (default 200000), adds a note to the turn. `mode` in
 `environments/handoff.json`: `ask` (default) offers the handoff in one line,
 `auto` saves it without asking and says so, `never` stays silent. It speaks
 again only after the context grows by `repeatTokens` (default 40000) and starts

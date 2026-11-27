@@ -40,9 +40,10 @@ assuming it's the single-file export.
 ```
 
 An Insomnia export keeps its environments inside the same file as the requests, so
-the collection zip can hold their values. Before it goes to Confluence, the secret
-scan in [publishing.md](../publishing.md) matters even more here; for a collection
-whose environments hold secrets, publish it to 1Password instead.
+the export file is the **package** and can't be split: it goes to 1Password and/or
+the local folder. `target: "confluence"` isn't available for Insomnia, because the
+collection can't go there without its environments (see
+[publishing.md](../publishing.md), "The four targets").
 
 ## Run
 

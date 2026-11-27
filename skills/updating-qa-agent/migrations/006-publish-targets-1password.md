@@ -24,7 +24,8 @@ doesn't need it.
 
 ## Fresh install
 
-`skip`: configure-project asks where each product publishes from the start.
+`skip`: configure-project asks where each product publishes from the start
+(product-config.md step 5).
 
 ## Steps
 
