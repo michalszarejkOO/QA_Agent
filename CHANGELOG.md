@@ -56,15 +56,25 @@ feature, written before the pull request, not one per commit.
   subagent on Sonnet, so responses, screenshots and diffs no longer stay in
   the main conversation; ask for Opus ("puść na Opusie") when one run needs
   it. Skills load less on every run and Jira tickets are read with lighter
-  calls. The update asks at what size Claude Code should compact a long
-  conversation (350k recommended).
-- Long conversations can be handed off to a fresh session: "save the state"
-  writes what was done, found and drafted to `handoff.md` in the ticket's
-  folder, and after `/clear` "continue IP-123" picks it up from there. Past a
-  context size you set, Claude offers the handoff or saves it on its own, and
-  never while an agent is still working. The update asks how it should behave
-  (ask, auto or never), at what context size, and whether to install a status
-  line that shows the context size in colour.
+  calls.
+- Two limits keep a long conversation in check, and they do different things:
+  - Compact (Claude Code, 350k tokens recommended): Claude Code squeezes the
+    whole conversation into a summary it writes itself and carries on in the
+    same session. You do nothing, but you don't choose what the summary
+    keeps, so exact requests, responses, decisions or whether a comment was
+    already posted can get lost.
+  - Handoff (QA_Agent, 250k tokens by default): Claude saves the state of the
+    ticket to `handoff.md` in the ticket's folder: what was checked, the
+    findings, decisions, drafts and whether they were posted, open questions
+    and the next step. You run `/clear`, and "continue IP-123" starts a fresh,
+    small session from that file. Nothing important is lost, and the file
+    stays after you close Claude Code. "Save the state" does it at any time.
+  The handoff comes first, so you can start clean before Claude Code compacts.
+  Past the handoff limit Claude offers the handoff or saves it on its own, and
+  never while an agent is still working. The update asks at what size Claude
+  Code should compact, how the handoff should behave (ask, auto or never) and
+  at what size, and whether to install a status line that shows the context
+  size in colour.
 - New skills: retest fixed bugs and reworked tickets ("retest IP-330"),
   analyse a screen recording or screenshot you point to, and draft the QA
   comment for Jira in your product's format. Every skill now reads the whole
