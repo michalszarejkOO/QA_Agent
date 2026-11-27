@@ -66,9 +66,13 @@ feature, written before the pull request, not one per commit.
   - Handoff (QA_Agent, 250k tokens by default): Claude saves the state of the
     ticket to `handoff.md` in the ticket's folder: what was checked, the
     findings, decisions, drafts and whether they were posted, open questions
-    and the next step. You run `/clear`, and "continue IP-123" starts a fresh,
-    small session from that file. Nothing important is lost, and the file
-    stays after you close Claude Code. "Save the state" does it at any time.
+    and the next step. It's a short file (about 80 lines) that points to the
+    files holding the details (drafts, test cases, evidence), so Claude reads
+    it in seconds. You run `/clear`, and "continue IP-123" starts a fresh,
+    small session from that file. Unlike a compact summary, it's written for
+    carrying on with this ticket, so what the next step needs is kept, and
+    the file stays after you close Claude Code. "Save the state" does it at
+    any time.
   The handoff comes first, so you can start clean before Claude Code compacts.
   Past the handoff limit Claude offers the handoff or saves it on its own, and
   never while an agent is still working. The update asks at what size Claude
