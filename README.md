@@ -103,13 +103,13 @@ tokens, and every turn (each message and each tool call) sends the whole
 conversation again. A QA session easily has 200–300 turns, so the context size
 is what drives the cost.
 
-**Recommended: compact at 250k tokens.** In `~/.claude/settings.json`:
+**Recommended: compact at 350k tokens.** In `~/.claude/settings.json`:
 
 ```json
-"autoCompactWindow": 250000
+"autoCompactWindow": 350000
 ```
 
-For the current session only, run `/autocompact 250k`. For one long session where
+For the current session only, run `/autocompact 350k`. For one long session where
 every detail matters (a data migration, a long investigation), run
 `/autocompact auto` in it to get the full 1M back. The environment variable
 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` overrides the setting. `checking-qa-agent`
@@ -122,14 +122,16 @@ read $0.20, 1-hour cache write $8, per million tokens). The example session has
 | Compact at | How the context grows | Average per turn | Reading context, 300 turns | Coming back after a break (cache expired) |
 | --- | --- | --- | --- | --- |
 | 200k | saw-tooth up to 200k, ~3 compactions | ~100k | ~$6 | ~$1.60 each |
-| 250k (recommended) | saw-tooth up to 250k, ~2 compactions | ~125k | ~$7.50 | ~$2 each |
+| 250k | saw-tooth up to 250k, ~2 compactions | ~125k | ~$7.50 | ~$2 each |
 | 300k | saw-tooth up to 300k, ~2 compactions | ~150k | ~$9 | ~$2.40 each |
+| 350k (recommended) | saw-tooth up to 350k, ~1 compaction | ~175k | ~$10.50 | ~$2.80 each |
 | 1M (default) | straight up to 600k, no compaction | ~300k | ~$18 | ~$4.80 each |
 
-With a few breaks a day that is roughly $6–10 at 200k, $7.50–12 at 250k, $9–14 at 300k and $18–35
-at 1M. Output tokens cost about the same in all three. A session that never
-passes 200k costs the same whichever window is set. The 250k window leaves room for the session-handoff hook, which by default
-speaks at 200k, before Claude Code compacts. A longer context isn't
+With a few breaks a day that is roughly $6–10 at 200k, $7.50–12 at 250k, $9–14 at 300k, $10.50–16 at 350k and $18–35
+at 1M. Output tokens cost about the same in all of them. A session that never
+passes 200k costs the same whichever window is set. The 350k window costs a little more than the smaller ones but interrupts
+long QA sessions less often, and it leaves room for the session-handoff hook,
+which by default speaks at 250k, before Claude Code compacts. A longer context isn't
 better quality either: the model keeps track of details less well at 600k than
 after a fresh summary. QA_Agent keeps product knowledge in project skills, so a
 compaction rarely loses anything a ticket needs. Starting each new ticket with

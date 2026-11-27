@@ -12,7 +12,7 @@ IP-123"). `setup.sh` registers a UserPromptSubmit hook
 and, past a threshold, either offers the handoff, does it, or stays silent, as
 set in `~/.claude/environments/handoff.json` (shape:
 `environments.example/handoff.example.json`). Without the file it offers
-(`ask`) past 200k tokens. Optionally QA_Agent also sets the Claude Code status
+(`ask`) past 250k tokens. Optionally QA_Agent also sets the Claude Code status
 line (`skills/session-handoff/scripts/statusline.py`): its `ctx` part shows
 the context in percent and tokens and changes colour in step with the hook, so
 the user sees when a conversation should be handed off.
@@ -34,7 +34,7 @@ silent, and whether QA_Agent sets the status line.
    cost more with every message; QA_Agent can save the work on a ticket to
    `handoff.md` in the ticket's folder, so you `/clear` and continue with
    `kontynuuj IP-123`; a hook can point this out once the context passes about
-   200k tokens.
+   250k tokens.
 2. **Ask (tappable options; default in bold).** "What should happen when a
    conversation grows large?"
    - **ask**: Claude offers in one line to save the state and start fresh; it
@@ -43,8 +43,8 @@ silent, and whether QA_Agent sets the status line.
      `/clear` → `"auto"`;
    - never: no hint; saving still works when you ask ("zapisz stan") →
      `"never"`.
-3. **Ask only if they want to change it.** "Start at 200k tokens?" **yes** →
-   `200000`; or the number they give (e.g. 150k → `150000`). Skip for `never`.
+3. **Ask only if they want to change it.** "Start at 250k tokens?" **yes** →
+   `250000`; or the number they give (e.g. 150k → `150000`). Skip for `never`.
 4. **Explain the status line, then ask (tappable options; default in bold).**
    Show the current `statusLine` from `~/.claude/settings.json` (or say there
    is none). Explain in plain words how it works together with the hook: the

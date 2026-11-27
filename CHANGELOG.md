@@ -57,7 +57,7 @@ feature, written before the pull request, not one per commit.
   the main conversation; ask for Opus ("puść na Opusie") when one run needs
   it. Skills load less on every run and Jira tickets are read with lighter
   calls. The update asks at what size Claude Code should compact a long
-  conversation (200k recommended).
+  conversation (350k recommended).
 - Long conversations can be handed off to a fresh session: "save the state"
   writes what was done, found and drafted to `handoff.md` in the ticket's
   folder, and after `/clear` "continue IP-123" picks it up from there. Past a

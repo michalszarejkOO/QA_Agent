@@ -18,7 +18,7 @@ envRefreshProcedure), project skill and REPLACE_ME values,
 playwright-video and maestro, and the tools runs need (git, python, node, ffmpeg,
 agent-device, Xcode/adb, the agent-device iOS signing vars, the 1Password CLI when a product publishes to 1Password), the Postman API key
 reference for postman-sync when a product uses Postman, and the
-auto-compact window against the recommended 250k. Whether each Jira site is reachable through an
+auto-compact window against the recommended 350k. Whether each Jira site is reachable through an
 Atlassian MCP server can only be checked from inside Claude; the
 checking-qa-agent skill does that part.
 """
@@ -268,9 +268,9 @@ def handoff_check(r):
     try:
         conf = json.loads(out.stdout)
     except ValueError:
-        conf = {"mode": "ask", "thresholdTokens": 200000}
+        conf = {"mode": "ask", "thresholdTokens": 250000}
     if not (ENV_DIR / "handoff.json").exists():
-        r.add("INFO", "no handoff.json: the context hook offers a handoff past 200k tokens (mode ask)")
+        r.add("INFO", "no handoff.json: the context hook offers a handoff past 250k tokens (mode ask)")
     else:
         r.add("INFO", f"session handoff: mode {conf['mode']}, from {conf['thresholdTokens'] // 1000}k tokens")
     chosen = (load(ENV_DIR / "handoff.json") or {}).get("statusLine")
@@ -555,7 +555,7 @@ def check_stray_files(r, products):
               "moves them, asking before each move")
 
 
-RECOMMENDED_COMPACT_WINDOW = 250_000
+RECOMMENDED_COMPACT_WINDOW = 350_000
 COMPACT_ENV = "CLAUDE_CODE_AUTO_COMPACT_WINDOW"
 
 
@@ -585,16 +585,16 @@ def compact_window():
 def check_compact_window(r):
     tokens, source = compact_window()
     why = "cost per session explained in README, \"Context and token cost\""
-    fix = "in Claude: /autocompact 250k (this session), or \"autoCompactWindow\": 250000 in ~/.claude/settings.json (every session)"
+    fix = "in Claude: /autocompact 350k (this session), or \"autoCompactWindow\": 350000 in ~/.claude/settings.json (every session)"
     if tokens is None and source is None:
         r.add("INFO", "auto-compact window not set: sessions on 1M-context models compact only near 1M tokens, "
-              f"so a long day costs about 3x more than at the recommended 250k ({why})", fix)
+              f"so a long day costs about 2x more than at the recommended 350k ({why})", fix)
     elif tokens is None:
-        r.add("WARN", f"{source} is not a token count (expected e.g. 250000 or 250k)", fix)
+        r.add("WARN", f"{source} is not a token count (expected e.g. 350000 or 350k)", fix)
     elif tokens == RECOMMENDED_COMPACT_WINDOW:
         r.add("OK", f"sessions compact at {tokens // 1000}k tokens (recommended; {source})")
     else:
-        r.add("INFO", f"sessions compact at {tokens // 1000}k tokens ({source}); recommended is 250k ({why})", fix)
+        r.add("INFO", f"sessions compact at {tokens // 1000}k tokens ({source}); recommended is 350k ({why})", fix)
 
 
 def full():

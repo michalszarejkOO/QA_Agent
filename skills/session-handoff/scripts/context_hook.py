@@ -25,7 +25,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-DEFAULTS = {"mode": "ask", "thresholdTokens": 200000, "repeatTokens": 40000}
+DEFAULTS = {"mode": "ask", "thresholdTokens": 250000, "repeatTokens": 40000}
 MODES = ("ask", "auto", "never")
 TAIL_BYTES = 4 * 1024 * 1024
 
