@@ -100,8 +100,8 @@ Claude was opened in. They belong with the run's evidence, so:
    link). Inspect what's actually on the page before typing credentials into a
    guessed field.
 3. Before driving the UI toward any particular state, read `browser_network_requests`
-   and the underlying API responses first — see "Shared discipline" in the parent
-   skill (`../../SKILL.md`).
+   and the underlying API responses first — see "Shared discipline" in
+   [../execution.md](../execution.md).
 4. Walk each scenario with `browser_click` / `browser_type` / `browser_select_option`
    / `browser_fill_form` / `browser_press_key`. Use `browser_wait_for` for async
    state instead of guessing timing.
@@ -117,20 +117,24 @@ Claude was opened in. They belong with the run's evidence, so:
 
 ## Recording
 
-What to record, and where it goes, is set in the parent skill's "Recorded
-evidence" section; with `evidence: screenshots only` nothing below is
-recorded, only the bug screenshot is saved. The web mechanics:
+What to record, and where it goes, is set in "Recorded evidence" in
+[../execution.md](../execution.md); with `evidence: screenshots only` nothing below
+is recorded, only the bug screenshot is saved. The web mechanics:
 
 - **Video:** call `browser_start_video` with a `filename` such as
-  `qa-video/<scenario-id>-<slug>.webm`, then call `browser_stop_video` when the
-  scenario ends. Do this for every scenario, not just the happy path. These
+  `qa-video/<scenario-id>-<slug>.webm` and a `size` equal to the page's real
+  size, then call `browser_stop_video` when the scenario ends. Without `size`,
+  Playwright scales the maximized window down to 800x600 and the text in the
+  video is unreadable. Read the size first with `browser_evaluate`
+  (`() => ({ width: window.innerWidth, height: window.innerHeight })`) and pass
+  it as is; don't resize the window. Do this for every scenario, not just the happy path. These
   tools exist only on a server started with `--caps=devtools` (`playwright-video`, above). If they aren't in your tool
   list, no video can be recorded this run. Report that, and keep going with
   screenshots only.
 - **Convert to MP4:** Playwright records WebM only, which QuickTime and Jira
   previews play poorly. After moving the video into the run folder, convert it
   and keep the `.mp4` as the evidence file:
-  `ffmpeg -hide_banner -loglevel error -y -i <name>.webm -c:v libx264 -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -movflags +faststart -an <name>.mp4 && rm <name>.webm`.
+  `ffmpeg -hide_banner -loglevel error -y -i <name>.webm -c:v libx264 -crf 18 -preset slow -tune stillimage -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -movflags +faststart -an <name>.mp4 && rm <name>.webm`.
   If `ffmpeg` is missing or the conversion fails, keep the `.webm` and say so
   in the report.
 - **Where it goes:** the video's place in the run folder is

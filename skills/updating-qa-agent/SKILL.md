@@ -21,6 +21,7 @@ skipped.
 | MUST | Apply migrations in number order, one at a time, and record each as applied (`scripts/migrations.py mark <id>`) only after its "Verify" section passes. |
 | MUST | Run each migration's "Is it needed" check first. If the machine already matches, mark it applied without changing anything and say so. |
 | MUST | Show the user what you're about to move, delete or re-register before doing it, and ask for anything only they can decide (a project's working directory, whether to delete old files). Suggest a default whenever there is one. |
+| MUST | Say where every suggested default comes from, inside the question itself: the file (its path), the command, the tool call or the user's earlier answer, or that it's your own guess. Show URLs and paths in full, never shortened with `…`. A suggestion with no source looks like knowledge the agent shouldn't have. |
 | NEVER | Delete user data (evidence, notes, configs) without an explicit yes for that specific folder. Moving is preferred over deleting. |
 | NEVER | Commit or stage anything under a product's `config/` or `~/.claude/environments/` — they hold credentials. |
 
@@ -30,7 +31,12 @@ skipped.
    `python3 -I ~/.claude/skills/updating-qa-agent/scripts/check_updates.py --force`.
    If it reports new changes on the upstream branch, show **"What's new"** before
    asking, in the user's language:
-   - Read the full messages: `git -C <repo> log --format='%h %s%n%b' HEAD..@{u}`.
+   - Read the release notes first: the lines the update adds to `CHANGELOG.md`,
+     `git -C <repo> diff HEAD...@{u} -- CHANGELOG.md`. They are written for
+     users, one bullet per feature: show them as they are (translated), they
+     are the "What's new" list.
+   - Only for what the notes don't cover, read the commits:
+     `git -C <repo> log --format='%h %s%n%b' HEAD..@{u}`.
    - Read each new migration, `git -C <repo> diff --name-only --diff-filter=A
      HEAD...@{u} -- skills/updating-qa-agent/migrations/`, with `git -C <repo>
      show @{u}:<path>` ("What changed", and from "Steps" what it will ask).
@@ -45,8 +51,8 @@ skipped.
      whether Claude Code needs a restart (a new skill or agent, or a migration
      that re-registers an MCP server says so) or "no restart".
    - A warning if the repo has uncommitted changes.
-   Take everything from the commit messages and migration files; never add what
-   they don't say. A vague message ("fix") stays vague: show its title as is.
+   Take everything from the changelog, commit messages and migration files;
+   never add what they don't say. A vague message ("fix") stays vague: show its title as is.
    Then ask whether to update. On a yes run `git -C <repo> pull --ff-only`. If
    the repo has uncommitted changes, or the pull can't fast-forward, stop and
    explain instead of stashing, merging or resetting anything. The update-check
@@ -117,15 +123,31 @@ One paragraph: what's different now and why.
 Checks that tell whether this machine still needs the migration. Must be safe
 to run any number of times.
 
+## Fresh install
+`ask` or `skip`, then why. `ask`: the user decides something (a setting, a
+preference), so configure-project runs these Steps on a new machine too.
+`skip`: it only fixes an older install (moved files, an old layout; say a
+fresh install "has no" old state or gets it "from the start"), or
+configure-project already asks the same thing (name its step, e.g.
+"product-config.md step 5"). `lint` rejects a `skip` that says neither.
+
 ## Steps
-Numbered. Mark which steps run by themselves and which ask the user (with the
-suggested default).
+Numbered, written as a wizard: say what changes and why in plain words, ask
+only what the user must decide (tappable options, suggested default in bold),
+do the rest by yourself, and show what was written. Mark which steps run by
+themselves and which ask.
 
 ## Verify
 What must be true afterwards (usually: the validator passes, plus specific checks).
 ```
 
-Then run `python3 -I skills/updating-qa-agent/scripts/migrations.py lint`, and on
-your own machine apply it through this skill like anyone else would.
-`configure-project` marks every existing migration as applied on a fresh
-install, since a new setup is already built in the current layout.
+Then run `python3 -I skills/updating-qa-agent/scripts/migrations.py lint` (it
+fails without a valid "Fresh install" section), and on your own machine apply it
+through this skill like anyone else would.
+
+How it reaches people: existing installs get it at the next update (the
+update-check hook asks on their check days, also when they pulled in the
+terminal and the migration is still waiting; `setup.sh` and the start of every
+test run list it too). New installs: `configure-project` runs
+`migrations.py fresh-install`, which marks the `skip` ones applied and runs the
+`ask` ones as part of the first setup.

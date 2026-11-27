@@ -35,6 +35,14 @@ Actual:
 - **Actual**: what actually happens, with concrete evidence inline where you have
   it — an error message, a response body, "no request fires," a value that reverts
   after reload — never a vague "it doesn't work."
+  - When the defect shows in an API response, put into Actual the request
+    (method, path, as which user or role) and the full response body as a JSON
+    code block, exactly as the API sent it (numbers like `50.00` unchanged), so
+    the developer can copy it. Leave out tokens, cookies and other secrets. Never
+    use a screenshot of DevTools or a picture of the JSON instead.
+  - Save the same response as a `.json` file in the run's folder, so it can be
+    attached when the body is too long for the description.
+  - Screenshots stay for what the UI shows.
 
 Multiple bugs in one request → one block per bug, same four fields each, in the
 order found.

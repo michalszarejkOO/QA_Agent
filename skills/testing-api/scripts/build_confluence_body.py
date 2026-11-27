@@ -14,10 +14,8 @@ works.
 
 Usage: build_confluence_body.py <repo_root> <page_id> <name>=<fileId> [<name>=<fileId> ...]
 
-Pass every attachment that should show as a visible file card - the primary
-collection zip plus any secondary attachments (e.g. a live-populated
-environment file) from that product's api.confluence.secondaryAttachments
-config.
+Pass the attachment that should show as a visible file card: the collection zip
+(api.confluence.attachmentName). Environments never go to Confluence.
 """
 import subprocess
 import sys

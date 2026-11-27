@@ -13,8 +13,9 @@ into `~/.claude/skills/`. So everything about a product (config, project skill,
 evidence, run output) lives in its own folder and goes away with it. Deleting
 a project folder leaves a dangling link: the validator reports it and
 `./setup.sh` removes it. Only the shared files, `atlassian-connectors.json`,
-`evidence.json`, `qa-agent-updates.json` and `qa-agent-migrations.json`, are real
-files in `~/.claude/environments/`.
+`evidence.json`, `handoff.json`, `qa-agent-updates.json`, `postman.json`,
+`qa-agent-preferences.json` and `qa-agent-migrations.json`, are real files in
+`~/.claude/environments/`.
 
 Run `./setup.sh` first, then add products with the `configure-project` skill (or by
 hand: write `<workDir>/config/<product>-<env>.json` and symlink it into
@@ -31,10 +32,13 @@ a product that has both a UI and an API collection).
   app, data kept).
 - [`api-collection.example.json`](./api-collection.example.json) — a product
   `testing-api` runs an API collection against: which client (Bruno, Postman, or
-  Insomnia), repo path, default environment, the environment ticket mode
+  Insomnia), repo path (optional when the collection lives only where it is
+  published), default environment, the environment ticket mode
   proposes for confirmation (`ticketEnvironment`, optional; without it, it asks),
   known stateful-case caveats, where updated collections and environments are
-  published (`publish`: 1Password, Confluence or nowhere, per part), and
+  published (`publish.target`: `1password`, `local`, `1password+local` or
+  `confluence`; the collection always travels with its environments as one
+  package, except to Confluence, which gets the collection alone), and
   (optionally) a Confluence tracker page to publish results to.
 
 - [`evidence.example.json`](./evidence.example.json) — one file for all products,
@@ -52,6 +56,18 @@ a product that has both a UI and an API collection).
   `skills/testing-apps/references/adapters/web.md`).
   Mobile videos use `agent-device record`.
 
+- [`handoff.example.json`](./handoff.example.json) — one file for this machine,
+  saved as `environments/handoff.json`. It sets what the `session-handoff`
+  context hook does once a conversation's context passes `thresholdTokens`
+  (default 250000): `"mode": "ask"` (the default) offers to save the work state
+  to `<workDir>/qa-evidence/<TICKET>/handoff.md` and continue after `/clear`,
+  `"auto"` saves it without asking, `"never"` stays silent. It speaks again only
+  after the context grows by `repeatTokens` (default 40000).
+  `"statusLine": "qa-agent"` sets the QA_Agent status line, whose `ctx` part
+  shows the context in percent and tokens and turns green, purple (from 100k),
+  yellow (from `thresholdTokens`) and red with `/clear!` (20k later); `"own"`
+  keeps your own status line.
+
 - [`qa-agent-updates.example.json`](./qa-agent-updates.example.json) — one file
   for this machine, saved as `environments/qa-agent-updates.json`. `checkDays`
   sets on which days of the week QA_Agent checks for a newer version of itself:
@@ -60,6 +76,27 @@ a product that has both a UI and an API collection).
   resumed, or after `/clear`), or the next one if there was none that day; when there are new changes, Claude
   says so and asks whether to see what's new and update. Nothing is ever pulled
   without a yes.
+
+- [`postman.example.json`](./postman.example.json) — one file for this machine,
+  saved as `environments/postman.json`, needed once a product has
+  `"client": "postman"`. `apiKeyRef` is a 1Password secret reference,
+  `op://<vault>/<item>/<field>`, to the field holding your Postman API key (the
+  key alone, or a note with the key in it). The `postman-sync` agent reads it
+  through `skills/testing-api/scripts/postman-mcp-headers.sh` each time it
+  connects to the Postman MCP server, so the key never sits on disk and the
+  server's tools never load into the main conversation. Migration 010 writes it.
+- [`qa-agent-preferences.example.json`](./qa-agent-preferences.example.json) — one
+  file for this machine, saved as `environments/qa-agent-preferences.json`. Per
+  action (`confirmTicketEnvironment`, `publishCollection`, `postJiraComment`,
+  `fileBugs`, `attachEvidence`, `updateProjectSkill`): `ask` (the default),
+  `auto` or `never`, in `actions` for every product and in `products.<product>`
+  for one. `results.saveReportFiles` also saves reports as files (they're always
+  shown in the chat); test cases and notes for a ticket are always saved to its
+  folder. `claudePermissions` lists the Claude Code tool groups to allow.
+  Written by `configure-project`, and by
+  `skills/configure-project/scripts/preferences.py set` whenever the user
+  answers "always" or "never"; see
+  `skills/configure-project/references/preferences.md`.
 
 ## Working directory (`workDir`)
 
@@ -71,17 +108,25 @@ on demand:
 
 ```
 <workDir>/
-  qa-evidence/<ticket or session>/<YYYY-MM-DD>-<web|ios|android>/   testing-apps videos and bug screenshots
+  qa-evidence/<ticket or session>/                                  everything about one ticket
+    test-cases.md                                                   writing-test-cases table, test data, results of every run and retest
+    <YYYY-MM-DD>-<web|ios|android>/                                 testing-apps videos and bug screenshots
+    notes/                                                          SQL, notes, scripts, data and API calls made to prepare this ticket's tests
   api-runs/<ticket or YYYY-MM-DD-<env>>/                            testing-api CLI results, report, exported collection and environments zips
-    published-collection/                                           the published collection (1Password or Confluence); ticket runs work from here
+    published-collection/                                           the published collection (1Password, local folder or Confluence); ticket runs work from here
   worktrees/<ticket or branch>/                                     fresh checkouts for mobile builds and branch API runs
   reports/                                                          create-quality-metrics HTML dashboards
+  notes/, scripts/                                                  only what applies to the whole product, not to one ticket
 ```
 
-A product with no collection repo of its own can keep its collection inside
-`workDir` too (e.g. `<workDir>/postman/`, pointed at by `api.repo`). Code repos
-may live inside it or anywhere else; `repo` fields keep pointing at them either
-way.
+A product with no collection repo the team shares leaves out `api.repo`, and
+every `testing-api` run downloads the collection from where it is published
+into its run folder. `api.publish.apiCollectionsFolder` (e.g.
+`<workDir>/postman/`, required for the targets `local`, `1password+local` and
+`confluence`) holds the last published package: runs update it after each
+publish and start from it when the target can't be read. Code
+repos may live inside `workDir` or anywhere else; `repo` fields keep pointing at
+them either way.
 
 ## Old files (`legacyFileKeywords`)
 

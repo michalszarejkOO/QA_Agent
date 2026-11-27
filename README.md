@@ -13,7 +13,7 @@ git clone <this-remote> && cd QA_Agent
 ./setup.sh
 ```
 
-This links `agents/qa-tester.md` and every folder under `skills/` into `~/.claude/`
+This links every agent under `agents/` and every folder under `skills/` into `~/.claude/`
 (or `$CLAUDE_CONFIG_DIR`, if set). If something else already lives at those paths,
 `setup.sh` backs it up to `.bak` before swapping in the symlink — safe to re-run.
 
@@ -21,8 +21,8 @@ It also creates `~/.claude/environments/` (global, never committed to any repo),
 index of products, plus `environments/` in this repo as a convenience link to it,
 removes product links there whose project folder is gone, and installs the
 1Password CLI (`op`) with Homebrew if a product needs it and it's missing. `op` is
-required once you test an API and publish its collection or environments (which
-hold tokens) to 1Password, the default `configure-project` suggests; setups for
+required once you test an API and publish its collection with its environments
+(which hold tokens) to 1Password, the default `configure-project` suggests; setups for
 UI testing only don't need it. Turn on its sign-in once in the 1Password app (Settings > Developer >
 Integrate with 1Password CLI); you always approve access yourself, Claude never
 handles the password.
@@ -59,10 +59,26 @@ and update. It never pulls without your yes. It checks only on the days of the
 week you choose (`checkDays` in `~/.claude/environments/qa-agent-updates.json`,
 e.g. Monday, or Monday and Thursday; also "daily" or "never"; Monday by default),
 at the first new, resumed or cleared (`/clear`) session that day, or the next
-one if you skipped that day.
+one if you skipped that day. On those days it also notices migrations you
+pulled in the terminal but haven't applied yet, and offers to go through them.
 `configure-project` asks once, and you can change it any time by saying "change
 update settings" / "zmień ustawienia aktualizacji". `qa-tester`, `testing-apps` and `testing-api` also
 check the setup at the start of a run and warn when it's out of date.
+
+**What runs by itself.** `~/.claude/environments/qa-agent-preferences.json`
+sets, per action, whether QA_Agent asks first (`ask`, the default), just does it
+(`auto`) or never does it (`never`): confirming the ticket environment,
+publishing the API collection, posting the Jira comment, filing bugs, attaching
+evidence, adding lines to the project skill. Each question offers "Yes, always"
+and "No, never ask", which save the answer, so you're asked once. Safety stops (a
+newer published version, a production environment, secrets, a likely duplicate
+bug) always ask. `claudePermissions` in the same file lists which tool groups
+Claude Code may use without its own prompt (`preferences.py permissions
+--apply` adds them to `~/.claude/settings.json`). Say "zmień ustawienia
+QA_Agent" / "change my QA_Agent preferences" to change it; details in
+`skills/configure-project/references/preferences.md`. Whatever the settings,
+every test run ends with the summary, the scenario table, the Jira comment draft
+and the bug drafts in the chat.
 
 To see whether everything a run needs is in place (links, hooks, configs, MCP
 servers, tools, Jira access), say "check QA_Agent" / "sprawdź setup": the
@@ -78,14 +94,76 @@ the `updating-qa-agent` skill runs them in order, asks only what it can't work
 out (e.g. a project's working directory), and records what's done, so every
 machine ends up with the same setup however many updates it skipped.
 
+## Context and token cost
+
+Opus 4.7 and later, Sonnet 5 and later and the other current models run in
+Claude Code with a 1M-token context window by default (there's no 200k variant
+to pick in `/model`). With nothing else set, a session compacts only near 1M
+tokens, and every turn (each message and each tool call) sends the whole
+conversation again. A QA session easily has 200–300 turns, so the context size
+is what drives the cost.
+
+**Recommended: compact at 350k tokens.** In `~/.claude/settings.json`:
+
+```json
+"autoCompactWindow": 350000
+```
+
+For the current session only, run `/autocompact 350k`. For one long session where
+every detail matters (a data migration, a long investigation), run
+`/autocompact auto` in it to get the full 1M back. The environment variable
+`CLAUDE_CODE_AUTO_COMPACT_WINDOW` overrides the setting. `checking-qa-agent`
+reports what's set; migrations 009 and 021 ask on existing installs.
+
+What it changes, for one long day on Opus 5.5 (prices as of 30.10.2026: cache
+read $0.20, 1-hour cache write $8, per million tokens). The example session has
+300 turns and would grow to about 600k tokens without compaction:
+
+| Compact at | How the context grows | Average per turn | Reading context, 300 turns | Coming back after a break (cache expired) |
+| --- | --- | --- | --- | --- |
+| 200k | saw-tooth up to 200k, ~3 compactions | ~100k | ~$6 | ~$1.60 each |
+| 250k | saw-tooth up to 250k, ~2 compactions | ~125k | ~$7.50 | ~$2 each |
+| 300k | saw-tooth up to 300k, ~2 compactions | ~150k | ~$9 | ~$2.40 each |
+| 350k (recommended) | saw-tooth up to 350k, ~1 compaction | ~175k | ~$10.50 | ~$2.80 each |
+| 1M (default) | straight up to 600k, no compaction | ~300k | ~$18 | ~$4.80 each |
+
+With a few breaks a day that is roughly $6–10 at 200k, $7.50–12 at 250k, $9–14 at 300k, $10.50–16 at 350k and $18–35
+at 1M. Output tokens cost about the same in all of them. A session that never
+passes 200k costs the same whichever window is set. The 350k window costs a little more than the smaller ones but interrupts
+long QA sessions less often, and it leaves room for the session-handoff hook,
+which by default speaks at 250k, before Claude Code compacts. A longer context isn't
+better quality either: the model keeps track of details less well at 600k than
+after a fresh summary. QA_Agent keeps product knowledge in project skills, so a
+compaction rarely loses anything a ticket needs. Starting each new ticket with
+`/clear` keeps sessions short as well.
+
+Other things that add to every session and every subagent: plugins and MCP
+connectors you don't use (their tool lists and skill descriptions load each
+time). Check with `claude plugin list` and `claude plugin details <name>` (it shows
+the token cost), and turn off unused claude.ai connectors in claude.ai → Settings
+→ Connectors.
+
 ## Making changes to QA_Agent
 
-If your change needs something done on machines that already use QA_Agent, add
-a migration in the same commit: `skills/updating-qa-agent/migrations/NNN-<slug>.md`
-with the sections "What changed", "Is it needed", "Steps" and "Verify" (details in
+Before every commit, decide whether the change affects machines that already use
+QA_Agent (a config field, a user setting, an MCP registration, files that move, a
+new choice the user should make). If it does, add a migration in the same commit:
+`skills/updating-qa-agent/migrations/NNN-<slug>.md` with the sections "What
+changed", "Is it needed", "Fresh install", "Steps" and "Verify" (details in
 [`skills/updating-qa-agent/SKILL.md`](./skills/updating-qa-agent/SKILL.md)), then run
-`python3 -I skills/updating-qa-agent/scripts/migrations.py lint`. A change that
-only edits skill text needs no migration. Removing or renaming a skill folder:
+`python3 -I skills/updating-qa-agent/scripts/migrations.py lint`. Steps are written
+as a wizard. "Fresh install" says whether new users get the same wizard during
+their first setup (`ask`) or not (`skip`, it only fixes older installs). Existing
+users get it at their next update: on their update-check days Claude offers it,
+also when they already pulled in the terminal. End the commit message with
+`Migration: NNN-<slug>` or `Migration: none (<why>)`. A change that only edits
+skill text needs no migration.
+
+Before opening a pull request, add the release note to
+[`CHANGELOG.md`](./CHANGELOG.md) under "Unreleased": one bullet per feature (not
+per commit), written for the people who use QA_Agent, the same text as the pull
+request description. Claude shows these notes to everyone when it offers the
+update. Removing or renaming a skill folder:
 add its old name to `RETIRED_SKILLS` in `setup.sh`. Keep skills and the agent
 product-agnostic (see "Generic skills here, project knowledge in the project").
 
@@ -115,32 +193,59 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
 - `skills/configure-project/` — interactive setup wizard for a new clone: asks which
   Atlassian MCP connectors are authorized and for which sites, then asks about each
   product (ticket prefixes, working directory, repo path, web/mobile UI and/or API collection,
-  credentials, where collections and environments are published) and writes the resulting
+  credentials, where the collection goes: 1Password, local, both, or Confluence) and writes the resulting
   `environments/*.json` files. Never edits any other skill or agent file — config
   only.
-- `agents/qa-tester.md` — the subagent that performs QA on a live application based
+- `agents/qa-tester.md` (rare cases it reads on demand in `agents/qa-tester/`; the ticket, PR and design link through `reading-jira-tickets`) —
+  the subagent, on Sonnet (Opus for one run when you ask for it: "puść na
+  Opusie"), that performs QA on a live application based
   on a Jira ticket, a PR diff, and (optionally) a Figma design — execution against
   the live app (Playwright for web, `agent-device` for iOS/Android) is delegated
   entirely to the `testing-apps` skill. It never edits code, and never publishes
   anything to Jira without the user's explicit approval. Additionally, when a
   ticket/diff plausibly touches accessibility (forms, custom controls, contrast,
-  focus order, ARIA, screen-reader-dependent flows), it explicitly invokes the
-  `auditing-accessibility` skill (outside this repo) and folds confirmed violations
+  focus order, ARIA, screen-reader-dependent flows), it checks the affected
+  screens: with the `auditing-accessibility` skill when that skill is installed
+  (it isn't part of this repo), otherwise from the accessibility tree (labels,
+  roles, focus order; contrast reported as not checked). Confirmed violations go
   into the "Bugs and deviations found" section, tagged with the WCAG criterion.
-  Deliberately left unbound in the frontmatter — like
-  `preparing-refinement-questions` — so it isn't loaded on every agent run
-  regardless of whether the ticket has anything to do with accessibility.
+  The skill is deliberately left unbound in the frontmatter, so it isn't loaded
+  on every agent run regardless of whether the ticket has anything to do with
+  accessibility.
 - `skills/writing-test-cases/` — writes static test cases (Title / Preconditions /
   Steps to reproduce / Expected result) from a ticket/diff, independent of
-  execution. Bound to `qa-tester` (its "Derive scenarios" step).
+  execution. Preloaded into `qa-tester` (its "Derive scenarios" step).
+- `skills/reading-jira-tickets/` — reads a ticket fully before a test or a
+  document: picks the connector for its site, the issue with every comment,
+  web link and the linked issues it relies on, the Figma link, the PR or branch
+  and its diff, and how to search Jira with JQL. Read-only. Preloaded into
+  `qa-tester`; testing-api ticket mode, `routing-qa-tickets`,
+  `retesting-tickets` (with parent and related issues), `writing-test-cases`, `preparing-refinement-questions`,
+  `find-duplicates` and `create-quality-metrics` use it too.
+- `skills/writing-jira-comments/` — drafts the QA comment for a ticket in the
+  product's own format (the project skill's "Jira QA comment" section) or the
+  default template. Draft only; preloaded into `qa-tester`, used by testing-api
+  ticket mode and `retesting-tickets`.
+- `skills/retesting-tickets/` — retests tickets sent back to QA (a fixed bug, a
+  task reworked after a failed test): reads each with its parent and related
+  issues, checks the fix is deployed, repeats the failing steps plus a few
+  checks around the fix through the API or the app, and returns Fixed, Not
+  fixed, Fixed with a regression or Can't verify per ticket with comment
+  drafts. Runs in a subagent; never posts or transitions.
+- `skills/analyzing-recordings/` — looks at a screen recording or screenshot
+  the user gives as a file path, in the context of its product and ticket,
+  inside a subagent: extracts only the frames where the screen changes
+  (`scripts/extract_frames.py`), returns a timeline, a verdict against the
+  ticket and two or three key frames, so no image stays in the main
+  conversation. Hands a defect on to `reporting-bugs`.
 - `skills/reporting-bugs/` — drafts a bug report (Title / Steps to reproduce /
-  Expected / Actual). Bound to `qa-tester` (its "Bug report draft" step). Never
-  publishes on its own — draft only. Calls `find-duplicates` itself before
-  drafting, which is why that skill is bound to `qa-tester` alongside it.
+  Expected / Actual). `qa-tester` reads it only when a run finds a bug (its
+  "Bug report draft" step), so it isn't loaded on every run. Never publishes on
+  its own — draft only. Calls `find-duplicates` itself before drafting.
 - `skills/find-duplicates/` — checks in Jira whether a similar bug/task already
   exists before a new one is filed; only searches and reports, never files/links
-  anything itself. An automatic first step of `reporting-bugs`, hence bound to
-  `qa-tester` as its transitive dependency, not invoked by `qa-tester` directly.
+  anything itself. An automatic first step of `reporting-bugs`; `qa-tester`
+  reads it through `reporting-bugs` only when a run finds a bug.
 - `skills/testing-apps/` — executes scenarios against a live app: one skill, one
   adapter choice based on the shape of the target (URL → web/Playwright, bundle
   id/device name → mobile/`agent-device`), instead of two separate places carrying
@@ -154,22 +259,34 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   alarm), the shared daemon that holds onto stale environment variables, and a
   separate reference file for one-time signing setup on a physical iPhone. Rules
   shared by both platforms (the real-account/real-payment boundary, "don't judge
-  without examining the screenshot") live once, in the main `SKILL.md`, not
-  duplicated per adapter. Deliberately scoped to web + mobile (iOS/Android) —
+  without examining the screenshot") live once, in `references/execution.md`,
+  not duplicated per adapter. `SKILL.md` itself only picks the adapter and
+  decides where a standalone run happens, so a conversation that hands the run
+  to a subagent doesn't load the execution rules. Deliberately scoped to web + mobile (iOS/Android) —
   `agent-device` also supports macOS/TV, but this skill doesn't reach into that.
-  Bound to `qa-tester` (its "Execute" step), and the mobile adapter is also
-  callable directly for dogfooding without a full ticket/PR context.
+  Used by `qa-tester` in its "Execute" step, and also callable directly for
+  exploration or dogfooding without a full ticket/PR context (a ticket retest
+  is `retesting-tickets`).
+  Such a direct run goes to a subagent, so its screenshots and snapshots don't
+  stay in the main conversation and get sent again with every later turn.
 - `skills/preparing-refinement-questions/` — generates refinement-session questions
   from a Jira ticket. **Standalone skill, deliberately unbound** from any agent
   (it applies before a feature is delivered, so `qa-tester` would never use it —
   binding it would only raise the context cost of every test run).
 - `skills/testing-api/` — runs a repo's API test collection (Bruno, Postman, or
-  Insomnia) via that tool's CLI against a live environment, exports the collection
-  and its environments separately, optionally publishes them where the product
-  config says (1Password, as plain files in Secure Notes with an "Updated /
-  Changes" note; or a Confluence tracker page for a secret-free collection; after
-  a check for a newer version and your yes), and produces a
-  pass/fail report ready to paste into a Jira comment. **Standalone, deliberately
+  Insomnia) via that tool's CLI against a live environment and produces a
+  pass/fail report ready for a Jira comment (for a ticket, the endpoint, request
+  and response of the happy path). It can publish the collection, the tests
+  collection and the environments as one package to the product's
+  `api.publish.target`: `1password` (one zip in one vault item), `local` (the
+  `api.publish.apiCollectionsFolder`), `1password+local`, or `confluence` (the
+  collection without environments on the page, the package in the local
+  folder). It checks for a newer published version first and publishes after
+  your yes, or by itself when your preferences say so. The run itself goes to a
+  subagent on Sonnet (Opus for one run when you ask for it: "puść na Opusie"), so CLI output and
+  response bodies stay out of the main conversation; the main conversation
+  gathers the brief, asks what your preferences leave open, and posts, files or
+  publishes as they say. **Standalone, deliberately
   unbound** from `qa-tester` — this is collection-level API testing, not manual QA
   against a live app. Product- and tool-agnostic: which repo/collection/client and
   (if applicable) where it's published comes from
@@ -184,6 +301,15 @@ product-agnostic (see "Generic skills here, project knowledge in the project").
   runner, before Postman and Insomnia were added as further adapters once it became
   clear different projects use different API clients and separate skills would have
   duplicated the same reporting logic.
+- `agents/postman-sync.md` — started by `testing-api` before it publishes a
+  Postman collection: brings the repo's collection and environment files up to
+  date with the user's Postman app. The Postman MCP server connects only inside
+  this agent (inline `mcpServers`, the `minimal` tier), signed in with the user's
+  Postman API key that `skills/testing-api/scripts/postman-mcp-headers.sh` reads
+  from 1Password at connect time (`environments/postman.json` says where), so
+  none of its tools load into the main conversation. Its report always lists the
+  variables without a Shared Value, with the reminder that only Shared Value
+  reaches 1Password. Never commits, publishes or prints a value.
 
 - `skills/routing-qa-tickets/` — a standalone skill invoked right at the start when
   a request only carries a bare Jira ticket and/or PR link, without saying whether
@@ -256,20 +382,19 @@ later followed for Bruno/Postman/Insomnia.
 
 ```yaml
 skills:
+  - reading-jira-tickets
   - writing-test-cases
-  - reporting-bugs
-  - find-duplicates
-  - testing-apps
+  - writing-jira-comments
 ```
 
-These four skills load in full on every run of the agent (not via descriptive
-routing) and are used inside its own procedure — `testing-apps` in the "Execute"
-step, itself picking the web/mobile adapter by the shape of the target;
-`find-duplicates` isn't invoked by `qa-tester` directly — it's bound because a
-subagent only receives the full content of the skills listed in its frontmatter at
-startup, rather than loading them on demand the way a normal session does, so
-`find-duplicates` has to be listed here separately even though in practice
-`reporting-bugs` calls it, not `qa-tester` directly.
+These three load in full on every run of the agent: `reading-jira-tickets`
+(the ticket, PR and design link), `writing-test-cases` ("Derive scenarios") and
+`writing-jira-comments` (the comment draft). The rest is read from `~/.claude/skills/` when a run needs it:
+`testing-apps/references/execution.md` in "Execute" (it picks the web/mobile
+adapter by the shape of the target; the skill's `SKILL.md` is only for
+standalone runs, so it isn't preloaded), and `reporting-bugs` with
+`find-duplicates` only when a run finds a bug, so a clean run doesn't pay for
+them.
 `preparing-refinement-questions` is invoked directly, independent of `qa-tester` —
 e.g. "prepare refinement questions for ACME-1234".
 

@@ -28,8 +28,15 @@ Coverage per endpoint:
 - <validation rules exercised>
 - <auth/business-logic cases>
 
+Request and response (happy path):
+<METHOD /path> — <happy-path case name>
+<request body, or the query parameters for a GET>
+Response: <status>
+<response body, trimmed to the fields that matter, with "..." where cut>
+...one block per endpoint that ran, plus one per failing case...
+
 Notes:
-- <any caveat surfaced in step 6/7 of SKILL.md — failing case detail, a case that
+- <any caveat surfaced in step 6/7 of run.md — failing case detail, a case that
   passed without truly testing what its name claims (e.g. expiry), an environment
   prerequisite that was or wasn't met, or a product-specific caveat from
   `api.knownCaveats`>
@@ -61,48 +68,38 @@ Tool: <resolved api.client>, collection under <collectionPath>/<subfolder>
 Coverage per endpoint:
 - <bullets, same style as full report but only for the scoped endpoint(s)>
 
+Request and response (happy path):
+<METHOD /path> — <happy-path case name>
+<request body, or the query parameters for a GET>
+Response: <status>
+<response body, trimmed to the fields that matter, with "..." where cut>
+...one block per endpoint that ran, plus one per failing case...
+
 <Notes section only if there's a real caveat to flag — omit entirely otherwise>
 ```
 
-## Ticket comment (ticket mode)
-
-Use this, not the reports above, for the Jira comment in ticket mode. It may be
-technical, but opens with a short summary any stakeholder can read:
-
-````
-*QA result: <Passed | Passed with issues | Failed | Blocked>* — <env> (<baseUrl>)
-
-<One or two sentences in business terms: what the change lets the client or user do, and whether it works as the ticket describes.>
-
-*What was tested:*
-- <one bullet per case or closely related group: the situation in plain words, then the endpoint and status, e.g. "Login with a wrong password is rejected — POST /auth/login → 401 — OK">
-
-*Request and response:*
-<For each endpoint the ticket changed, one representative request and its response, normally the happy path, plus one for each failing case:>
-<METHOD /path> — <case name>
-{code:json}
-<request body, or the query parameters for a GET; omit for a request without either>
-{code}
-Response: <status>
-{code:json}
-<response body, trimmed to the fields that matter, with "..." where cut>
-{code}
-
-*Issues found:*
-- <one bullet per bug: a plain-language description, then the technical detail (request, expected vs actual status/body)>
-
-Tested with <resolved api.client> on commit <short sha> (branch: <branch>); <requests passed>/<total requests> requests, <assertions passed>/<total assertions> assertions passed.
-````
-
-- Write it in English, whatever language the conversation uses.
-- Take requests and responses from this run's CLI output or the reports it wrote,
-  never from the collection's examples or docs.
-- Replace tokens, OTPs, passwords, phone numbers, national IDs and other personal
-  data with `<redacted>`.
-- Omit *Issues found:* when there are none, and keep the Notes rules below for any
-  real caveat, as a short *Notes:* list before the last line.
-
 ## Rules for filling it in
+
+- **Commit line when the run used the published collection** (ticket mode, or a
+  product without `repo`, where the collection is
+  `<run folder>/published-collection/` and has no git history): replace the
+  Commit line with `Collection: published in <target>, version <version>`, taken
+  from `<run folder>/published-base.json` (or `local folder, version <version>`
+  when the run fell back to `api.publish.apiCollectionsFolder`). Say what the
+  run added on top of it (e.g. "+ 12 cases generated for ABC-123"). In the full
+  report's closing line, write where the collection is published instead of
+  "committed under <collectionPath>".
+
+- **Every report shows the happy-path request and its response for each
+  endpoint that ran. Never skip it**, not for a short report, a scoped run or a
+  clean pass. Take it from this run's CLI output (Bruno: `--output` JSON,
+  `results[].request` / `response`), never from the collection's examples or
+  docs. Replace tokens, OTPs, passwords, phone numbers, national IDs and other
+  personal data with `<redacted>`. A happy path that didn't run or didn't pass:
+  show the closest successful request instead and say so in Notes, or, if
+  nothing passed, the failing request and its response. The Jira comment is not
+  part of this file: `writing-jira-comments` writes it (for an API ticket
+  without a project format, from its `api-comment-default-template.md`).
 
 - **Result line must match the CLI summary table exactly.** Don't round or
   editorialize — "34/35" stays "34/35", with the failing case named in Notes.
@@ -116,6 +113,6 @@ Tested with <resolved api.client> on commit <short sha> (branch: <branch>); <req
   `insomnia.md`) and the product's `api.knownCaveats` for known ones.
 - **A "N/N PASS" line next to happy-path-only coverage is exactly this kind of
   wrong assumption.** In generic mode, call out thin coverage as its own Note per
-  SKILL.md step 6 — don't let the pass count stand unqualified.
-- Always present the final report and the ticket comment inside a fenced code block on its own, so it can be
+  run.md step 6 — don't let the pass count stand unqualified.
+- Always present the final report inside a fenced code block on its own, so it can be
   copy-pasted into a Jira comment without picking up chat formatting.

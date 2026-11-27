@@ -1,0 +1,129 @@
+# Default QA comment template for a UI ticket
+
+Used for a ticket tested in the app (web or mobile) when the product's project
+skill has no "Jira QA comment" section, or the section says "Default template".
+An API ticket uses [api-comment-default-template.md](api-comment-default-template.md).
+
+## Short form (most tickets)
+
+```
+Checked with status: [PASSED]
+
+- <what was checked and how it behaved, one line each>
+- <...>
+```
+
+## Failed
+
+Only the problems: no list of what worked, so the reader sees at once what
+has to be fixed. The full results stay in the run's report.
+
+```
+Checked with status: [FAILED]
+
+- <what goes wrong, in one line>: <bug link, e.g. ABC-124>
+- <...>
+```
+
+Under each problem, the evidence a developer needs to reproduce it:
+
+**API problem**: the request, expected against actual status, and the
+response body in a JSON code block. Shorten a long body to the fields that
+matter (`...` for the rest); replace any token, key or password with
+`<redacted>`.
+
+```
+- A second user can take a number already in use: ABC-124
+  PUT /v1/users/me/phone-number
+  {"phoneNumber": "+966512345678"}
+  Expected: 409   Actual: 200
+  {
+    "id": "8f3c...",
+    "phoneNumber": "+966512345678",
+    "updatedAt": "2026-11-02T11:59:12Z"
+  }
+```
+
+**UI problem**: where it happens, what shows instead of the expected
+behaviour, and a screenshot cropped to the element. The video stays in the
+bug's evidence folder and goes with the bug when it is filed.
+
+```
+- Saving with an empty name closes the form without an error: ABC-125
+  Settings > Profile, clear Name, Save
+  Expected: "Name is required" under the field   Actual: the form closes, the old name stays
+  [screenshot: bugs/ABC-125/screenshot.png]
+```
+
+The screenshot goes into the comment through Atlassian's own server, as
+`~/.claude/skills/creating-jira-tickets/references/jira-attachments.md`, "A
+screenshot inside a comment", says. The draft gives each file's full path in
+the run folder; when the upload doesn't work, that path is what the user
+attaches by hand.
+
+## With per-case detail (tickets with real scenarios)
+
+After the list, one block per case that needs it (with FAILED, only for the
+failing cases):
+
+```
+<Case title>
+Steps: <short>
+Expected: <...>
+Result: <...>
+Data: <ids that matter: user, record, order...>
+<code block with the key response or log lines; logs expire, so keep them here>
+```
+
+## Status
+
+One status for the whole ticket:
+
+| Status | When | Lozenge color |
+| --- | --- | --- |
+| PASSED | everything checked works as the ticket says | green |
+| FAILED | at least one problem the ticket's change caused or didn't fix | red |
+| BLOCKED | the main scenarios couldn't run (environment down, no test data) | yellow |
+
+A run that passed with a few cases not checked is PASSED, with those cases
+listed as not checked and why.
+
+## Examples
+
+API:
+
+```
+Checked with status: [PASSED]
+
+- Valid number (+966 followed by 9 digits) is saved and returned by GET /v1/users/me
+- A second user sending a number already in use gets 409 "Phone number is already in use"; their own number stays unchanged
+- Invalid formats (missing, empty, local 05 format, 8 or 10 digits, letters, +971) return 400
+- No token or an invalid token returns 401, an auditor token 403
+- Not checked: two users saving the same number at the same moment (no way to time it on stage)
+```
+
+UI (with a Figma link in the ticket):
+
+```
+Checked with status: [PASSED]
+
+- Profile form shows the saved name, email and phone after opening Settings > Profile
+- Empty name shows "Name is required" under the field and Save stays disabled
+- Saved changes are visible after a page reload
+- Matches the Figma design (spacing, colors, type, error state)
+- Not checked: Arabic texts (translations not delivered yet)
+```
+
+## HTML
+
+Post the body as HTML (`addOrEditJiraIssueComment` with `contentFormat:
+"html"`); Atlassian's server turns it into Jira's own format. The tool takes
+only markdown or HTML, and markdown drops status lozenges and images.
+
+- Heading: `<h3>Checked with status: <span data-type="status" data-color="green">PASSED</span></h3>`
+- Each list: `<ul><li><p>...</p></li></ul>`.
+- Each case title: `<h3>`.
+- Steps / Expected / Result / Data: a `<p>` each, label in `<strong>`.
+- Response bodies: `<pre><code class="language-json">...</code></pre>`; log lines: `<pre><code>...</code></pre>`.
+- Screenshots: a `<figure>` right where the image belongs, as `jira-attachments.md`, "A screenshot inside a comment", shows; when the upload doesn't work, a line naming the file's full path to attach by hand.
+- Ticket links: `<a href="https://<site>/browse/ABC-124" data-card-appearance="inline"></a>`.

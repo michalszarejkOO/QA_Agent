@@ -19,6 +19,10 @@ Run `python3 -I <QA_Agent>/skills/updating-qa-agent/scripts/find_project_files.p
 Needed if it prints anything but `none`. The search can be run again any time;
 answering "leave" for everything is a valid way to finish.
 
+## Fresh install
+
+`skip`: a fresh install has no old project files to gather.
+
 ## Steps
 
 1. **Keywords (asks; default: none).** For each product, ask for words that

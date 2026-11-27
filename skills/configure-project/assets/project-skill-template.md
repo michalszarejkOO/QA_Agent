@@ -1,7 +1,7 @@
 ---
 name: {{PRODUCT}}
 description: Project map for {{PRODUCT_TITLE}} (Jira prefix {{TICKET_PREFIXES}}) — where its code, API collection, environment config, Jira/Confluence and tools live, which environment to test on, and the project's known gotchas. Load it first whenever a task touches {{PRODUCT_TITLE}}, then hand off to the generic skills (testing-api, qa-tester, testing-apps, writing-test-cases, reporting-bugs) with the right paths and context.
-when_to_use: "Trigger on any mention of {{PRODUCT_TITLE}}, a {{TICKET_PREFIX_EXAMPLE}}-<number> ticket or a {{JIRA_SITE}}/browse/{{TICKET_PREFIX_EXAMPLE}}-… link, or the {{PRODUCT_TITLE}} environment URLs ({{URL_HOSTS}}). Load before testing-api / qa-tester / writing-test-cases for a {{PRODUCT_TITLE}} ticket. Do NOT trigger for other products — they have their own skill."
+when_to_use: "Trigger on any mention of {{PRODUCT_TITLE}}, a {{TICKET_PREFIX_EXAMPLE}}-123 ticket or a {{JIRA_SITE}}/browse/{{TICKET_PREFIX_EXAMPLE}}-… link, or the {{PRODUCT_TITLE}} environment URLs ({{URL_HOSTS}}). Load before testing-api / qa-tester / writing-test-cases for a {{PRODUCT_TITLE}} ticket. Do NOT trigger for other products — they have their own skill."
 ---
 
 # {{PRODUCT_TITLE}}
@@ -16,9 +16,13 @@ It lives in the project's working directory, so it goes away with the project.
 
 **Every file you create for {{PRODUCT_TITLE}} goes into its working directory,
 `{{WORK_DIR}}`, wherever Claude was opened**: test output goes where the testing
-skills put it (`qa-evidence/`, `api-runs/`, `worktrees/`, `reports/`), and anything
-else (notes, plans, scripts, SQL, exports, data dumps) goes into `notes/` or
-`scripts/` there, created as needed. Never into the current folder, the Desktop,
+skills put it (`qa-evidence/`, `api-runs/`, `worktrees/`, `reports/`). Anything
+else made for one ticket (notes, plans, SQL, scripts, exports, data dumps) goes
+into that ticket's folder, `qa-evidence/<TICKET>/notes/`, next to its test cases
+and evidence. That includes API requests and responses made only to prepare data
+for a test; `api-runs/` is for `testing-api` runs. The top-level `notes/` and `scripts/` hold only what applies to the
+whole project (a shared account setup, a tool, a reusable script), created as
+needed. Never into the current folder, the Desktop,
 `/tmp` or `~/Downloads`. Give the full path of anything you save.
 
 ## Where things are
@@ -37,7 +41,7 @@ else (notes, plans, scripts, SQL, exports, data dumps) goes into `notes/` or
 
 ## Before you start a {{PRODUCT_TITLE}} task
 
-1. Read the ticket and its acceptance criteria.
+1. Read the ticket with the `reading-jira-tickets` skill (comments, links, PR).
 2. Check "Rules for this project" below before touching test data.
 
 ## Rules for this project

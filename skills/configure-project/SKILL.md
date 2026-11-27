@@ -1,6 +1,6 @@
 ---
 name: configure-project
-description: Interactive setup wizard that configures this repo's skills (qa-tester, testing-api, routing-qa-tickets, create-quality-metrics, writing-test-cases) for a new team/product after cloning — asks which Atlassian MCP connectors are authorized and for which sites, then asks about each product (ticket prefixes, a required working directory where all of that product's QA output lands, repo path, web/mobile UI and/or API collection, credentials, where updated collections and environments are published (1Password, Confluence or nowhere), a project skill for product-specific knowledge), and writes the resulting ~/.claude/environments/*.json files the other skills already read. Never modifies skill files themselves, only generates config.
+description: Interactive setup wizard that configures this repo's skills (qa-tester, testing-api, routing-qa-tickets, create-quality-metrics, writing-test-cases) for a new team/product after cloning — asks which Atlassian MCP connectors are authorized and for which sites, then asks about each product (ticket prefixes, a required working directory where all of that product's QA output lands, repo path, web/mobile UI and/or API collection, credentials, where updated collections and environments are published (1Password, a local folder, 1Password + local, or Confluence), a project skill for product-specific knowledge), and writes the resulting ~/.claude/environments/*.json files the other skills already read. Never modifies skill files themselves, only generates config.
 when_to_use: "Trigger on: 'set up QA_Agent', 'zrób setup', 'skonfiguruj QA_Agent', 'dodaj projekt', 'set up this project for my team', 'configure QA_Agent', 'onboard me onto this repo', 'I just cloned this, how do I set it up', running this after ./setup.sh for the first time, adding a new product's config to an existing setup, or any request to create/update files under ~/.claude/environments/. Do NOT trigger for updating an existing install after pulling QA_Agent changes (that's updating-qa-agent), for editing an existing environments/*.json file by hand (just edit it) or for questions about what a config field means (read environments.example/README.md instead)."
 ---
 
@@ -24,11 +24,12 @@ repo's `skills/` or `agents/`.
 | Severity | Rule |
 | --- | --- |
 | MUST | Make sure `$CLAUDE_CONFIG_DIR/environments` (or `~/.claude/environments`) exists before writing any config: `./setup.sh` creates it, and if it's missing, create it yourself (`mkdir -p`) rather than stopping. |
-| MUST | Write each product file to `<workDir>/config/<product>-<environment>.json` (the real file) and put only a symlink to it in `~/.claude/environments/`, the same way skills are linked into `~/.claude/skills/`. Everything about a product then lives in its working directory. Only the shared files (`atlassian-connectors.json`, `evidence.json`, `qa-agent-updates.json`) are real files in `~/.claude/environments/`. |
+| MUST | Write each product file to `<workDir>/config/<product>-<environment>.json` (the real file) and put only a symlink to it in `~/.claude/environments/`, the same way skills are linked into `~/.claude/skills/`. Everything about a product then lives in its working directory. Only the shared files (`atlassian-connectors.json`, `evidence.json`, `qa-agent-updates.json`, `postman.json`, `qa-agent-preferences.json`) are real files in `~/.claude/environments/`. |
 | NEVER | Put `<workDir>/config/` inside a git repo without gitignoring it: it holds credentials. If `git -C <workDir> rev-parse` succeeds, add `config/` to that repo's `.gitignore` (show the change first). |
 | MUST | Read `environments.example/README.md`, `environments.example/app-with-ui.example.json`, and `environments.example/api-collection.example.json` fresh at the start of every run, not from memory — the shape is the source of truth and this skill must never drift from it. |
 | MUST | Resolve each Atlassian connector's site with a live call to its own `getAccessibleAtlassianResources` tool, never by asking the user to type a site/cloudId from memory — see [references/connectors.md](./references/connectors.md). |
 | MUST | Ask one section at a time (connectors, then one product at a time) and show the generated JSON before writing it, so the user can correct it before it lands on disk. |
+| MUST | Say where every suggestion in a question comes from, inside the question itself: the file (its path), the command (e.g. `op item list`), the tool call or the user's earlier answer. Write "I found the 1Password item `[X] [STG] Login` in `op item list`", never just "I see `[X] [STG] Login`". The user may see only the question dialog, and a suggestion with no source looks like knowledge the agent shouldn't have. If a suggestion is your own guess, say it's a guess. Show URLs and paths in full, never shortened with `…`. |
 | MUST | Get a working directory (`workDir`) from the user for every product before writing its file — it's required, with no silent default. Create it if missing. Every file a run produces for that product (evidence, API run output, worktrees, reports) lands there, so the user can remove a whole project by deleting one folder. |
 | MUST | Offer every product a project skill (`projectSkill`, a skill folder inside its `workDir`, symlinked into `~/.claude/skills/`). It's where everything specific to that product goes, so this repo's skills stay product-agnostic and the knowledge goes away with the project folder. |
 | MUST | Use the literal placeholder `REPLACE_ME` for any password/credential the user doesn't want to paste into the conversation, and say plainly that they'll need to edit the file afterward — never invent a fake credential. |
@@ -96,6 +97,47 @@ repo's `skills/` or `agents/`.
    one, or after `/clear`; or the next one when there was none that day), and if there's something new, Claude asks
    whether to see what's new and update; nothing is pulled without a yes.
 
+5b. **Choose what runs by itself.** Skip if
+   `environments/qa-agent-preferences.json` already exists (show it with
+   `scripts/preferences.py show`). Otherwise ask one question with tappable
+   options: "Co agent ma robić po teście bez pytania?" (in the user's
+   language), the four options in
+   [references/preferences.md](./references/preferences.md), "Choosing in the
+   setup wizard", each with its one-sentence description:
+   - **ask** (suggested to start with): asks before every action that leaves
+     the computer; "Yes, always" / "No, never ask" remember the answer for that
+     one action;
+   - **auto**: the agent does everything itself and only asks at the end
+     whether to add knowledge to the project skill;
+   - **never**: the agent does the work and keeps the drafts; it publishes,
+     posts and files nothing and doesn't ask;
+   - **mix**: one question per action (`ask` / `auto` / `never`), two questions
+     of three; suggest `ask` for `updateProjectSkill`.
+   Then ask which Claude Code permission groups to allow so its own prompts stop
+   too, exactly as [references/preferences.md](./references/preferences.md),
+   "Asking about permissions" says: plain labels, read suggested, write only
+   when a writing action is `auto`. Write the file with `scripts/preferences.py set`
+   per action (and `claudePermissions` / `results` by hand, following
+   `environments.example/qa-agent-preferences.example.json`), run
+   `scripts/preferences.py permissions --apply` if they picked any group, and
+   say they can change any of it later by saying "zmień ustawienia QA_Agent" /
+   "change my QA_Agent preferences".
+   If any product has a mobile surface (a `surfaces.*.platform`), also ask how
+   physical devices are reached (`mobile.connection`, see
+   [references/preferences.md](./references/preferences.md), "Mobile devices"):
+   Wi-Fi first with the cable as fallback (suggested), cable first with Wi-Fi as
+   fallback, Wi-Fi only, or cable only. Save it with
+   `scripts/preferences.py connection <order>`. Ask this even when the
+   preferences file already exists but has no `mobile.connection`.
+   If any product's `api.client` is `postman` or `bruno`, also ask how its
+   collection reaches the app after a publish (`updateLocalApp`, see
+   [references/preferences.md](./references/preferences.md), "Choosing in the
+   setup wizard"): **manual** (suggested; you import it, with Replace in
+   Postman) or **auto** (the agent replaces it in Postman or Bruno, same names,
+   no import). Save it with `scripts/preferences.py set updateLocalApp
+   <never|auto>`. Ask this even when the preferences file already exists but
+   has no `updateLocalApp` in `actions`.
+
 6. **Offer folder access from anywhere.** Ask whether Claude may read and write
    the working directories and repo path(s) just configured without asking, from
    whatever folder it's opened in. If yes, follow
@@ -106,11 +148,16 @@ repo's `skills/` or `agents/`.
 7. **Validate.** Run `python3 environments.example/validate_environments.py` (from
    the repo root) and show the output. If it reports errors, fix the specific file
    and field it names and re-run until clean. On a first install (no product
-   files existed before this run), then record every migration as applied, since
-   this run already built the current layout:
-   `python3 -I skills/updating-qa-agent/scripts/migrations.py mark-all`. When
-   products already existed, leave migrations to the `updating-qa-agent` skill
-   instead.
+   files existed before this run), then run
+   `python3 -I skills/updating-qa-agent/scripts/migrations.py fresh-install`. It
+   records as applied every migration that only fixes older installs (this run
+   already built the current layout) and prints the ones a new machine needs too,
+   because the user decides something in them (e.g. `009-auto-compact-window`).
+   Run each printed migration now as a wizard, the way `updating-qa-agent` does
+   (its step 3): read the file, run "Is it needed", then "Steps" (explain, ask with
+   the suggested default), then "Verify", and mark it applied with
+   `migrations.py mark <id>`. When products already existed, leave migrations to
+   the `updating-qa-agent` skill instead.
 
 8. **Post-setup check.** Run the `checking-qa-agent` skill and include its report:
    it shows what's still missing on this machine (tools, playwright-video, Jira

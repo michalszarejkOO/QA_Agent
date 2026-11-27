@@ -4,7 +4,7 @@ Produces `~/.claude/environments/atlassian-connectors.json` (or
 `$CLAUDE_CONFIG_DIR/environments/atlassian-connectors.json`), the standing map every
 skill checks before guessing which Atlassian MCP connector reaches which Jira/
 Confluence site — see `agents/qa-tester.md`'s "Jira ticket" input and
-`skills/testing-api/references/ticket-driven-testing.md` step T0. There is
+`skills/testing-api/references/ticket-driven-testing.md` step T0 ("Order"). There is
 deliberately no example template for this file elsewhere in the repo; this is where
 it gets created.
 
@@ -127,7 +127,49 @@ Two kinds of operation:
 | Read a Confluence page | `getConfluenceContent` | direct |
 | Create / update a Confluence page | `createConfluenceContent` / `updateConfluenceContent` | direct |
 | Get the body format rules before writing a page or comment body | `getContentFormatGuide`, with `toolName` set to `createConfluencePage` or `updateConfluencePage` for pages, `addOrEditJiraIssueComment` for a Jira comment in HTML | through discover, `executeRead` |
+| Read an issue's comments | `listJiraIssueComments` | direct |
+
+Reading a ticket before a test and searching Jira with JQL: the
+`reading-jira-tickets` skill.
 
 These names hold only for Atlassian's own server. If the session has no such
 server for the site, stop and tell the user how to add one (see "Two or more
 Atlassian sites") rather than switching to another Atlassian server.
+
+## Calling it so reads and writes work every time
+
+Mistakes seen in real runs, and what to do instead:
+
+- **Always pass `cloudId`**: the site's hostname (e.g. `is-takamol.atlassian.net`)
+  works, no lookup needed. A call without it fails with "cloudId: Required".
+- **Reading a Confluence page** (`getConfluenceContent`) needs `content_id` (the
+  number from the page URL) or `content_url` (the whole URL), plus `detail:
+  "full"` for the body; the default `summary` is only an excerpt.
+  `content_format: "markdown"` is easier to read than the default `html`.
+- **Jira search** (`searchJiraIssuesUsingJql`): ask only for the fields you need
+  and a small `maxResults` (e.g. 20); a full result overflows the tool output.
+  This is about search only: never pass `fields` to `getJiraIssue`, which
+  silently drops some of them. Both rules, with examples, are in
+  `reading-jira-tickets` ("The ticket", "Searching Jira").
+  Issue types are per project: list them (`listJiraProjectIssueTypesMetadata`)
+  before filtering on one, never guess a name like "Regression Bug".
+- **Files.** Upload operations (`createConfluenceAttachment`,
+  `uploadAttachmentToJiraIssue`, both through `discover`) return a `curl` command
+  with a short-lived token. Run each one with Bash as is, right away, one per
+  file; never take the token out and reuse it in your own loop. The file can be
+  anywhere on disk, so upload straight from the run's evidence or run folder
+  under `workDir`; never copy it into the QA_Agent or product repo. Jira
+  attachments and screenshots inside a comment:
+  `~/.claude/skills/creating-jira-tickets/references/jira-attachments.md`.
+- **Server missing from the session.** If `atlassian-connectors.json` names a
+  server for the site and its tools aren't there (ToolSearch for
+  `mcp__<server>__` finds nothing, even after waiting for it to connect), stop and
+  say so: the user re-authenticates it in `/mcp`, or adds it as "Two or more
+  Atlassian sites" says. Don't switch to another server, and don't report a
+  ticket as untestable without saying which server was missing.
+- **Write blocked by Claude Code.** Auto mode can block a Jira or Confluence write
+  even after the user said yes. The fix is the `jira-write` / `confluence-write`
+  groups in the user's preferences (`claudePermissions`, see
+  [preferences.md](./preferences.md)); give the user the command, don't add
+  permissions yourself.
+

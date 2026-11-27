@@ -35,8 +35,50 @@ any wording ("set up QA_Agent", "zrób setup", "skonfiguruj", "update QA_Agent",
 
 - Keep `skills/` and `agents/` product-agnostic. Product-specific rules go into
   that product's project skill, never here.
-- If a change needs something done on machines that already use QA_Agent, add
-  a migration in the same commit (see `skills/updating-qa-agent/SKILL.md`, "Writing
-  a migration") and run
-  `python3 -I skills/updating-qa-agent/scripts/migrations.py lint`.
+- **Before every commit that touches `skills/`, `agents/`, scripts, hooks,
+  `setup.sh` or `environments.example/`, decide whether other users' installs
+  are affected**: a config field, a user setting (`~/.claude/settings.json`),
+  an MCP registration, a file or folder that moves, a new place output goes,
+  or a new choice the user should make. Say the answer to the user before
+  committing, even when it's "no".
+  - Affected → add a migration in the same commit (see
+    `skills/updating-qa-agent/SKILL.md`, "Writing a migration"). Write its Steps
+    as a wizard (explain, ask with a default, do the rest, show the result) and
+    choose its "Fresh install": `ask` if new users must make the same choice
+    (configure-project then runs it in the first setup), `skip` if it only fixes
+    older installs. Run
+    `python3 -I skills/updating-qa-agent/scripts/migrations.py lint`.
+  - Not affected (skill text only) → no migration.
+  - End the commit message with `Migration: NNN-<slug>` or
+    `Migration: none (<why>)`.
+- **Ask whether a new behaviour should be configurable.** Before writing a new
+  feature or changing what a skill or agent does, ask the user whether it should
+  be a choice in the setup wizard (`configure-project`, and the migration for
+  existing installs), and propose the options it would offer, each with one
+  plain sentence on what it means (e.g. `ask` / `auto` / `never`, or where
+  output goes). Build it only after the user picks; if they say no, hard-code
+  the agreed behaviour.
+  Every setting reaches both kinds of users: existing installs through the
+  migration, new users through configure-project. A migration may use
+  "Fresh install: skip" only when configure-project already asks the same
+  question (name that step in the migration's "Fresh install" line) or when
+  it only fixes older installs (say a fresh install has nothing to change).
+  Otherwise use "ask". `migrations.py lint` checks this.
+- **Skill descriptions.** Claude Code lists every skill with its
+  `description` and `when_to_use` and cuts the pair after 1536 characters, so
+  keep the two together within 1536. Don't use `<` or `>` in them (the listing
+  shows `&lt;` `&gt;`; write an example such as `ABC-123` instead of a
+  placeholder), and no colon followed by a space in an unquoted `description`
+  (it breaks strict YAML parsers). The same applies to project skills that
+  configure-project generates from its template.
+- **Before opening a pull request, write the release note** in `CHANGELOG.md`
+  under `## Unreleased`, as its own commit ("Changelog: ..."). Read all the
+  branch's commits (`git log <base>..HEAD`), group them by feature and write one
+  bullet per feature, not per commit, in the user's terms: what they can do now,
+  what works differently, what the update will ask (name the migration's
+  question, not its number). Fold purely internal work (tests, evals, wording)
+  into one "Smaller fixes" bullet or leave it out. Use the same bullets as the
+  pull request description. When a version branch is cut (e.g. `1.2.0`), rename
+  `## Unreleased` to the version and start a new empty `## Unreleased` above it.
+  Claude shows these entries to everyone who updates.
 - Repo content is in English.

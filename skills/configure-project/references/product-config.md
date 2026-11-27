@@ -40,9 +40,10 @@ entirely — a product needs at least one of the two, per `validate_environments
      product, ask for its working directory the same way and add only that field,
      showing the diff first.
    - In the questions below, when the product has no repo yet for something the
-     skills read (most often an API collection kept outside any code repo),
-     suggest a folder inside `workDir` for it (e.g. `<workDir>/postman/`), so
-     that also goes away with the project.
+     skills read, suggest a folder inside `workDir` for it, so that also goes
+     away with the project. An API collection is the exception: one that is
+     published needs no local folder at all (step 5, "Where the collection
+     lives").
 
 3. **Jira site** (skip if the user opted out of Atlassian integration in
    [connectors.md](./connectors.md)) — which registered connector name (from
@@ -79,12 +80,21 @@ entirely — a product needs at least one of the two, per `validate_environments
 5. **Does this product have a committed API test collection?**
    If yes:
    - Which tool: Bruno, Postman, or Insomnia (`api.client`).
-   - Repo path and the collection's path within it (`api.repo`, `api.collectionPath`
-     — for Postman this is a directory containing both the `.postman_collection.json`
-     and an `environments/` folder of `.postman_environment.json` files). If the
-     collection lives loose (exported files, no repo), offer to copy it into
-     `<workDir>/<client>/` in that layout and point `api.repo` there; keep the
-     originals untouched and leave secrets out of the copied environment files.
+   - Where the collection lives. Ask: "Is the collection in a git repo the team
+     shares (e.g. inside the backend repo)?"
+     - **Yes** → the repo path and the collection's path within it (`api.repo`,
+       `api.collectionPath` — for Postman a directory containing both the
+       `.postman_collection.json` and an `environments/` folder of
+       `.postman_environment.json` files).
+     - **No, it's published to 1Password or Confluence** (or loose exported
+       files that will be) → no `repo`: the published copy is the source,
+       and every run downloads it (`testing-api`'s config-fields.md, "No
+       `repo`"). Leave `api.repo` out and set `api.collectionPath` to the
+       collection's path inside the published copy (`.` for files at its top).
+       In the target question below, suggest **1Password + local**: the local
+       folder is where a run starts when 1Password can't be read. Loose files
+       that aren't published yet go into that folder, and the first run's
+       publish uploads them.
    - Which environment a plain "run the API tests" should use when no
      staging-like branch can be resolved (`api.defaultEnvironment`). Offer the
      names of the collection's environment files as choices; never assume one is
@@ -94,31 +104,48 @@ entirely — a product needs at least one of the two, per `validate_environments
      verify results against (`api.ticketEnvironment`). Offer the collection's
      environment names, plus "none, ask every time" for teams whose tickets land
      on different environments. Tell the user that `testing-api`'s ticket mode
-     always confirms the environment before running (it proposes this one, or
-     asks when the field is absent), because a change may be deployed elsewhere.
+     tests on it: with the `confirmTicketEnvironment` preference at `auto`
+     (step 5b) without asking, otherwise it proposes it and asks; without the
+     field it always asks. An environment named in the request always wins.
    - Any known stateful/order-dependent test cases worth flagging up front
      (`api.knownCaveats`) — optional, skip if none come to mind yet.
-   - **Where updated collections and environments go** (`api.publish`, see
-     `testing-api`'s `references/publishing.md`). Ask about the two parts
-     separately, because environments hold tokens and logins:
-     - The collection: `1password` (suggested), `confluence`, or `none` (it only
-       stays as a zip in the run folder).
-     - The environments: `1password` (suggested), `confluence`, or `none`. If the
-       user picks Confluence, say that everyone with access to the page can read
-       it, often the client too, and that `testing-api` will stop on anything its
-       secret scan flags. **Insomnia:** skip this question and write
-       `environments: "none"`; an Insomnia export holds its environments, so they
-       travel with the collection.
-     Tell the user that `testing-api` always shows what goes where and waits for
-     their yes before any upload, and checks first that nobody published a newer
-     version.
-   - **For 1Password:** item names follow `<Product> <Client> Collection` and
-     `<Product> <Client> Environments`, with the tool name capitalized as
-     `Postman`, `Bruno` or `Insomnia` (e.g. `Emtethal Postman Collection`,
-     `Mowaamah Bruno Environments`); offer them and let the user change them. Say
-     what will go in, per the tool chosen above: Postman, the collection file and
-     one file per environment; Bruno, the collection as a zip and one `.yml` per
-     environment; Insomnia, the export file. Then find the vault:
+   - **Where updated collections go** (`api.publish.target`, see
+     `testing-api`'s `references/publishing.md`, "The four targets"). The
+     **package** is the collection, the tests collection (when there is one)
+     and the environments in one import (Postman and Bruno: one zip;
+     Insomnia: the export).
+     Ask as one question, with exactly these four options:
+     1. **1Password** (suggested): the package in one vault item, shared with the
+        team → `target: "1password"`.
+     2. **Local**: the package in a folder on this machine, nothing shared →
+        `target: "local"`.
+     3. **1Password + local**: the package in both places →
+        `target: "1password+local"`.
+     4. **Confluence**: the collection **without environments** on a Confluence
+        page, the package in a local folder (environments hold tokens and never
+        go to Confluence) → `target: "confluence"`, plus the `api.confluence`
+        block. Not offered for Insomnia: its export holds the environments and
+        can't be split.
+     With no `repo`, suggest 3 instead of 1.
+     For 2, 3 and 4 ask for the folder (`api.publish.apiCollectionsFolder`),
+     suggesting `<workDir>/postman/` for Postman and `<workDir>/<client>/`
+     otherwise. It must be outside the QA_Agent repo and any git repo (the
+     package holds live values); write it with `~` for the home folder. Say that
+     it always holds the last published package, unpacked, written without
+     asking (with 1Password + local, after the upload), that hand edits there
+     are never overwritten without a question, and that no other copy is kept
+     (not in the run folders either).
+     Tell the user that `testing-api` shows what goes to 1Password or
+     Confluence and, unless the `publishCollection` preference is `auto` (step
+     5b), waits for their yes before any upload, and always checks first that
+     nobody published a newer version.
+   - **For 1Password:** one item per product, named `<Product> <Client>
+     Collection` with the tool name capitalized as `Postman`, `Bruno` or
+     `Insomnia` (e.g. `Emtethal Postman Collection`); offer it and let the user
+     change it. Say what will go in, per the tool chosen above: Postman and
+     Bruno, one zip with the collection, the tests collection and the
+     environments; Insomnia, the export file. Then find the
+     vault:
      1. If `op` isn't installed (`command -v op`), install it:
         `brew install --cask 1password-cli` (without Homebrew, give the user
         https://developer.1password.com/docs/cli/get-started/). It's required
@@ -127,34 +154,44 @@ entirely — a product needs at least one of the two, per `validate_environments
         `op vault list` and tell them to approve the 1Password dialog it opens
         (not `op whoami`: it reports "not signed in" even when this works).
         Never ask for their password.
-     2. Look for the items already: `op item list --format
-        json`, matching `title` exactly. If a teammate created them before, take
-        their vault without asking, and say so. If the vault holds this
+     2. Look for the item already: `op item list --format
+        json`, matching `title` exactly. If a teammate created it before, take
+        its vault without asking, and say so. If the vault holds this
         product's items for another tool (e.g. `<Product> Bruno Collection` while
         this setup is Postman), tell the user, as information only: teammates
         publish that collection separately, both are allowed, and changes don't
         pass between them. Take that item's vault as the suggestion.
      3. Otherwise list `op vault list --format json` and ask which vault this
         product uses; it must be one the whole team can open.
-     Write `api.publish.onePassword` with `vault`, `collectionItem` and
-     `environmentsItem`. Don't create the items now: the first upload does, after
-     the user's yes.
+     Write `api.publish.onePassword` with `vault` and `item`. Don't create the
+     item now: the first upload does, after the user's yes.
    - **For a Postman collection with any target:** publishing first syncs the
-     repo files with the Postman app through the Postman MCP server (see
-     `testing-api`'s `adapters/postman.md`). Check it's signed in
-     (`getAuthenticatedUser`); if not, start its `authenticate` and let the user
-     approve in the browser. Tell the user the team rule: variables everyone needs,
+     collection files with the Postman app through the `postman-sync` agent (see
+     `testing-api`'s `adapters/postman.md`). It connects with the user's Postman
+     API key from 1Password; migration 010 (run with the other `ask` migrations
+     in the first setup) asks where that key is. Tell the user the team rule: variables everyone needs,
      keys included, are plain (`default`-type) variables with their value in
      Shared Value, because values in the Value column or the Postman Vault never
      leave their app.
+   - **For a Postman collection: a separate tests collection?** Explain:
+     test cases that `testing-api` generates for tickets can go into a
+     collection of their own, which every run executes, so the main collection
+     keeps one request per endpoint and stays readable in the app (see
+     `testing-api`'s `references/config-fields.md`, "The tests collection").
+     Ask "Keep test cases in a separate tests collection?" with **yes**
+     suggested. On yes, ask its name (suggest the main collection's name
+     with `_TESTS`, e.g. `ACME_TESTS` next to `ACME`, so the two are easy to tell
+     apart after an import) and write it as `api.testsCollection`; it is
+     published in the same package and item as the main one. On no, write
+     nothing: cases go into the main collection.
    - **For a Bruno collection with any target:** values in the collection's
      `.env` file are never published (it stays on each person's machine). Tell
      the user that anything the team needs must be in the environment files
      (`environments/<env>.yml`), or come from an `envRefreshProcedure`.
-   - **For Confluence** (either part): cloudId (the resolved site from step 3),
+   - **For Confluence** (`target: "confluence"`): cloudId (the resolved site from step 3),
      space key, parent page id, a fixed page title, and a fixed attachment
      filename for the exported collection zip, as the `api.confluence` block.
-     Without any Confluence part, leave that block out.
+     For any other target, leave that block out.
 
 6. **Staging-like branch.** For the main repo captured above, run
    `python3 -I skills/testing-apps/scripts/detect_env_branch.py <repo>` and show
@@ -171,15 +208,47 @@ entirely — a product needs at least one of the two, per `validate_environments
      [../assets/project-skill-template.md](../assets/project-skill-template.md).
      Fill every `{{…}}` placeholder from the answers already collected (repos as
      table rows, one environments table row per environment file, Jira site and
-     connector). Ask the user for the one-paragraph product description. Show
-     the result before writing. Offer `git init` and a first commit in
-     `<workDir>/skills/`, so later additions are tracked.
+     connector). Ask the user for the one-paragraph product description. Keep
+     the frontmatter within the skill listing rules (see "Skill descriptions"
+     in this repo's `CLAUDE.md`): `description` plus `when_to_use` at most 1536
+     characters, no `<` or `>`. Show the result before writing. Offer
+     `git init` and a first commit in `<workDir>/skills/`, so later additions
+     are tracked.
    - Either way, link it so it loads in any session:
      `ln -s <skill folder> ~/.claude/skills/<product>` (if something else is at that
      path, show it and ask before replacing it).
    - Write the folder as top-level `"projectSkill"`. Every environment file of
      the same product points at the same skill.
    - If the user declines a project skill, leave `projectSkill` out.
+   - **Jira QA comment format** (only with a project skill and a Jira site).
+     Say that after testing, the agent drafts a comment for the ticket
+     (`writing-jira-comments`), and that QA_Agent always has two defaults:
+     for an API ticket "QA result" with the endpoint, request and response of
+     the happy path
+     (`skills/writing-jira-comments/references/api-comment-default-template.md`),
+     for a UI ticket "Checked with status"
+     (`skills/writing-jira-comments/references/ui-comment-default-template.md`).
+     Show the short form of the one(s) this product uses. Ask
+     "Which format should QA comments for this product use?":
+     - **Default template** (recommended): add a "## Jira QA comment" section
+       to the project skill with the line "Default template.";
+     - **Default with changes**: ask what to change (heading, statuses,
+       language, sections) and write the section as those changes on top of
+       the default template;
+     - **Our own format**: ask the user to paste an example comment or point
+       to a file; write the section describing it (or linking that file, kept
+       inside the skill folder).
+     - Only for a product with an `api` block that chose **Default with
+       changes** or **Our own format**, ask "Czy komentarz do taska API ma
+       zawierać endpoint, request i response?" (in the user's language):
+       - **Tak, zawsze** (recommended): add the line "API tickets: always
+         include endpoint, request and response (happy path)." to the section.
+         Every API ticket comment then has them, placed where the format says
+         or at the end, with tokens, passwords and personal data redacted.
+       - **Nie**: add "API tickets: no endpoint, request or response." The
+         comment holds only what the format says.
+       The default API template always has them, so don't ask with
+       **Default template**.
 
 8. **Assemble and confirm.** Merge `workDir`, `projectSkill` and whichever of `surfaces`/`api`
    blocks apply into one JSON object shaped exactly like the example files (both together if the

@@ -1,6 +1,6 @@
 ---
 name: writing-test-cases
-description: Writes manual test cases from a Jira ticket's acceptance criteria, a PR diff, or a described feature. Defaults to a plain four-field table (Title, Preconditions, Steps to reproduce, Expected result) for review or hand-off — this is not execution, it does not open a browser. When explicitly asked to publish/create a Confluence page for a Jira ticket, switches to a Figma-grounded Confluence mode instead: a trackable, executable granular Smoke/Regression suite plus a condensed regression layer on the same page. Use when asked to write test cases, draft a test plan, prepare test scenarios, turn a Jira ticket into a Confluence QA page, or condense/merge an existing granular suite into fewer realistic regression cases.
+description: Writes manual test cases from a Jira ticket's acceptance criteria, a PR diff, or a described feature. Defaults to a plain four-field table (Title, Preconditions, Steps to reproduce, Expected result) for review or hand-off — this is not execution, it does not open a browser. When explicitly asked to publish/create a Confluence page for a Jira ticket, switches to a Figma-grounded Confluence mode instead — a trackable, executable granular Smoke/Regression suite plus a condensed regression layer on the same page. Use when asked to write test cases, draft a test plan, prepare test scenarios, turn a Jira ticket into a Confluence QA page, or condense/merge an existing granular suite into fewer realistic regression cases.
 when_to_use: "Plain-table trigger: 'write test cases for X', 'prepare a test plan', 'draft test scenarios', turning acceptance criteria into documented test cases, listing what should be tested before or independent of actually running the tests. Confluence-mode trigger: 'create a Confluence page with test cases for MWA-123', 'publish test cases for this ticket to Confluence', 'QA this story on Confluence', or a request to condense/merge/combine an existing granular test-case page into realistic regression journeys."
 ---
 
@@ -18,7 +18,9 @@ deliberately, don't blend them:
 
 - **Plain table** (default) — a lightweight, four-field review document. No Jira/Figma
   fetching is required (though it's used when already provided), nothing gets
-  published anywhere, and the output is just a Markdown table returned inline. This is
+  published anywhere, and the output is a Markdown table returned inline and saved
+  to the ticket's folder in the product's working directory
+  (`<workDir>/qa-evidence/<TICKET>/test-cases.md`). This is
   what a bare "write test cases for X" means, and what `qa-tester` itself calls
   internally to turn gathered context into scenarios before touching Playwright.
 - **Confluence page** — only when the request explicitly asks to create, publish, or
@@ -36,9 +38,10 @@ Don't infer Confluence mode from the mere presence of a Jira ticket — plenty o
 Same sources of truth as manual QA execution, used the same way:
 
 - **Jira ticket** — acceptance criteria and description are the primary source of
-  what "correct" means. Fetch with the Atlassian MCP tools, or use what's already
-  pasted into the request.
-- **PR diff**, if referenced — read it for edge cases the ticket doesn't spell out:
+  what "correct" means. Read it with the `reading-jira-tickets` skill (comments
+  included, they often change the criteria), or use what's already pasted into
+  the request.
+- **PR diff**, if referenced (`reading-jira-tickets`, "The PR or branch") — read it for edge cases the ticket doesn't spell out:
   new validation, new error states, changed conditionals. A diff that doesn't touch
   what the ticket describes is a mismatch worth flagging, not something to test
   around silently.
@@ -78,6 +81,9 @@ case:
 ### Procedure
 
 1. Pull acceptance criteria (or the feature description) and the PR diff if given.
+   Check whether the ticket already has a saved file (`<workDir>/qa-evidence/<TICKET>/test-cases.md`,
+   see [references/saved-file.md](./references/saved-file.md)); if it does, read it
+   and build on its cases instead of starting over.
 2. Turn each acceptance criterion into one test case. Add test cases for edge cases
    the diff or design surfaces (new validation, error states, empty/loading states)
    even if the ticket doesn't spell them out — but don't invent scope neither the
@@ -89,12 +95,18 @@ case:
    within each row.
 5. Return the table. If a source (ticket, diff, or design) was unavailable, say so
    explicitly rather than silently working from less context.
+6. Save it as [references/saved-file.md](./references/saved-file.md) says
+   (`<workDir>/qa-evidence/<TICKET>/test-cases.md`, update the file when it exists, keep
+   case numbers and earlier runs) and give its full path. When `qa-tester`
+   uses this method inside its run it can't write files; it returns the
+   cases and the conversation that started it saves them.
 
 ### Output
 
 A single Markdown table, ready to paste into Jira, Confluence, or a test-management
 tool — nothing else added (no priority column, no "covers" column, no test-case
-cross-references) unless the request explicitly asks for those too.
+cross-references) unless the request explicitly asks for those too. After it, one
+line with the saved file's full path.
 
 ---
 

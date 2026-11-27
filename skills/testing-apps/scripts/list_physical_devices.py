@@ -3,6 +3,7 @@
 Wi-Fi) and whether it is reachable right now.
 
 Usage: python3 -I list_physical_devices.py [--platform ios|android] [--connect]
+                                          [--prefer wifi,usb | usb,wifi | wifi | usb]
 
 Needed because `agent-device devices` alone is misleading for wireless work:
   - iOS: it shows every *paired* device as booted=true, even one that is off the
@@ -15,6 +16,15 @@ Needed because `agent-device devices` alone is misleading for wireless work:
 Columns: platform, name, id (UDID or adb serial to pass as --udid/--serial),
 transport (usb | wifi | ?), state (ready | not-reachable | unauthorized | ...).
 Only rows with state=ready can be tested; the rest say why not.
+
+--connect also tries to bring Wi-Fi devices back: `adb connect` for Android
+devices advertised over mDNS, and `xcrun devicectl device info details` for a
+paired iOS device without a live tunnel (that call wakes the tunnel).
+
+Connection order: --prefer, else `mobile.connection` in
+~/.claude/environments/qa-agent-preferences.json (e.g. ["wifi", "usb"]: Wi-Fi
+first, cable only when no device is ready over Wi-Fi). With an order, a last
+line per platform says which device to use ("pick: ...") or why none fits.
 """
 import argparse
 import json
@@ -22,6 +32,11 @@ import os
 import re
 import subprocess
 import tempfile
+from pathlib import Path
+
+CLAUDE_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude"))
+PREFS = CLAUDE_DIR / "environments" / "qa-agent-preferences.json"
+TRANSPORTS = ("wifi", "usb")
 
 
 def run(cmd, timeout=30):
@@ -32,17 +47,39 @@ def run(cmd, timeout=30):
         return 1, ""
 
 
-def ios_devices():
+def ios_raw():
+    """devicectl's device list, or None when devicectl isn't available."""
     fd, path = tempfile.mkstemp(suffix=".json")
     os.close(fd)
     try:
         code, _ = run(["xcrun", "devicectl", "list", "devices", "--json-output", path, "--quiet"])
         if code != 0:
-            return [("ios", "-", "-", "?", "devicectl unavailable (Xcode 15+ needed)")]
+            return None
         with open(path) as f:
-            devices = json.load(f).get("result", {}).get("devices", [])
+            return json.load(f).get("result", {}).get("devices", [])
     finally:
         os.unlink(path)
+
+
+def ios_wake(devices):
+    """Bring up the tunnel of each paired physical iOS device that has none."""
+    for d in devices:
+        conn = d.get("connectionProperties", {})
+        hw = d.get("hardwareProperties", {})
+        if (hw.get("reality") == "physical" and hw.get("platform") == "iOS"
+                and conn.get("pairingState") == "paired" and conn.get("tunnelState") != "connected"
+                and d.get("identifier")):
+            run(["xcrun", "devicectl", "device", "info", "details", "--device", d["identifier"], "--quiet"],
+                timeout=45)
+
+
+def ios_devices(connect=False):
+    devices = ios_raw()
+    if devices is not None and connect:
+        ios_wake(devices)
+        devices = ios_raw()
+    if devices is None:
+        return [("ios", "-", "-", "?", "devicectl unavailable (Xcode 15+ needed)")]
     rows = []
     for d in devices:
         conn = d.get("connectionProperties", {})
@@ -108,15 +145,52 @@ def android_devices(connect):
     return rows
 
 
+def preferred_order(arg):
+    """Connection order from --prefer, else from the preferences file; [] = no preference."""
+    if arg:
+        order = [x.strip() for x in arg.split(",") if x.strip()]
+    else:
+        try:
+            order = (json.loads(PREFS.read_text()).get("mobile") or {}).get("connection") or []
+        except (OSError, ValueError, AttributeError):
+            order = []
+    if not order or any(x not in TRANSPORTS for x in order) or len(set(order)) != len(order):
+        if arg:
+            raise SystemExit(f"--prefer must be wifi,usb | usb,wifi | wifi | usb, got {arg!r}")
+        return []
+    return order
+
+
+def pick(rows, platform, order):
+    """One line saying which device to use on this platform, following the order."""
+    ready = [r for r in rows if r[0] == platform and r[4] == "ready"]
+    for i, transport in enumerate(order):
+        match = [r for r in ready if r[3] == transport]
+        if match:
+            r = match[0]
+            note = "" if i == 0 else f" (fallback: nothing ready over {', '.join(order[:i])})"
+            more = f"; also ready: {', '.join(m[1] + ' ' + m[2] for m in match[1:])}" if len(match) > 1 else ""
+            return f"pick {platform}: {r[1]}  {r[2]}  over {transport}{note}{more}"
+    others = sorted({r[3] for r in ready} - set(order))
+    tail = f"; ready only over {', '.join(others)}, which the order doesn't allow" if others else ""
+    nxt = " or ".join("plug in the cable" if t == "usb" else "wake/unlock it on the same Wi-Fi, then --connect"
+                      for t in order)
+    return f"pick {platform}: none ready over {' then '.join(order)}{tail} ({nxt})"
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--platform", choices=["ios", "android"])
     ap.add_argument("--connect", action="store_true",
-                    help="adb connect every Android device advertised over mDNS but not attached")
+                    help="bring Wi-Fi devices back: adb connect mDNS-advertised Android devices, "
+                         "wake the tunnel of paired iOS devices")
+    ap.add_argument("--prefer", help="connection order, e.g. wifi,usb (default: mobile.connection in "
+                                     "qa-agent-preferences.json)")
     args = ap.parse_args()
+    order = preferred_order(args.prefer)
     rows = []
     if args.platform in (None, "ios"):
-        rows += ios_devices()
+        rows += ios_devices(args.connect)
     if args.platform in (None, "android"):
         rows += android_devices(args.connect)
     header = ("platform", "name", "id", "transport", "state")
@@ -125,6 +199,11 @@ def main():
         print("  ".join(str(c).ljust(widths[i]) for i, c in enumerate(r[:4])) + "  " + r[4])
     if not rows:
         print("No physical devices found.")
+    if order:
+        print(f"connection order: {' then '.join(order)}")
+        for platform in ("ios", "android"):
+            if args.platform in (None, platform):
+                print(pick(rows, platform, order))
 
 
 if __name__ == "__main__":

@@ -16,6 +16,10 @@ ever pulled without the user's yes.
 Needed if `~/.claude/environments/qa-agent-updates.json` (or
 `$CLAUDE_CONFIG_DIR/environments/qa-agent-updates.json`) doesn't exist.
 
+## Fresh install
+
+`skip`: configure-project asks for the update-check days itself (its step 5).
+
 ## Steps
 
 1. **Ask (tappable options; default in bold).** "When should I check for a

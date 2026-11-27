@@ -20,6 +20,10 @@ is neither in ... nor in ...". Configs that are still real files in
 `~/.claude/environments/` (001 not applied yet) are covered by 001; apply 001
 first, then check again.
 
+## Fresh install
+
+`skip`: configure-project writes config docs next to the config from the start.
+
 ## Steps
 
 1. **List (runs by itself).** For each product config with such a doc, show the

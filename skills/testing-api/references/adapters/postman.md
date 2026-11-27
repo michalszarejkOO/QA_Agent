@@ -11,9 +11,15 @@ procedure.
 ```
 <collectionPath>/
   <name>.postman_collection.json     # the collection: folders/requests, pm.test() assertions
+  <tests>.postman_collection.json    # optional tests collection (api.testsCollection)
   environments/
     <env>.postman_environment.json   # baseUrl and other variables per environment
 ```
+
+With `api.testsCollection` the cases live in the tests collection and the main
+one keeps one request per endpoint (see
+[config-fields.md](../config-fields.md), "The tests collection"). Both use the
+same `environments/`.
 
 A collection's `item[]` array nests folders and requests recursively. Each request
 item has a `request` (method/url/header/body) and, usually, an `event[]` entry with
@@ -29,29 +35,26 @@ one.
 
 ## Export
 
-Postman collections are already plain JSON, so "export" just means zipping them
-for re-import into the desktop app, the collection and its environments
-separately:
+Postman collections are already plain JSON, so the **package** is just the files
+themselves: the `*.postman_collection.json` and each environment file, which
+Postman imports as they are. They go to 1Password and/or the local folder flat,
+without a zip (see [publishing.md](../publishing.md), "The four targets"). Only
+`target: "confluence"` needs a zip, of the collection without environments:
 
 ```
-./scripts/export-collection.sh <repo_root> <dest_zip_path> <collectionPath> postman [collection|environments]
+./scripts/export-collection.sh <repo_root> <dest_zip_path> <collectionPath> postman collection
 ```
 
 Point `collectionPath` at the directory containing both the `*.postman_collection.json`
-file and the `environments/` folder. The default part, `collection`, leaves out
-`environments/`, `.env` files and a `.git` folder;
-`environments` zips `environments/` on its own, since environment files can hold
-live tokens (see [publishing.md](../publishing.md)). Publishing to 1Password skips
-the zips: the collection file and each environment file go up as they are, so
-people can import them straight into Postman (see
-[onepassword-publish.md](../onepassword-publish.md), "What goes into each item").
+file and the `environments/` folder. Part `collection` leaves out `environments/`,
+`.env` files and a `.git` folder, since environment files can hold live tokens.
 
 ## Syncing with the Postman app before publishing
 
 People work in the Postman app; the repo files only change when someone exports
 them. Importing a file copies it into Postman and nothing links the two after
 that. So before publishing (publishing.md step 1), bring the repo up to date with
-the app, or the zip carries a stale collection and environments.
+the app, or the package carries a stale collection and environments.
 
 **What Postman lets out.** Only a variable's **Shared Value** leaves the app,
 through an export or the API. A value kept only in the **Value** column, or in the
@@ -59,11 +62,21 @@ through an export or the API. A value kept only in the **Value** column, or in t
 `secret`-type field), stays in that person's app. So variables the whole team
 needs, keys included, are plain (`default`-type) variables with their value in
 Shared Value; secret type and the Vault are for one person's own values.
+An empty Shared Value is fine for a variable the collection's own scripts set
+during a run (tokens, ids, helper variables tests add), environment or
+collection variable alike. Only variables requests read and no script sets
+(API keys such as an `x-api-key` header, credentials, base URLs, ids of
+existing data) need one, and only those are reported as missing
+(`postman-sync`, "Which variables need a value").
 
-**How.** Through the Postman MCP server (the `postman` plugin). It needs the user
-to sign in once (its `authenticate` tool gives them a link; they approve in the
-browser, never in the chat). Without it, say so, ask the user whether they changed
-anything in the app since the last commit, and go on with the files.
+**How.** The `postman-sync` agent does the steps below (publishing.md step 1
+starts it). It is the only place the Postman MCP server connects, with the
+user's Postman API key from 1Password (`~/.claude/environments/postman.json`,
+read by `scripts/postman-mcp-headers.sh` when the agent starts), so its 41 tools
+never load into the main conversation. Without it (no key set up, 1Password
+locked, the agent reports "Postman not connected"), say so with the agent's fix,
+ask the user whether they changed anything in the app since the last commit, and
+go on with the files.
 
 1. **Find the cloud copies.** Everything here is on the account of whoever is
    signed in to the MCP: teammates may each have their own Postman account and
@@ -80,11 +93,14 @@ anything in the app since the last commit, and go on with the files.
    project skill names no workspace, propose adding this one, marked with whose
    account it is on.
 2. **Environments: pull and merge.** `getEnvironment` for each, then rewrite the
-   repo file from it:
+   environment file in the collection folder from the brief (the repo's, or the
+   run folder's copy for a product without `repo`) from it:
    - variables, order, values and types come from Postman;
    - a variable that is empty in Postman but has a value in the file keeps the
      file's value (it's in someone's Value column or Vault), and the summary says
      so, with the fix: put it in Shared Value as a `default`-type variable;
+   - a `secret`-type variable comes back from the API with no value at all,
+     even when one is set: treat it as empty in Postman, as above;
    - drop the stray `"secret": true` field the API returns next to a `type`; a
      file with it imports without that value;
    - keep the file's own header fields (`id`, `name`, `_postman_*`).
@@ -92,24 +108,29 @@ anything in the app since the last commit, and go on with the files.
    never values, and list per environment which variables have a value.
 3. **Collection: check, don't rewrite.** A collection is too large to pass through
    the conversation safely, and the Postman CLI (`postman collection get`) prints
-   only the v3 format. Compare the cloud collection's `updatedAt` with the last
-   commit of the collection file (`git log -1 --format=%cI -- <file>`). Newer in
-   Postman: ask the user to export it over the repo file (Export, Collection v2.1,
-   same path and name), then compare the request names with the previous version
-   and show what changed. Not newer: say the repo is current, and if the repo
-   has commits after `updatedAt`, that the app is behind them: the user should
-   import the collection again (Replace is fine for a collection).
-4. **Both sides changed.** If the repo file has commits or uncommitted changes
-   since the cloud copy's `updatedAt` and Postman changed too, show both and ask
-   which to keep; never overwrite either silently.
+   only the v3 format. Compare the cloud collection's `updatedAt` with when the
+   files were last changed, for each collection file (the main ones and the
+   tests collection), matched by `info.name`: the last commit of the file
+   (`git log -1 --format=%cI -- <file>`), or, for a product without `repo`, the
+   published version's `updatedAt` in `<run folder>/published-base.json`.
+   Newer in Postman: ask the user to export it over the collection file (Export,
+   Collection v2.1, same path and name), then compare the request names with the
+   previous version and show what changed. Not newer: say the files are current,
+   and if they changed after `updatedAt`, that the app is behind them: the user
+   should import the collection again (Replace is fine for a collection).
+4. **Both sides changed.** If the files changed since the cloud copy's
+   `updatedAt` (repo commits or uncommitted changes, or, without `repo`, cases
+   this run added) and Postman changed too, show both and ask which to keep;
+   never overwrite either silently.
 5. **Commit only when the user says so** (SKILL.md, NEVER rule on git), in the
-   collection's own repo, with the change summary as the message.
+   collection's own repo, with the change summary as the message. Without
+   `repo` there is nothing to commit: the publish carries the change.
 
 **The other way round.** Someone who takes the collection from 1Password or
 Confluence and imports the environment with **Replace** loses their local
 values (Value column) for it. Suggest importing it as a new environment, or, on
-their yes, updating their cloud environment through the MCP
-(`putEnvironment`/`patchEnvironment`, Shared Values only).
+their yes, updating their cloud environment through the `postman-sync` agent
+(`putEnvironment`, Shared Values only; the brief says so explicitly).
 
 ## Run
 
@@ -118,6 +139,9 @@ npx --yes newman run "<collection dir>/<name>.postman_collection.json" \
   -e "<collection dir>/environments/<env>.postman_environment.json" \
   --reporters cli,json --reporter-json-export "<run folder>/newman-run.json"
 ```
+
+`<name>` is the tests collection when the config has `testsCollection`;
+otherwise the main collection (one run per file when there are several).
 
 Newman resolves relative paths against the shell's current folder, so pass every
 path absolute: `<collection dir>` is `<run root>/<collectionPath>`, where `<run

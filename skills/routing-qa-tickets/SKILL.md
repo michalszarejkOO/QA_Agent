@@ -1,7 +1,7 @@
 ---
 name: routing-qa-tickets
 description: Classifies a bare Jira ticket and/or PR link as a backend or frontend change — and, if frontend, as web or mobile — before any testing begins, then dispatches to the testing-api skill (backend) or the qa-tester agent (frontend, with the resolved web URL or mobile device target). Use when asked to test, QA, or verify a ticket/PR that doesn't already say which kind of change it is or already come with a target — a bare ticket key/link with a generic ask to test it, with no mention of API/backend/endpoint and no web URL or device/bundle id supplied.
-when_to_use: "Trigger on: 'test MWA-123', 'QA this PR', a bare Jira ticket key/URL or PR link with a generic ask to test/verify/check it, before it's known whether the change is frontend or backend. Do NOT trigger when the request already says backend/API/an endpoint (goes straight to testing-api) or already supplies a web URL or a mobile device/bundle id (goes straight to qa-tester) — those are already unambiguous and routing them through here just adds a step."
+when_to_use: "Trigger on: 'test MWA-123', 'QA this PR', a bare Jira ticket key/URL or PR link with a generic ask to test/verify/check it, before it's known whether the change is frontend or backend. Do NOT trigger when the request already says backend/API/an endpoint (goes straight to testing-api) or already supplies a web URL or a mobile device/bundle id (goes straight to qa-tester) — those are already unambiguous and routing them through here just adds a step. Also not for a retest of a fixed bug or a ticket sent back to QA (retesting-tickets)."
 ---
 
 # Routing QA tickets
@@ -24,6 +24,9 @@ and doesn't publish anywhere.
   reporting) run unchanged — this skill does not re-fetch or re-derive anything they
   already own.
 - Never guesses when the signals disagree or are absent — see steps 5 and 6.
+- A retest (a fixed bug, a ticket sent back to QA, "sprawdź czy poprawione")
+  goes to the `retesting-tickets` skill, which picks API or UI per ticket
+  itself.
 
 ## Classification signals
 
@@ -44,7 +47,9 @@ diff.
    and `testing-api` do. Note which blocks it has (`api`, `surfaces`, both) — this
    alone can already answer backend-vs-frontend for a single-surface product.
 1. **Gather minimal signals** — cheap, not the full context-gathering step: the
-   ticket's labels/components/summary, and the PR's changed-file list only (e.g. `gh
+   ticket's labels/components/summary (`getJiraIssue` with the default view,
+   through the connector `reading-jira-tickets`, "Which connector", picks; the
+   full read happens in `testing-api` or `qa-tester`), and the PR's changed-file list only (e.g. `gh
    pr diff <n> --name-only`, or `git diff --name-only <base>...<branch>` if resolving
    the branch directly) — not the full diff body.
 2. **Classify backend vs. frontend** against the table above.
@@ -66,6 +71,10 @@ diff.
    - **Mobile** → nothing in the environment config shape resolves this today (see
      `environments.example/`), so ask the user for the device name/bundle id if the
      original request didn't already supply one — never invent or guess a target.
+     For a physical phone, also check the connection order
+     (`python3 -I ~/.claude/skills/configure-project/scripts/preferences.py connection`);
+     if none is saved, ask Wi-Fi or cable first and save it, since `qa-tester`
+     can't ask (testing-apps mobile adapter, "Physical devices: cable or Wi-Fi").
 
    Before invoking, resolve evidence recording from
    `~/.claude/environments/evidence.json`, because `qa-tester` runs as a subagent
@@ -75,10 +84,14 @@ diff.
      otherwise), then continue.
    - `mode: "ask"` → ask the user which evidence to save for this run, with
      two options: videos and screenshots (default), or screenshots only. Pass
-     the answer in the brief as its line from "Recorded evidence" in the
-     `testing-apps` skill ("evidence: record and save" / "evidence: screenshots
-     only").
+     the answer in the brief as its line from "Recorded evidence" in
+     `~/.claude/skills/testing-apps/references/execution.md` ("evidence: record
+     and save" or "evidence: screenshots only").
    - `mode: "auto"` or missing → nothing to ask; `qa-tester` records by default.
+
+   `qa-tester` runs on Sonnet. If the user asks for Opus for this ticket ("puść
+   na Opusie", "run it on Opus"), pass model `opus` in the Agent call; that
+   applies to this run only.
 
    Stop here once `qa-tester` is invoked.
 5. **Mixed signals** (both backend- and frontend-shaped paths touched) → don't pick
@@ -96,8 +109,21 @@ Before invoking `qa-tester`, also say what it will do: target, ticket, and
 whether it will record evidence and where. `qa-tester` runs as a subagent and
 the user sees nothing until it returns. When it returns, relay its **Summary**
 (done, and not done/skipped with reasons) and its scenario-results table as-is,
-then the rest of the report. When the user then says yes to posting the comment
-or filing a bug, put its screenshots and videos on Jira as
+then the rest of the report, with the **Jira-ready comment** and every **bug
+report draft** printed in full in the chat (never only a file path). Save its
+cases, test data and results to `<workDir>/qa-evidence/<TICKET>/test-cases.md` as
+`~/.claude/skills/writing-test-cases/references/saved-file.md` says (update the
+file if it exists, the run goes on top under "Runs") and give the file's path.
+Do the same when you send `qa-tester` back to finish cases: the file then
+holds every case with its latest result. Then finish as the `configure-project`
+skill's [references/preferences.md](../configure-project/references/preferences.md),
+"After a test run", describes: actions set to `auto` were already done by the
+subagent (relay what it posted or filed, with links); ask about the `ask` ones
+(with "always"/"never" options that are saved); show the `never` ones as drafts;
+ask about the project-skill lines last. If the report has no comment draft or no
+bug drafts where bugs were found, write them yourself from its scenario results
+before asking. When the comment is posted or a bug filed, put its screenshots
+and videos on Jira as
 `~/.claude/skills/creating-jira-tickets/references/jira-attachments.md` says:
 through Atlassian's own server, from the run folder, never through
 `mcp-atlassian` and never via a copy in another folder.

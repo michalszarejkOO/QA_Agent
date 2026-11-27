@@ -16,7 +16,9 @@ checks it covers the agent link, dangling skill links, git hooks, the config
 validator, every product's paths, the docs it points at (knownCaveatsFile,
 envRefreshProcedure), project skill and REPLACE_ME values,
 playwright-video and maestro, and the tools runs need (git, python, node, ffmpeg,
-agent-device, Xcode/adb, the agent-device iOS signing vars, the 1Password CLI when a product publishes to 1Password). Whether each Jira site is reachable through an
+agent-device, Xcode/adb, the agent-device iOS signing vars, the 1Password CLI when a product publishes to 1Password), the Postman API key
+reference for postman-sync when a product uses Postman, and the
+auto-compact window against the recommended 350k. Whether each Jira site is reachable through an
 Atlassian MCP server can only be checked from inside Claude; the
 checking-qa-agent skill does that part.
 """
@@ -31,7 +33,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 CLAUDE_DIR = Path(os.environ.get("CLAUDE_CONFIG_DIR", Path.home() / ".claude"))
 ENV_DIR = CLAUDE_DIR / "environments"
-META = {"atlassian-connectors.json", "evidence.json", "qa-agent-migrations.json", "qa-agent-updates.json"}
+META = {"atlassian-connectors.json", "evidence.json", "handoff.json", "postman.json", "qa-agent-migrations.json",
+        "qa-agent-updates.json", "qa-agent-preferences.json"}
 SCRIPTS = REPO / "skills" / "updating-qa-agent" / "scripts"
 WRAPPER = CLAUDE_DIR / "skills" / "testing-apps" / "scripts" / "playwright-mcp.sh"
 
@@ -64,7 +67,7 @@ def pending_migrations():
     return run(sys.executable, "-I", SCRIPTS / "migrations.py", "pending").stdout.split()
 
 
-COMPANION_FIELDS = ("knownCaveatsFile", "confluence.envRefreshProcedure")
+COMPANION_FIELDS = ("knownCaveatsFile", "publish.envRefreshProcedure", "confluence.envRefreshProcedure")
 
 
 def collection_environments(api):
@@ -234,11 +237,12 @@ def check_links(r):
     if other_repo:
         r.add("WARN", f"skills linked to another QA_Agent clone: {'; '.join(other_repo)}",
               f"run {REPO / 'setup.sh'} from the clone you want to use")
-    agent = CLAUDE_DIR / "agents" / "qa-tester.md"
-    if not agent.exists():
-        r.add("FAIL", "qa-tester agent not linked", f"{REPO / 'setup.sh'}")
-    if not unlinked and not dangling and not other_repo and agent.exists():
-        r.add("OK", f"skills and qa-tester agent linked to {REPO}")
+    agents = sorted(a.stem for a in (REPO / "agents").glob("*.md"))
+    unlinked_agents = [a for a in agents if not (CLAUDE_DIR / "agents" / f"{a}.md").exists()]
+    if unlinked_agents:
+        r.add("FAIL", f"agents not linked: {', '.join(unlinked_agents)}", f"{REPO / 'setup.sh'}")
+    if not unlinked and not dangling and not other_repo and not unlinked_agents:
+        r.add("OK", f"skills and agents ({', '.join(agents)}) linked to {REPO}")
 
 
 def check_repo(r):
@@ -255,6 +259,38 @@ def check_repo(r):
     else:
         r.add("WARN", "git hooks not enabled: pulls won't re-run setup.sh or say when an update is needed",
               f"{REPO / 'setup.sh'}")
+
+
+def handoff_check(r):
+    folder = REPO / "skills/session-handoff/scripts"
+    out = subprocess.run([sys.executable, "-I", str(folder / "context_hook.py"), "--settings"],
+                         capture_output=True, text=True)
+    try:
+        conf = json.loads(out.stdout)
+    except ValueError:
+        conf = {"mode": "ask", "thresholdTokens": 250000}
+    if not (ENV_DIR / "handoff.json").exists():
+        r.add("INFO", "no handoff.json: the context hook offers a handoff past 250k tokens (mode ask)")
+    else:
+        r.add("INFO", f"session handoff: mode {conf['mode']}, from {conf['thresholdTokens'] // 1000}k tokens")
+    chosen = (load(ENV_DIR / "handoff.json") or {}).get("statusLine")
+    if chosen == "qa-agent":
+        line = subprocess.run([sys.executable, "-I", str(folder / "register_statusline.py"), "--check"],
+                              capture_output=True, text=True)
+        if line.returncode == 0:
+            r.add("OK", "context status line set (ctx turns yellow at the handoff threshold, red 20k later)")
+        else:
+            r.add("WARN", "QA_Agent status line chosen but not set: you won't see when the context grows large",
+                  f"python3 -I {folder / 'register_statusline.py'} (or run setup.sh)")
+    if conf["mode"] == "never":
+        return
+    reg = subprocess.run([sys.executable, "-I", str(folder / "register_handoff_hook.py"), "--check"],
+                         capture_output=True, text=True)
+    if reg.returncode == 0:
+        r.add("OK", "session-handoff context check runs on every prompt (UserPromptSubmit hook)")
+    else:
+        r.add("WARN", "session-handoff hook not registered: no hint when a conversation grows large",
+              f"python3 -I {folder / 'register_handoff_hook.py'} (or run setup.sh)")
 
 
 def check_configs(r, products):
@@ -304,7 +340,8 @@ def check_product(r, path, servers):
     for label, p in [("workDir", data.get("workDir"))] + [
         (f"surfaces.{n}.repo", s.get("repo")) for n, s in (data.get("surfaces") or {}).items() if isinstance(s, dict)
     ] + [(f"repos.{n}", v if isinstance(v, str) else (v or {}).get("repoLocalPath")) for n, v in (data.get("repos") or {}).items()] + [
-        ("api.repo", (data.get("api") or {}).get("repo"))
+        ("api.repo", (data.get("api") or {}).get("repo")),
+        ("api.publish.apiCollectionsFolder", ((data.get("api") or {}).get("publish") or {}).get("apiCollectionsFolder")),
     ]:
         if p and not Path(p).expanduser().exists():
             missing.append(f"{label} ({p})")
@@ -436,11 +473,12 @@ def check_tools(r, any_mobile, any_web):
 
 
 def uses_onepassword(products):
-    """Products whose API collection or environments are published to 1Password."""
+    """Products whose API collection is published to 1Password (api.publish.target, or the
+    old per-part shape before migration 016)."""
     names = []
     for p in products:
         pub = ((load(p) or {}).get("api") or {}).get("publish") or {}
-        if isinstance(pub, dict) and "1password" in (pub.get("collection"), pub.get("environments")):
+        if isinstance(pub, dict) and ("1password" in str(pub.get("target", "")) or "1password" in (pub.get("collection"), pub.get("environments"))):
             names.append(p.name)
     return names
 
@@ -467,6 +505,39 @@ def check_onepassword(r, users):
               "in the 1Password app: Settings > Developer > Integrate with 1Password CLI, then run `op vault list` and approve the dialog")
 
 
+def postman_products(products):
+    """Products whose API collection is a Postman one (publishing syncs it through postman-sync)."""
+    return [p.name for p in products if ((load(p) or {}).get("api") or {}).get("client") == "postman"]
+
+
+def postman_plugin_enabled():
+    settings = load(CLAUDE_DIR / "settings.json") or {}
+    plugins = settings.get("enabledPlugins") or {}
+    return [k for k, on in plugins.items() if on and k.split("@")[0].lower() == "postman"]
+
+
+def check_postman(r, users):
+    """postman-sync connects with the API key that environments/postman.json points at."""
+    plugin = postman_plugin_enabled()
+    if plugin:
+        r.add("WARN", f"Postman plugin still enabled ({', '.join(plugin)}): its tools load into every session, "
+              "and QA_Agent uses the postman-sync agent instead",
+              f"claude plugin disable {plugin[0]}")
+    if not users:
+        return
+    config = ENV_DIR / "postman.json"
+    data = load(config)
+    ref = (data or {}).get("apiKeyRef") if isinstance(data, dict) else None
+    if not config.exists():
+        r.add("WARN", f"no environments/postman.json, but {', '.join(users)} use(s) Postman: publishing "
+              "can't sync with the Postman app", "in Claude: \"update QA_Agent\" (migration 010)")
+    elif not (isinstance(ref, str) and ref.startswith("op://")):
+        r.add("FAIL", "environments/postman.json has no apiKeyRef op://<vault>/<item>/<field>",
+              "in Claude: \"update QA_Agent\", or fix the file by hand (environments.example/README.md)")
+    else:
+        r.add("OK", "Postman API key reference set (postman-sync agent); the key itself is read only when it connects")
+
+
 def check_stray_files(r, products):
     """Product files left outside their workDir (find_project_files.py, read-only)."""
     script = Path(__file__).with_name("find_project_files.py")
@@ -482,6 +553,48 @@ def check_stray_files(r, products):
         r.add("INFO", f"project files outside their working directories ({summary})",
               f"see them: python3 -I {script}; in Claude: \"pozbieraj pliki projektów\" / \"gather project files\" "
               "moves them, asking before each move")
+
+
+RECOMMENDED_COMPACT_WINDOW = 350_000
+COMPACT_ENV = "CLAUDE_CODE_AUTO_COMPACT_WINDOW"
+
+
+def parse_tokens(value):
+    """Reads a token count such as 200000, "200000", "200k" or "1M"; None if it isn't one."""
+    match = re.fullmatch(r"\s*(\d+)\s*([kKmM]?)\s*", str(value))
+    if not match:
+        return None
+    multiplier = {"": 1, "k": 1_000, "m": 1_000_000}[match.group(2).lower()]
+    return int(match.group(1)) * multiplier
+
+
+def compact_window():
+    """Where the auto-compact window comes from: (tokens, source), or (None, None) when unset.
+
+    The environment variable wins over the user setting, as in Claude Code.
+    """
+    env_value = os.environ.get(COMPACT_ENV)
+    if env_value:
+        return parse_tokens(env_value), COMPACT_ENV
+    settings = load(CLAUDE_DIR / "settings.json") or {}
+    if "autoCompactWindow" in settings:
+        return parse_tokens(settings["autoCompactWindow"]), "autoCompactWindow in settings.json"
+    return None, None
+
+
+def check_compact_window(r):
+    tokens, source = compact_window()
+    why = "cost per session explained in README, \"Context and token cost\""
+    fix = "in Claude: /autocompact 350k (this session), or \"autoCompactWindow\": 350000 in ~/.claude/settings.json (every session)"
+    if tokens is None and source is None:
+        r.add("INFO", "auto-compact window not set: sessions on 1M-context models compact only near 1M tokens, "
+              f"so a long day costs about 2x more than at the recommended 350k ({why})", fix)
+    elif tokens is None:
+        r.add("WARN", f"{source} is not a token count (expected e.g. 350000 or 350k)", fix)
+    elif tokens == RECOMMENDED_COMPACT_WINDOW:
+        r.add("OK", f"sessions compact at {tokens // 1000}k tokens (recommended; {source})")
+    else:
+        r.add("INFO", f"sessions compact at {tokens // 1000}k tokens ({source}); recommended is 350k ({why})", fix)
 
 
 def full():
@@ -500,7 +613,10 @@ def full():
     check_mcp(r, servers, any_mobile, any_web)
     check_tools(r, any_mobile, any_web)
     check_onepassword(r, uses_onepassword(products))
+    check_postman(r, postman_products(products))
     check_stray_files(r, products)
+    check_compact_window(r)
+    handoff_check(r)
     days = update_settings()["checkDays"]
     when = {"daily": "every day", "never": "never"}.get(days) if isinstance(days, str) else ", ".join(days)
     r.add("INFO", f"update check: {when}" + ("" if days == "never" else " (first session that day)"),
